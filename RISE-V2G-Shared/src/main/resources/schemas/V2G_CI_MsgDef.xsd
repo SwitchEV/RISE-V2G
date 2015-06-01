@@ -1,0 +1,18 @@
+<!-- This XML document originates from the ISO/IEC 15118-2 standard which can be obtained from ISO at http://www.iso.org/iso/catalogue_detail.htm?csnumber=55366 -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+xmlns="urn:iso:15118:2:2013:MsgDef" xmlns:v2gci_h="urn:iso:15118:2:2013:MsgHeader"
+xmlns:v2gci_b="urn:iso:15118:2:2013:MsgBody" targetNamespace="urn:iso:15118:2:2013:MsgDef"
+elementFormDefault="qualified" attributeFormDefault="qualified" version="15118 2.0">
+<!-- attributeFormDefault="unqualified" -->
+<xs:import namespace="urn:iso:15118:2:2013:MsgHeader" schemaLocation="V2G_CI_MsgHeader.xsd"/>
+<xs:import namespace="urn:iso:15118:2:2013:MsgBody" schemaLocation="V2G_CI_MsgBody.xsd"/>
+<!-- Message Structure -->
+<xs:element name="V2G_Message">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="Header" type="v2gci_h:MessageHeaderType"/>
+<xs:element name="Body" type="v2gci_b:BodyType"/>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+</xs:schema>

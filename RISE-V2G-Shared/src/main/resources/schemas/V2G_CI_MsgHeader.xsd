@@ -1,0 +1,18 @@
+<!-- This XML document originates from the ISO/IEC 15118-2 standard which can be obtained from ISO at http://www.iso.org/iso/catalogue_detail.htm?csnumber=55366 -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+xmlns="urn:iso:15118:2:2013:MsgHeader"
+xmlns:v2gci_t="urn:iso:15118:2:2013:MsgDataTypes"
+xmlns:xmlsig="http://www.w3.org/2000/09/xmldsig#"
+targetNamespace="urn:iso:15118:2:2013:MsgHeader"
+elementFormDefault="qualified" attributeFormDefault="qualified">
+<xs:import namespace="urn:iso:15118:2:2013:MsgDataTypes" schemaLocation="V2G_CI_MsgDataTypes.xsd"/>
+<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+<!-- Message Header -->
+<xs:complexType name="MessageHeaderType">
+<xs:sequence>
+<xs:element name="SessionID" type="v2gci_t:sessionIDType"/>
+<xs:element name="Notification" type="v2gci_t:NotificationType" minOccurs="0"/>
+<xs:element ref="xmlsig:Signature" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>

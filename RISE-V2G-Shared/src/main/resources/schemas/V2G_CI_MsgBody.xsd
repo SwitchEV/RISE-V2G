@@ -1,0 +1,497 @@
+<!-- This XML document originates from the ISO/IEC 15118-2 standard which can be obtained from ISO at http://www.iso.org/iso/catalogue_detail.htm?csnumber=55366 -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+xmlns="urn:iso:15118:2:2013:MsgBody"
+xmlns:v2gci_d="urn:iso:15118:2:2013:MsgDef"
+xmlns:v2gci_t="urn:iso:15118:2:2013:MsgDataTypes"
+targetNamespace="urn:iso:15118:2:2013:MsgBody"
+elementFormDefault="qualified" attributeFormDefault="qualified">
+<xs:import namespace="urn:iso:15118:2:2013:MsgDataTypes" schemaLocation="V2G_CI_MsgDataTypes.xsd"/>
+<!-- Body -->
+<xs:complexType name="BodyType">
+<xs:sequence>
+<xs:element ref="BodyElement" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+<xs:element name="BodyElement" type="BodyBaseType" abstract="true"/>
+<xs:complexType name="BodyBaseType" abstract="true"/>
+<!-- ....................... -->
+<!-- Common Messages (AC/DC) -->
+<!-- ....................... -->
+<!-- -->
+<!-- Session Setup -->
+<!-- -->
+<xs:element name="SessionSetupReq" type="SessionSetupReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="SessionSetupReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="EVCCID" type="v2gci_t:evccIDType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="SessionSetupRes" type="SessionSetupResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="SessionSetupResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="EVSEID" type="v2gci_t:evseIDType"/>
+<xs:element name="EVSETimeStamp" type="xs:long" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Service Discovery -->
+<!-- -->
+<xs:element name="ServiceDiscoveryReq" type="ServiceDiscoveryReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ServiceDiscoveryReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ServiceScope" type="v2gci_t:serviceScopeType" minOccurs="0"/>
+<xs:element name="ServiceCategory" type="v2gci_t:serviceCategoryType" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="ServiceDiscoveryRes" type="ServiceDiscoveryResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ServiceDiscoveryResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="PaymentOptionList" type="v2gci_t:PaymentOptionListType"/>
+<xs:element name="ChargeService" type="v2gci_t:ChargeServiceType"/>
+<!--<xs:element name="ServiceList" type="v2gci_t:ServiceTagListType" minOccurs="0"/> -->
+<xs:element name="ServiceList" type="v2gci_t:ServiceListType" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Service Detail -->
+<!-- -->
+<xs:element name="ServiceDetailReq" type="ServiceDetailReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ServiceDetailReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ServiceID" type="v2gci_t:serviceIDType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="ServiceDetailRes" type="ServiceDetailResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ServiceDetailResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="ServiceID" type="v2gci_t:serviceIDType"/>
+<xs:element name="ServiceParameterList" type="v2gci_t:ServiceParameterListType" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Service Payment & Selection -->
+<!-- -->
+<xs:element name="PaymentServiceSelectionReq" type="PaymentServiceSelectionReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PaymentServiceSelectionReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="SelectedPaymentOption" type="v2gci_t:paymentOptionType"/>
+<xs:element name="SelectedServiceList" type="v2gci_t:SelectedServiceListType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="PaymentServiceSelectionRes" type="PaymentServiceSelectionResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PaymentServiceSelectionResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Payment Details -->
+<!-- -->
+<xs:element name="PaymentDetailsReq" type="PaymentDetailsReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PaymentDetailsReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="eMAID" type="v2gci_t:eMAIDType"/>
+<xs:element name="ContractSignatureCertChain" type="v2gci_t:CertificateChainType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="PaymentDetailsRes" type="PaymentDetailsResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PaymentDetailsResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="GenChallenge" type="v2gci_t:genChallengeType"/>
+<xs:element name="EVSETimeStamp" type="xs:long"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Authorization-->
+<!-- -->
+<xs:element name="AuthorizationReq" type="AuthorizationReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="AuthorizationReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="GenChallenge" type="v2gci_t:genChallengeType" minOccurs="0"/>
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID"/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="AuthorizationRes" type="AuthorizationResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="AuthorizationResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="EVSEProcessing" type="v2gci_t:EVSEProcessingType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Charge Parameter Discovery -->
+<!-- -->
+<xs:element name="ChargeParameterDiscoveryReq" type="ChargeParameterDiscoveryReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ChargeParameterDiscoveryReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="MaxEntriesSAScheduleTuple" type="xs:unsignedShort" minOccurs="0"/>
+<!-- new -->
+<xs:element name="RequestedEnergyTransferMode" type="v2gci_t:EnergyTransferModeType"/>
+<xs:element ref="v2gci_t:EVChargeParameter"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="ChargeParameterDiscoveryRes" type="ChargeParameterDiscoveryResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ChargeParameterDiscoveryResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="EVSEProcessing" type="v2gci_t:EVSEProcessingType"/>
+<xs:element ref="v2gci_t:SASchedules" minOccurs="0"/>
+<xs:element ref="v2gci_t:EVSEChargeParameter"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Power Delivery -->
+<!-- -->
+<xs:element name="PowerDeliveryReq" type="PowerDeliveryReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PowerDeliveryReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ChargeProgress" type="v2gci_t:chargeProgressType"/>
+<xs:element name="SAScheduleTupleID" type="v2gci_t:SAIDType"/>
+<xs:element name="ChargingProfile" type="v2gci_t:ChargingProfileType" minOccurs="0"/>
+<xs:element ref="v2gci_t:EVPowerDeliveryParameter" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="PowerDeliveryRes" type="PowerDeliveryResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PowerDeliveryResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element ref="v2gci_t:EVSEStatus"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Metering Receipt -->
+<!-- -->
+<xs:element name="MeteringReceiptReq" type="MeteringReceiptReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="MeteringReceiptReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="SessionID" type="v2gci_t:sessionIDType"/>
+<xs:element name="SAScheduleTupleID" type="v2gci_t:SAIDType" minOccurs="0"/>
+<xs:element name="MeterInfo" type="v2gci_t:MeterInfoType"/>
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID"/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="MeteringReceiptRes" type="MeteringReceiptResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="MeteringReceiptResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element ref="v2gci_t:EVSEStatus"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- SessionStop -->
+<!-- -->
+<xs:element name="SessionStopReq" type="SessionStopReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="SessionStopReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ChargingSession" type="v2gci_t:chargingSessionType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="SessionStopRes" type="SessionStopResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="SessionStopResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Certificate Update -->
+<!-- -->
+<xs:element name="CertificateUpdateReq" type="CertificateUpdateReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CertificateUpdateReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ContractSignatureCertChain" type="v2gci_t:CertificateChainType"/>
+<xs:element name="eMAID" type="v2gci_t:eMAIDType"/>
+<xs:element name="ListOfRootCertificateIDs" type="v2gci_t:ListOfRootCertificateIDsType"/>
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" use="required"/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="CertificateUpdateRes" type="CertificateUpdateResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CertificateUpdateResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="SAProvisioningCertificateChain" type="v2gci_t:CertificateChainType"/>
+<xs:element name="ContractSignatureCertChain" type="v2gci_t:CertificateChainType"/>
+<xs:element name="ContractSignatureEncryptedPrivateKey" type="v2gci_t:ContractSignatureEncryptedPrivateKeyType"/>
+<xs:element name="DHpublickey" type="v2gci_t:DiffieHellmanPublickeyType"/>
+<xs:element name="eMAID" type="v2gci_t:EMAIDType"/>
+<xs:element name="RetryCounter" type="xs:short" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Certificate Installation -->
+<!-- -->
+<xs:element name="CertificateInstallationReq" type="CertificateInstallationReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CertificateInstallationReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="OEMProvisioningCert" type="v2gci_t:certificateType"/>
+<xs:element name="ListOfRootCertificateIDs" type="v2gci_t:ListOfRootCertificateIDsType"/>
+</xs:sequence>
+<xs:attribute name="Id" type="xs:ID" use="required"/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="CertificateInstallationRes" type="CertificateInstallationResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CertificateInstallationResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="SAProvisioningCertificateChain" type="v2gci_t:CertificateChainType"/>
+<!-- new -->
+<xs:element name="ContractSignatureCertChain" type="v2gci_t:CertificateChainType"/>
+<xs:element name="ContractSignatureEncryptedPrivateKey" type="v2gci_t:ContractSignatureEncryptedPrivateKeyType"/>
+<xs:element name="DHpublickey" type="v2gci_t:DiffieHellmanPublickeyType"/>
+<xs:element name="eMAID" type="v2gci_t:EMAIDType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- ....................... -->
+<!-- AC-Messages -->
+<!-- ....................... -->
+<!-- -->
+<!-- Charging Status -->
+<!-- -->
+<xs:element name="ChargingStatusReq" type="ChargingStatusReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ChargingStatusReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence/>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="ChargingStatusRes" type="ChargingStatusResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="ChargingStatusResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="EVSEID" type="v2gci_t:evseIDType"/>
+<xs:element name="SAScheduleTupleID" type="v2gci_t:SAIDType"/>
+<xs:element name="EVSEMaxCurrent" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="MeterInfo" type="v2gci_t:MeterInfoType" minOccurs="0"/>
+<xs:element name="ReceiptRequired" type="xs:boolean" minOccurs="0"/>
+<xs:element name="AC_EVSEStatus" type="v2gci_t:AC_EVSEStatusType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- ....................... -->
+<!-- DC-Messages -->
+<!-- ....................... -->
+<!-- -->
+<!-- Cable Check -->
+<!-- -->
+<xs:element name="CableCheckReq" type="CableCheckReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CableCheckReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="DC_EVStatus" type="v2gci_t:DC_EVStatusType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="CableCheckRes" type="CableCheckResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CableCheckResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="DC_EVSEStatus" type="v2gci_t:DC_EVSEStatusType"/>
+<xs:element name="EVSEProcessing" type="v2gci_t:EVSEProcessingType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Pre-Charge -->
+<!-- -->
+<xs:element name="PreChargeReq" type="PreChargeReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PreChargeReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="DC_EVStatus" type="v2gci_t:DC_EVStatusType"/>
+<xs:element name="EVTargetVoltage" type="v2gci_t:PhysicalValueType"/>
+<xs:element name="EVTargetCurrent" type="v2gci_t:PhysicalValueType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="PreChargeRes" type="PreChargeResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="PreChargeResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="DC_EVSEStatus" type="v2gci_t:DC_EVSEStatusType"/>
+<xs:element name="EVSEPresentVoltage" type="v2gci_t:PhysicalValueType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Current Demand -->
+<!-- -->
+<xs:element name="CurrentDemandReq" type="CurrentDemandReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CurrentDemandReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="DC_EVStatus" type="v2gci_t:DC_EVStatusType"/>
+<xs:element name="EVTargetCurrent" type="v2gci_t:PhysicalValueType"/>
+<xs:element name="EVMaximumVoltageLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVMaximumCurrentLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVMaximumPowerLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="BulkChargingComplete" type="xs:boolean" minOccurs="0"/>
+<xs:element name="ChargingComplete" type="xs:boolean"/>
+<xs:element name="RemainingTimeToFullSoC" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="RemainingTimeToBulkSoC" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVTargetVoltage" type="v2gci_t:PhysicalValueType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="CurrentDemandRes" type="CurrentDemandResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="CurrentDemandResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="DC_EVSEStatus" type="v2gci_t:DC_EVSEStatusType"/>
+<xs:element name="EVSEPresentVoltage" type="v2gci_t:PhysicalValueType"/>
+<xs:element name="EVSEPresentCurrent" type="v2gci_t:PhysicalValueType"/>
+<xs:element name="EVSECurrentLimitAchieved" type="xs:boolean"/>
+<xs:element name="EVSEVoltageLimitAchieved" type="xs:boolean"/>
+<xs:element name="EVSEPowerLimitAchieved" type="xs:boolean"/>
+<xs:element name="EVSEMaximumVoltageLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVSEMaximumCurrentLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVSEMaximumPowerLimit" type="v2gci_t:PhysicalValueType" minOccurs="0"/>
+<xs:element name="EVSEID" type="v2gci_t:evseIDType"/>
+<xs:element name="SAScheduleTupleID" type="v2gci_t:SAIDType"/>
+<xs:element name="MeterInfo" type="v2gci_t:MeterInfoType" minOccurs="0"/>
+<xs:element name="ReceiptRequired" type="xs:boolean" minOccurs="0"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<!-- -->
+<!-- Welding Detection -->
+<!-- -->
+<xs:element name="WeldingDetectionReq" type="WeldingDetectionReqType" substitutionGroup="BodyElement"/>
+<xs:complexType name="WeldingDetectionReqType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="DC_EVStatus" type="v2gci_t:DC_EVStatusType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+<xs:element name="WeldingDetectionRes" type="WeldingDetectionResType" substitutionGroup="BodyElement"/>
+<xs:complexType name="WeldingDetectionResType">
+<xs:complexContent>
+<xs:extension base="BodyBaseType">
+<xs:sequence>
+<xs:element name="ResponseCode" type="v2gci_t:responseCodeType"/>
+<xs:element name="DC_EVSEStatus" type="v2gci_t:DC_EVSEStatusType"/>
+<xs:element name="EVSEPresentVoltage" type="v2gci_t:PhysicalValueType"/>
+</xs:sequence>
+</xs:extension>
+</xs:complexContent>
+</xs:complexType>
+</xs:schema>

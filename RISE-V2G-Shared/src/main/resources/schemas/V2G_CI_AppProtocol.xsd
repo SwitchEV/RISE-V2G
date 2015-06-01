@@ -1,0 +1,55 @@
+<!-- This XML document originates from the ISO/IEC 15118-2 standard which can be obtained from ISO at http://www.iso.org/iso/catalogue_detail.htm?csnumber=55366 -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+xmlns="urn:iso:15118:2:2010:AppProtocol"
+targetNamespace="urn:iso:15118:2:2010:AppProtocol">
+<xs:element name="supportedAppProtocolReq">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="AppProtocol" type="AppProtocolType" maxOccurs="20"/>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+<xs:element name="supportedAppProtocolRes">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="ResponseCode" type="responseCodeType"/>
+<xs:element name="SchemaID" type="idType" minOccurs="0"/>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+<xs:complexType name="AppProtocolType">
+<xs:sequence>
+<xs:element name="ProtocolNamespace" type="protocolNamespaceType"/>
+<xs:element name="VersionNumberMajor" type="xs:unsignedInt"/>
+<xs:element name="VersionNumberMinor" type="xs:unsignedInt"/>
+<xs:element name="SchemaID" type="idType"/>
+<xs:element name="Priority" type="priorityType"/>
+</xs:sequence>
+</xs:complexType>
+<xs:simpleType name="idType">
+<xs:restriction base="xs:unsignedByte"/>
+</xs:simpleType>
+<xs:simpleType name="protocolNameType">
+<xs:restriction base="xs:string">
+<xs:maxLength value="30"/>
+</xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="protocolNamespaceType">
+<xs:restriction base="xs:anyURI">
+<xs:maxLength value="100"/>
+</xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="priorityType">
+<xs:restriction base="xs:unsignedByte">
+<xs:minInclusive value="1"/>
+<xs:maxInclusive value="20"/>
+</xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="responseCodeType">
+<xs:restriction base="xs:string">
+<xs:enumeration value="OK_SuccessfulNegotiation"/>
+<xs:enumeration value="OK_SuccessfulNegotiationWithMinorDeviation"/>
+<xs:enumeration value="Failed_NoNegotiation"/>
+</xs:restriction>
+</xs:simpleType>
+</xs:schema>
