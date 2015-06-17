@@ -48,11 +48,12 @@ public final class MiscUtils {
 	 * @return The link-local address given as a String
 	 */
 	public static Inet6Address getLinkLocalAddress() {
-		String networkInterfaceConfig = (String) MiscUtils.getPropertyValue("NetworkInterface");
+		int networkInterfaceConfig = (int) getPropertyValue("NetworkInterfaceIndex");
+		
 		NetworkInterface nif = null;
 		
 		try {
-			nif = NetworkInterface.getByName(networkInterfaceConfig);
+			nif = NetworkInterface.getByIndex(networkInterfaceConfig);
 			Enumeration<InetAddress> inetAddresses = nif.getInetAddresses();
 			
 			while (inetAddresses.hasMoreElements()) {
@@ -69,7 +70,7 @@ public final class MiscUtils {
 			getLogger().fatal("SocketException while trying to get network interface for configured name " +
 							  networkInterfaceConfig + "'", e); 
 		} catch (NullPointerException e2) {
-			getLogger().fatal("No network interface for configured network interface name '" + 
+			getLogger().fatal("No network interface for configured network interface index '" + 
 							  networkInterfaceConfig + "' found");
 		}
 		
@@ -78,12 +79,12 @@ public final class MiscUtils {
 	
 	
 	public static byte[] getMacAddress() {
-		String networkInterfaceConfig = (String) MiscUtils.getPropertyValue("NetworkInterface");
+		int networkInterfaceConfig = (int) getPropertyValue("NetworkInterfaceIndex");
 		NetworkInterface nif = null;
 		byte[] macAddress = null;
 		
 		try {
-			nif = NetworkInterface.getByName(networkInterfaceConfig);
+			nif = NetworkInterface.getByIndex(networkInterfaceConfig);
 			macAddress = nif.getHardwareAddress();
 		} catch (SocketException e) {
 			getLogger().error("Failed to retrieve local mac address (SocketException)", e);
@@ -124,8 +125,14 @@ public final class MiscUtils {
 		}
 		
 		switch (propertyName) {
-		case "NetworkInterface": // EV + EVSE property
-			returnValue = propertyValue; 
+		case "NetworkInterfaceIndex": // EV + EVSE property
+			try {
+				returnValue = Integer.parseInt(propertyValue);
+			} catch (NumberFormatException e) {
+				getLogger().warn("NetworkInterface index value '" + propertyValue + "' not supported. " + 
+								 "Trying index value 0", e);
+				returnValue = 0;
+			}
 			break;
 		case "SessionID": // EV property
 			try {
@@ -209,7 +216,7 @@ public final class MiscUtils {
 			returnValue = Boolean.parseBoolean(propertyValue);
 			break;
 		default:
-			break;
+			getLogger().error("No property with name '" + propertyName + "' found");
 		}
 		
 		return returnValue;
