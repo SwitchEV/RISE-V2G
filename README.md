@@ -21,3 +21,13 @@ More information about the RISE V2G project can be found on the [Eclipse Foundat
 
 ### License
 RISE V2G is published under the [Eclipse Public License v1.0](http://projects.eclipse.org/content/eclipse-public-license-1.0)
+
+![GITTER](http://i.imgur.com/8ZX0M4X.png)
+
+Discuss and file Gitter issues here
+----
+
+Join our online chat at [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/eclipse/risev2g)
+
+* Desktop Client: https://github.com/gitterHQ/desktop
+* Irc Bridge: https://github.com/gitterHQ/irc-bridge
