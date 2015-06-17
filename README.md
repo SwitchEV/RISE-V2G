@@ -1,5 +1,7 @@
 ### About RISE V2G
 
+[![Join the chat at https://gitter.im/eclipse/risev2g](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/eclipse/risev2g?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 RISE V2G is a **R**eference **I**mplementation **S**upporting the **E**volution of the **V**ehicle-**2**-**G**rid communication interface ISO/IEC 15118.
 The international standard ISO/IEC 15118, entitled "Road vehicles - Vehicle to grid communication interface", defines a digital IP-based communication interface between an electric vehicle (EV) and a charging station (named Electric Vehicle Supply Equipment - EVSE). It allows for a user-friendly "plug-and-charge" mechanism for authentication, authorisation, billing, and flexible load control based on a wide set of information exchanged between the EV and EVSE.
 A rise in the wide application of this standard is essential for reaching the goal of integrating EVs as flexible energy storage devices into a smart grid.
