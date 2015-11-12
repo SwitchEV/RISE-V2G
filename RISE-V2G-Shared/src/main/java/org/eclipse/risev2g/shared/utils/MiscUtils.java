@@ -48,12 +48,12 @@ public final class MiscUtils {
 	 * @return The link-local address given as a String
 	 */
 	public static Inet6Address getLinkLocalAddress() {
-		int networkInterfaceConfig = (int) getPropertyValue("NetworkInterfaceIndex");
+		String networkInterfaceConfig = getPropertyValue("NetworkInterface").toString();
 		
 		NetworkInterface nif = null;
 		
 		try {
-			nif = NetworkInterface.getByIndex(networkInterfaceConfig);
+			nif = NetworkInterface.getByName(networkInterfaceConfig);
 			Enumeration<InetAddress> inetAddresses = nif.getInetAddresses();
 			
 			while (inetAddresses.hasMoreElements()) {
@@ -79,12 +79,12 @@ public final class MiscUtils {
 	
 	
 	public static byte[] getMacAddress() {
-		int networkInterfaceConfig = (int) getPropertyValue("NetworkInterfaceIndex");
+		String networkInterfaceConfig = getPropertyValue("NetworkInterface").toString();
 		NetworkInterface nif = null;
 		byte[] macAddress = null;
 		
 		try {
-			nif = NetworkInterface.getByIndex(networkInterfaceConfig);
+			nif = NetworkInterface.getByName(networkInterfaceConfig);
 			macAddress = nif.getHardwareAddress();
 		} catch (SocketException e) {
 			getLogger().error("Failed to retrieve local mac address (SocketException)", e);
@@ -125,14 +125,8 @@ public final class MiscUtils {
 		}
 		
 		switch (propertyName) {
-		case "NetworkInterfaceIndex": // EV + EVSE property
-			try {
-				returnValue = Integer.parseInt(propertyValue);
-			} catch (NumberFormatException e) {
-				getLogger().warn("NetworkInterface index value '" + propertyValue + "' not supported. " + 
-								 "Trying index value 0", e);
-				returnValue = 0;
-			}
+		case "NetworkInterface": // EV + EVSE property
+			returnValue = propertyValue;
 			break;
 		case "SessionID": // EV property
 			try {

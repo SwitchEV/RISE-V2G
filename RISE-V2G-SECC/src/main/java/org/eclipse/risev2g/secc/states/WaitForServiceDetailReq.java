@@ -55,7 +55,11 @@ public class WaitForServiceDetailReq extends ServerState {
 				// Optionally, further service details parameters can be provided (if previously offered)
 				
 				serviceDetailRes.setServiceID(serviceDetailReq.getServiceID());
-				serviceDetailRes.setServiceParameterList(serviceParameterList);
+				
+				// The ServiceParameterList itself is optional, but if you send it, it shall not be empty
+				if (serviceParameterList.getParameterSet().size() > 0) {
+					serviceDetailRes.setServiceParameterList(serviceParameterList);
+				}
 				
 				((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 					.getAllowedRequests().add(V2GMessages.SERVICE_DETAIL_REQ);

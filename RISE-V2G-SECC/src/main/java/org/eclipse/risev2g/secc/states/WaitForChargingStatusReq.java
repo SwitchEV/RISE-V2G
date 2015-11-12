@@ -35,10 +35,14 @@ public class WaitForChargingStatusReq extends ServerState {
 			chargingStatusRes.setEVSEID(getCommSessionContext().getACEvseController().getEvseID());
 			chargingStatusRes.setSAScheduleTupleID(getCommSessionContext().getChosenSAScheduleTuple());
 			
-			// TODO check if a renegotiation is wanted or not
+			/*
+			 * TODO check if a renegotiation is wanted or not
+			 * Change EVSENotificationType to NONE if you want more than one charge loop iteration, 
+			 * but then make sure the EV is stopping the charge loop
+			 */
 			chargingStatusRes.setACEVSEStatus(
 					((IACEVSEController) getCommSessionContext().getACEvseController())
-					.getACEVSEStatus(EVSENotificationType.STOP_CHARGING)
+					.getACEVSEStatus(EVSENotificationType.STOP_CHARGING)  
 					);
 			
 			// Optionally indicate that the EVCC is required to send a MeteringReceiptReq message 

@@ -142,7 +142,6 @@ public final class ByteUtils {
 			char valueChar = (value) ? '1' : '0';
 			byteArrayString.append(valueChar);
 		}
-		byteArrayString.append(" ");
 		
 		return byteArrayString.toString();
 	}

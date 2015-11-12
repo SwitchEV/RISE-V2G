@@ -58,7 +58,6 @@ public class WaitForSessionSetupRes extends ClientState {
 								  sessionSetupRes.getResponseCode().toString() + "' is " +
 								  "neither OK_NEW_SESSION_ESTABLISHED nor OK_OLD_SESSION_JOINED");
 				return new TerminateSession("Positive response code invalid in state WaitForSessionSetupRes");
-				
 			}
 			
 			ServiceDiscoveryReqType serviceDiscoveryReq = new ServiceDiscoveryReqType();

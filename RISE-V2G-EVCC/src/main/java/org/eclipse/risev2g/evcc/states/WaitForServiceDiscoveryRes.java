@@ -122,7 +122,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 			}
 			
 			// Optionally, other value added services can be checked for here ...
-		} 
+		} else return false;
 		
 		return (getCommSessionContext().getServiceDetailsToBeRequested().size() > 0) ? true : false;
 	}

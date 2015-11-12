@@ -71,7 +71,9 @@ public class WaitForSupportedAppProtocolRes extends ClientState {
 						getCommSessionContext().generateSessionIDFromValue(sessionID)
 				);
 			} else {
-				return new TerminateSession("No supported appProtocol found (positive response code received, but no valid schemaID)");
+				return new TerminateSession("No supported appProtocol found (positive response code received, " + 
+											"but no valid schemaID. Received schema ID is: " + 
+											supportedAppProtocolRes.getSchemaID());
 			}
 			
 			return getSendMessage(sessionSetupReq, V2GMessages.SESSION_SETUP_RES, (int) Math.min(

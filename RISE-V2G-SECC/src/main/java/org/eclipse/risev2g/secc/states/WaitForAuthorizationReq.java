@@ -71,15 +71,18 @@ public class WaitForAuthorizationReq extends ServerState {
 			return false;
 		}
 		
-		// Verify signature
-		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-		verifyXMLSigRefElements.put(authorizationReq.getId(), SecurityUtils.generateDigest(authorizationReq, false));
-		ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
-				getCommSessionContext().getContractSignatureCertChain().getCertificate())
-				.getPublicKey();
-		if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
-			authorizationRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
-			return false;
+		// Only try to verify the signature in case we use a TLS connection
+		if (getCommSessionContext().isTlsConnection()) {
+			// Verify signature
+			HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
+			verifyXMLSigRefElements.put(authorizationReq.getId(), SecurityUtils.generateDigest(authorizationReq, false));
+			ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
+					getCommSessionContext().getContractSignatureCertChain().getCertificate())
+					.getPublicKey();
+			if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+				authorizationRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
+				return false;
+			}
 		}
 		
 		return true;

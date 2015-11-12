@@ -43,7 +43,11 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 			
 			serviceDiscoveryRes.setPaymentOptionList(getCommSessionContext().getPaymentOptions());
 			serviceDiscoveryRes.setChargeService(getChargeService()); 
-			serviceDiscoveryRes.setServiceList(offeredVASList);
+			
+			// The ServiceList itself is optional, but if you send it, it shall not be empty
+			if (offeredVASList.getService().size() > 0) {
+				serviceDiscoveryRes.setServiceList(offeredVASList);
+			}
 			
 			/*
 			 * When processing PaymentServiceSelectionReq the SECC needs to check if the service
