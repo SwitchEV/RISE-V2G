@@ -20,14 +20,17 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Properties;
+
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SupportedEnergyTransferModeType;
 
 
@@ -256,14 +259,18 @@ public final class MiscUtils {
 	 * JAXBElement<SessionStopReqType>(new QName ... ) but this seems to work as well 
 	 * (I don't know how to infer the type correctly)
 	 * 
-	 * @param messageOrField
+	 * @param messageOrField The message or field for which a digest is to be generated
 	 * @return
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static JAXBElement getJaxbElement(Object messageOrField) {
 		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
+		String namespace = "";
 		
-		return new JAXBElement(new QName("urn:iso:15118:2:2013:MsgBody", messageName), 
+		if (messageOrField instanceof SignedInfoType) namespace = "http://www.w3.org/2000/09/xmldsig#";
+		else namespace = "urn:iso:15118:2:2013:MsgBody";
+		
+		return new JAXBElement(new QName(namespace, messageName), 
 				messageOrField.getClass(), 
 				messageOrField);
 	}

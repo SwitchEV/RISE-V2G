@@ -263,7 +263,7 @@ public final class SecurityUtils {
 		} catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | 
 				 NoSuchProviderException | SignatureException e) {
 			getLogger().warn("Signature verification of certificate having distinguished name '" + 
-							  subject.getName() + "' with certificate having distinguished name '" + 
+							  subject.getName() + "' with certificate having distinguished name (the issuer) '" + 
 							  issuerSubject.getName() + "' failed. Expected issuer has distinguished name '" +
 							  expectedIssuerSubject.getName() + "' (" + e.getClass().getSimpleName() + ")", e);
 		} 
