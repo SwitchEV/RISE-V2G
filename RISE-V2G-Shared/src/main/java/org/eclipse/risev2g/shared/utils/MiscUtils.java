@@ -267,8 +267,8 @@ public final class MiscUtils {
 		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
 		String namespace = "";
 		
-		if (messageOrField instanceof SignedInfoType) namespace = "http://www.w3.org/2000/09/xmldsig#";
-		else namespace = "urn:iso:15118:2:2013:MsgBody";
+		if (messageOrField instanceof SignedInfoType) namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
+		else namespace = GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.toString();
 		
 		return new JAXBElement(new QName(namespace, messageName), 
 				messageOrField.getClass(), 

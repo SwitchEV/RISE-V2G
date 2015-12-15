@@ -57,6 +57,8 @@ public enum GlobalValues {
 	
 	// Schema information
 	V2G_CI_MSG_DEF_NAMESPACE("urn:iso:15118:2:2013:MsgDef"),
+	V2G_CI_MSG_BODY_NAMESPACE("urn:iso:15118:2:2013:MsgBody"), 
+	V2G_CI_XMLDSIG_NAMESPACE("http://www.w3.org/2000/09/xmldsig#"), 
 	SCHEMA_PATH_APP_PROTOCOL("/schemas/V2G_CI_AppProtocol.xsd"),
 	SCHEMA_PATH_MSG_DEF("/schemas/V2G_CI_MsgDef.xsd"),
 	SCHEMA_PATH_XMLDSIG("/schemas/xmldsig-core-schema.xsd"),
@@ -142,6 +144,10 @@ public enum GlobalValues {
 			 return "version 1 (IS compliant)";
 		case V2G_CI_MSG_DEF_NAMESPACE:
 			 return "urn:iso:15118:2:2013:MsgDef";
+		case V2G_CI_MSG_BODY_NAMESPACE:
+			 return "urn:iso:15118:2:2013:MsgBody";
+		case V2G_CI_XMLDSIG_NAMESPACE:
+			 return "http://www.w3.org/2000/09/xmldsig#";
 		case SCHEMA_PATH_APP_PROTOCOL:
 			 return "/schemas/V2G_CI_AppProtocol.xsd";
 		case SCHEMA_PATH_MSG_DEF:
