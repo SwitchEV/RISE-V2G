@@ -19,7 +19,8 @@ More information about the RISE V2G project can be found on the [Eclipse Foundat
 - Contribute any questions and suggestions to the [developers' mailing list](https://dev.eclipse.org/mailman/listinfo/risev2g-dev).
 - Join the [community forum](http://www.eclipse.org/forums/index.php?t=thread&frm_id=310) for any discussions.
 - View the [getting started guide and further documentation](https://wiki.eclipse.org/RISE_V2G) to get you up and running.
-- If you encounter a bug, [file it in Bugzilla](https://bugs.eclipse.org/bugs/enter_bug.cgi?product=Risev2g).
+- View an [in-depth presentation about ISO 15118](http://www.smart-v2g.info/blog/wp-content/uploads/2015/12/ISO-15118-Workshop-1.10.2015-Public-Download.pdf) for further understanding
+- Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to [mailto:jens.schmutzler@tu-dortmund.de](jens.schmutzler@tu-dortmund.de))
 
 ### License
 RISE V2G is published under the [Eclipse Public License v1.0](http://projects.eclipse.org/content/eclipse-public-license-1.0)
