@@ -146,7 +146,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		if (obs instanceof ConnectionHandler && obj instanceof byte[]) {
 			processIncomingMessage((byte[]) obj);
 		} else if (obs instanceof ConnectionHandler && obj == null) {
-			terminateSession("ConnectionHanlder has notified an error", false);
+			terminateSession("ConnectionHandler has notified an error", false);
 		}
 	}
 	

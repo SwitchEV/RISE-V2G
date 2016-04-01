@@ -31,6 +31,9 @@ public enum GlobalValues {
 	ALIAS_CONTRACT_CERTIFICATE("contract_cert"),
 	ALIAS_OEM_PROV_CERTIFICATE("oem_prov_cert"),
 	
+	// Period of time in days in which contract certificate update is recommended 
+	CERTIFICATE_EXPIRES_SOON_PERIOD((short) 21, GlobalTypes.SECURITY),
+	
 	/*
 	 * Relative file path to the EVCC and SECC keystore and truststore. 
 	 * Since at least the evccKeystore needs to be modified upon certificate installation / update, the 
@@ -186,6 +189,8 @@ public enum GlobalValues {
 			return "./seccKeystore.jks";
 		case SECC_TRUSTSTORE_FILEPATH:
 			return "./seccTruststore.jks";
+		case CERTIFICATE_EXPIRES_SOON_PERIOD:
+			return "21 days";
 		default: return "Invalid GlobalValue type";
 		}
 	}

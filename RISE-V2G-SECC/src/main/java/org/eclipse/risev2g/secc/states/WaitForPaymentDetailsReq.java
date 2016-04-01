@@ -79,6 +79,14 @@ public class WaitForPaymentDetailsReq extends ServerState {
 			return false;
 		}
 		
+		// Check if certificate expires soon (in 21 days or fewer) according to V2G2-690 
+		// A check for general validity has already been done above and does not need to be checked again here
+		if (SecurityUtils.getValidityPeriod(
+					SecurityUtils.getCertificate(paymentDetailsReq.getContractSignatureCertChain().getCertificate())
+				) <= GlobalValues.CERTIFICATE_EXPIRES_SOON_PERIOD.getShortValue()) {
+			paymentDetailsRes.setResponseCode(ResponseCodeType.OK_CERTIFICATE_EXPIRES_SOON);
+		}
+		
 		return true;
 	}
 }

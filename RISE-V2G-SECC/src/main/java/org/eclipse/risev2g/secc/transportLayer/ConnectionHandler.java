@@ -17,7 +17,10 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Observable;
+
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.risev2g.shared.misc.TimeRestrictions;
@@ -120,8 +123,11 @@ public class ConnectionHandler extends Observable implements Runnable {
 			} catch (SocketTimeoutException e) {
 				stopAndNotify("A SocketTimeoutException occurred", null);
 				break;
-			} catch (IOException e1) {
-				stopAndNotify("IOException occurred", e1);
+			} catch (SSLHandshakeException e1) {
+				stopAndNotify("An SSLHandshakeException occurred", e1);
+				break;
+			} catch (IOException e2) {
+				stopAndNotify("IOException occurred", e2);
 				break;
 			}
 		}

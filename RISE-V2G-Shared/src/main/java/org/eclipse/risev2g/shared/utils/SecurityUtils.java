@@ -53,9 +53,12 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -201,19 +204,76 @@ public final class SecurityUtils {
 	 */
 	public static boolean isCertificateValid(X509Certificate certificate) {
 		try {
-			certificate.checkValidity();
+			certificate.checkValidity();		
 			return true;
 		} catch (CertificateExpiredException e) {
 			X500Principal subject = certificate.getSubjectX500Principal();
+			
 			getLogger().warn("Certificate with distinguished name '" + subject.getName().toString() + 
 							 "' already expired (not after " + certificate.getNotAfter().toString() + ")");
 		} catch (CertificateNotYetValidException e) {
 			X500Principal subject = certificate.getSubjectX500Principal();
 			getLogger().warn("Certificate with distinguished name '" + subject.getName().toString() + 
 							 "' not yet valid (not before " + certificate.getNotBefore().toString() + ")");
-		}
+		} 
 		
 		return false;
+	}
+	
+	
+	/**
+	 * 
+	 * [V2G2-925] states:
+	 * A leaf certificate shall be treated as invalid, if the trust anchor at the end of the chain does not
+	 * match the specific root certificate required for a certain use, or if the required Domain
+	 * Component value is not present.
+	 * 
+	 * Domain Component restrictions:
+	 * - SECC certificate: "CPO" (verification by EVCC) 
+	 * - provisioning certificate (signer certificate of a contract certificate: "CPS" (verification by EVCC)
+	 * - OEM Provisioning Certificate: "OEM" (verification by provisioning service (not EVCC or SECC))
+	 * 
+	 * @param certificate The X509Certificiate to be checked for validity
+	 * @param domainComponent The domain component to be checked for in the distinguished name of the certificate
+	 * @return True, if the current date lies within the notBefore and notAfter attribute of the 
+	 * 		   certificate and the given domain component is present in the distinguished name, false otherwise
+	 */
+	public static boolean isCertificateValid(X509Certificate certificate, String domainComponent) {
+		if (isCertificateValid(certificate)) {
+			String dn = certificate.getSubjectX500Principal().getName();
+			LdapName ln;
+			
+			try {
+				ln = new LdapName(dn);
+				
+				for (Rdn rdn : ln.getRdns()) {
+				    if (rdn.getType().equalsIgnoreCase("DC") && rdn.getValue().equals(domainComponent)) {
+				        return true;
+				    }
+				}
+			} catch (InvalidNameException e) {
+				getLogger().warn("InvalidNameException occurred while trying to check domain component of certificate", e);
+			}
+
+			return false;
+		} else return false;
+	}
+	
+	
+	/**
+	 * Checks how many days a given certificate is still valid. 
+	 * If the certificate is not valid any more, a negative number will be returned according to the number
+	 * of days the certificate is already expired.
+	 * 
+	 * @param certificate The X509Certificiate to be checked for validity period
+	 * @return The number of days the given certificate is still valid, a negative number if already expired.
+	 */
+	public static short getValidityPeriod(X509Certificate certificate) {
+		Date today = Calendar.getInstance().getTime();
+		Date certificateExpirationDate = certificate.getNotAfter();
+		long diff = certificateExpirationDate.getTime() - today.getTime();
+		
+		return (short) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 	}
 	
 
@@ -239,6 +299,23 @@ public final class SecurityUtils {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Checks whether each certificate in the given certificate chain is currently valid and if a given
+	 * domain component (DC) in the distinguished name is set.
+	 *
+	 * @param certChain The certificate chain to iterate over to check for validity
+	 * @param domainComponent The domain component 
+	 * @return True, if the domain component is correctly set and if the current date lies within the notBefore 
+	 * 		   and notAfter attribute of each certificate contained in the provided certificate chain, 
+	 * 		   false otherwise
+	 */
+	public static boolean isCertificateChainValid(CertificateChainType certChain, String domainComponent) {
+		if (isCertificateChainValid(certChain)) {
+			if (isCertificateValid(getCertificate(certChain.getCertificate()), domainComponent)) return true;
+			else return false;
+		} else return false;
 	}
 	
 	
@@ -758,6 +835,24 @@ public final class SecurityUtils {
 		}
 		
 		return true;
+	}
+	
+	
+	public static X509Certificate getContractCertificate() {
+		X509Certificate contractCertificate = null;
+		
+		KeyStore evccKeyStore = getKeyStore(
+				GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(), 
+				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()
+			);
+		 
+		try {
+			contractCertificate = (X509Certificate) evccKeyStore.getCertificate(GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString());
+		} catch (KeyStoreException e) {
+			getLogger().error("KeyStoreException occurred while trying to get contract certificate from keystore", e);
+		}
+		
+		return contractCertificate;
 	}
 	
 	

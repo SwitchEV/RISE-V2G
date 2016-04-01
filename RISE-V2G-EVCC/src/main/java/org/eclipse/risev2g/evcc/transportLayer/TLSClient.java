@@ -14,7 +14,12 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -93,19 +98,32 @@ public class TLSClient extends StatefulTransportLayerClient {
 			// Set the supported TLS protocol
 			String[] enabledProtocols = {"TLSv1.2"};
 			getTlsSocketToServer().setEnabledProtocols(enabledProtocols);
-
+			
+			getTlsSocketToServer().startHandshake();
+			Certificate[] seccCertificates = getTlsSocketToServer().getSession().getPeerCertificates();
+			X509Certificate seccLeafCertificate = (X509Certificate) seccCertificates[0];
+			
+			// Check domain component of SECC certificate
+			if (!SecurityUtils.isCertificateValid(seccLeafCertificate, "CPO")) {
+				getLogger().error("TLS client connection failed. \n\t" + 
+								  "Reason: Domain component of SECC certificate not valid, expected 'DC=CPO'. \n\t" +
+								  "Distinuished name of SECC certificate: " + seccLeafCertificate.getSubjectX500Principal().getName());
+				return false;
+			}
+			
 			getLogger().debug("TLS client connection established \n\t from link-local address " +
 							  getClientAddress() + " and port " + getClientPort() + 
 							  "\n\t to host " + host.getHostAddress() + " and port " + port);
 			
 			return true;
 		} catch (UnknownHostException e) {
-			getLogger().error("TCP client connection failed (UnknownHostException)!", e);
+			getLogger().error("TLS client connection failed (UnknownHostException)!", e);
+		} catch (SSLHandshakeException e) {
+			getLogger().error("TLS client connection failed (SSLHandshakeException)", e);
 		} catch (IOException e) {
-			getLogger().error("TCP client connection failed (IOException)!", e);
+			getLogger().error("TLS client connection failed (IOException)!", e);
 		} catch (NullPointerException e) {
 			getLogger().fatal("NullPointerException while trying to set keystores, resource path to keystore/truststore might be incorrect");
-			return false;
 		}
 		
 		return false;
@@ -142,8 +160,10 @@ public class TLSClient extends StatefulTransportLayerClient {
 			getOutStream().flush();
 			getLogger().debug("Message sent");
 			setTimeout(timeout);
-		} catch (IOException e) {
-			getLogger().error("An undefined IOException occurred while trying to send message", e);
+		} catch (SSLHandshakeException e1) {
+			stopAndNotify("An SSLHandshakeException occurred", e1);
+		} catch (IOException e2) {
+			stopAndNotify("An undefined IOException occurred while trying to send message", e2);
 		}
 	}
 	

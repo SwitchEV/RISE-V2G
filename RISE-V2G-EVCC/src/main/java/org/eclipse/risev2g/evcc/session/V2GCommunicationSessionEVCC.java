@@ -10,10 +10,12 @@
  *******************************************************************************/
 package org.eclipse.risev2g.evcc.session;
 
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+
 import org.eclipse.risev2g.evcc.evController.DummyEVController;
 import org.eclipse.risev2g.evcc.evController.IEVController;
 import org.eclipse.risev2g.evcc.states.WaitForAuthorizationRes;
@@ -47,6 +49,7 @@ import org.eclipse.risev2g.shared.messageHandling.SendMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.misc.V2GCommunicationSession;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
+import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.AppProtocolType;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
@@ -425,26 +428,21 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	}
 
 
-	public boolean isCertificateInstallationNeeded() {
+	/**
+	 * Checks if the respective service for installing or updating a certificate is offered by the SECC and
+	 * has been selected by the EVCC.
+	 * 
+	 * @param parameterSetID 1 for installing a certificate, 2 for updating a certificate
+	 * @return True, if the respective certificate service is available, false otherwise
+	 */
+	public boolean isCertificateServiceAvailable(short parameterSetID) {
 		for (SelectedServiceType service : getSelectedServices().getSelectedService()) {
-			if (service.getServiceID() == 2 && 
+			if (service.getServiceID() == 2 && // ServiceID 2 refers to the 'Certificate' service
 				service.getParameterSetID() != null && 
-				service.getParameterSetID() == 1)
+				service.getParameterSetID() == parameterSetID) 
 				return true;
 		}
-		
-		return false;
-	}
 
-
-	public boolean isCertificateUpdateNeeded() {
-		for (SelectedServiceType service : getSelectedServices().getSelectedService()) {
-			if (service.getServiceID() == 2 && 
-				service.getParameterSetID() != null && 
-				service.getParameterSetID() == 2)
-				return true;
-		}
-		
 		return false;
 	}
 

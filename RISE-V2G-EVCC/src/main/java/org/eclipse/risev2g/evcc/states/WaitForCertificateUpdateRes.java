@@ -41,6 +41,15 @@ public class WaitForCertificateUpdateRes extends ClientState {
 				return new TerminateSession("Signature verification failed");
 			}
 			
+			/**
+			 * Check
+			 * - validity of each certificate in the chain
+			 * - that the signer certificate has a DC (Domain Component) field with the content "CPS" set
+			 */
+			if (!SecurityUtils.isCertificateChainValid(certificateUpdateRes.getSAProvisioningCertificateChain(), "CPS")) {
+				return new TerminateSession("Provisioning certificate chain is not valid");
+			}
+			
 			ECPrivateKey contractCertPrivateKey = SecurityUtils.getPrivateKey(
 					SecurityUtils.getKeyStore(
 							GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),

@@ -18,6 +18,7 @@ import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentDetailsResType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForPaymentDetailsRes extends ClientState {
@@ -33,9 +34,14 @@ public class WaitForPaymentDetailsRes extends ClientState {
 			PaymentDetailsResType paymentDetailsRes = 
 					(PaymentDetailsResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
-			if (paymentDetailsRes.getGenChallenge() == null) 
+			/*
+			 * A reaction on the response code OK_CERTIFICATE_EXPIRES_SOON is not needed as this check 
+			 * is already done by EVCC itself before deciding to send CertificateUpdateReq/CertificateInstallationReq
+			 */
+			
+			if (paymentDetailsRes.getGenChallenge() == null) {
 				return new TerminateSession("GenChallenge not provided in PaymentDetailsRes");
-			else {
+			} else {
 				// Set xml reference element
 				AuthorizationReqType authorizationReq = getAuthorizationReq(paymentDetailsRes.getGenChallenge());
 				getXMLSignatureRefElements().put(

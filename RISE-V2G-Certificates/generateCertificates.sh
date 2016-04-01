@@ -5,7 +5,7 @@
 # This file shall serve you with all information needed to create your own certificate chains.
 #
 # Helpful information about using OpenSSL is provided by Ivan Ristic's book "Bulletproof SSL and TLS".
-# Furthermore, you should have OpenSSL 1.0.2 (or above) installed to comply with all security requirements imposed by ISO/IEC 15118. For example, OpenSSL 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms.
+# Furthermore, you should have OpenSSL 1.0.2 (or above) installed to comply with all security requirements imposed by ISO 15118. For example, OpenSSL 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms.
 #
 # Author: Marc Mültin (marc.mueltin@chargepartner.com) 
 
@@ -49,7 +49,7 @@ openssl x509 -req -in csrs/cpoSub1CA.csr -extfile configs/cpoSub1CA.cnf -extensi
 # 3) Create a second intermediate CPO sub-CA certificate  just the way the previous intermedia certificate was created which is directly signed by the CPOSub1CA
 # Differences to CPOSub1CA
 # - basicConstraints in config file sets pathlength to 0 (meaning that no further sub CA's certificate may be signed with this certificate, a leaf certificate must follow this certificate in a certificate chain)
-# - validity is set to 1 year (1 - 2 years are allowed according to ISO/IEC 15118)
+# - validity is set to 1 year (1 - 2 years are allowed according to ISO 15118)
 openssl ecparam -genkey -name secp256r1 | openssl ec -out privateKeys/cpoSub2CA.key -aes128 -passout file:passphrase.txt
 openssl req -new -key privateKeys/cpoSub2CA.key -passin file:passphrase.txt -config configs/cpoSub2CA.cnf -extensions ext -out csrs/cpoSub2CA.csr
 openssl x509 -req -in csrs/cpoSub2CA.csr -extfile configs/cpoSub2CA.cnf -extensions ext -CA certs/cpoSub1CA.pem -CAkey privateKeys/cpoSub1CA.key -set_serial 03 -passin file:passphrase.txt -days 365 -out certs/cpoSub2CA.pem
@@ -59,7 +59,7 @@ openssl x509 -req -in csrs/cpoSub2CA.csr -extfile configs/cpoSub2CA.cnf -extensi
 # Differences to CPOSub1CA and CPOSub2CA
 # - basicConstraints sets CA to false, no pathlen is therefore set
 # - keyusage is set to digitalSignature instead of keyCertSign and cRLSign
-# - validity is set to 60 days (2 - 3 months are allowed according to ISO/IEC 15118)
+# - validity is set to 60 days (2 - 3 months are allowed according to ISO 15118)
 openssl ecparam -genkey -name secp256r1 | openssl ec -out privateKeys/seccCert.key -aes128 -passout file:passphrase.txt
 openssl req -new -key privateKeys/seccCert.key -passin file:passphrase.txt -config configs/seccCert.cnf -extensions ext -out csrs/seccCert.csr
 openssl x509 -req -in csrs/seccCert.csr -extfile configs/seccCert.cnf -extensions ext -CA certs/cpoSub2CA.pem -CAkey privateKeys/cpoSub2CA.key -set_serial 04 -passin file:passphrase.txt -days 60 -out certs/seccCert.pem
@@ -98,7 +98,7 @@ cat certs/oemSub2CA.pem certs/oemSub1CA.pem > certs/intermediateOEMCAs.pem
 openssl pkcs12 -export -inkey privateKeys/oemProvCert.key -in certs/oemProvCert.pem -certfile certs/intermediateOEMCAs.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name oem_prov_cert -out certs/oemProvCert.p12
 
 
-# 9) Create a self-signed MORootCA (mobility operator) certificate (validity is up to the OEM, this example applies the same validity as the V2GRootCA)
+# 9) Create a self-signed MORootCA (mobility operator) certificate (validity is up to the MO, this example applies the same validity as the V2GRootCA)
 openssl ecparam -genkey -name secp256r1 | openssl ec -out privateKeys/moRootCA.key -aes128 -passout file:passphrase.txt
 openssl req -new -x509 -days 14600 -sha256 -key privateKeys/moRootCA.key -set_serial 09 -passin file:passphrase.txt -config configs/moRootCA.cnf -extensions ext -out certs/moRootCA.pem
 
@@ -145,7 +145,7 @@ cat certs/provSub2CA.pem certs/provSub1CA.pem > certs/intermediateProvCAs.pem
 openssl pkcs12 -export -inkey privateKeys/provServiceCert.key -in certs/provServiceCert.pem -certfile certs/intermediateProvCAs.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name prov_service_cert -out certs/provServiceCert.p12
 
 
-# XX) Finally we need to convert the certificates from PEM format to DER format (PEM is the default format, but ISO/IEC 15118 only allows DER format)
+# XX) Finally we need to convert the certificates from PEM format to DER format (PEM is the default format, but ISO 15118 only allows DER format)
 openssl x509 -inform PEM -in certs/v2gRootCA.pem -outform DER -out certs/v2gRootCA.crt
 openssl x509 -inform PEM -in certs/oemRootCA.pem -outform DER -out certs/oemRootCA.crt
 openssl x509 -inform PEM -in certs/moRootCA.pem -outform DER -out certs/moRootCA.crt
@@ -155,7 +155,7 @@ openssl x509 -inform PEM -in certs/moRootCA.pem -outform DER -out certs/moRootCA
 # XX) Create the initial Java truststores and keystores
 # XX.1) truststore for the EVCC which needs to hold the V2GRootCA certificate (the EVCC does not verify the received certificate chain, therefore no MORootCA needs to be imported in evccTruststore.jks )
 keytool -import -keystore keystores/evccTruststore.jks -alias v2g_root_ca -file certs/v2gRootCA.crt -storepass:file passphrase.txt -noprompt
-# XX.2) truststore for the SECC which needs to hold the V2GRootCA certificate and the MORootCA which signed the MOSub1CA (needed for verifying the  contract certificate signature chain which will be sent from the EVCC to the SECC with PaymentDetailsReq message). According to ISO/IEC 15118-2, MORootCA is not necessarily needed as the MOSub1CA could instead be signed by a V2GRootCA.
+# XX.2) truststore for the SECC which needs to hold the V2GRootCA certificate and the MORootCA which signed the MOSub1CA (needed for verifying the  contract certificate signature chain which will be sent from the EVCC to the SECC with PaymentDetailsReq message). According to ISO 15118-2, MORootCA is not necessarily needed as the MOSub1CA could instead be signed by a V2GRootCA.
 keytool -import -keystore keystores/seccTruststore.jks -alias v2g_root_ca -file certs/v2gRootCA.crt -storepass:file passphrase.txt -noprompt
 keytool -import -keystore keystores/seccTruststore.jks -alias mo_root_ca -file certs/moRootCA.crt -storepass:file passphrase.txt -noprompt
 # XX.3) keystore for the SECC which needs to hold the CPOSub1CA, CPOSub1CA and SECCCert certificates

@@ -1,3 +1,11 @@
+*.jks
+*.p12
+*.pem
+*.cert
+*.cer
+*.key
+*.pfx
+*.bin
 *.class
 **/bin
 */bin

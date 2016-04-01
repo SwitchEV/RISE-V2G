@@ -20,6 +20,7 @@ import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateInstallationResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -39,6 +40,15 @@ public class WaitForCertificateInstallationRes extends ClientState {
 			
 			if (!verifySignature(certificateInstallationRes, v2gMessageRes.getHeader().getSignature())) {
 				return new TerminateSession("Signature verification failed");
+			}
+			
+			/**
+			 * Check
+			 * - validity of each certificate in the chain
+			 * - that the signer certificate has a DC (Domain Component) field with the content "CPS" set
+			 */
+			if (!SecurityUtils.isCertificateChainValid(certificateInstallationRes.getSAProvisioningCertificateChain(), "CPS")) {
+				return new TerminateSession("Provisioning certificate chain is not valid");
 			}
 			
 			ECPrivateKey oemProvCertPrivateKey = SecurityUtils.getPrivateKey(
@@ -89,4 +99,5 @@ public class WaitForCertificateInstallationRes extends ClientState {
 		
 		return true;
 	}
+
 }
