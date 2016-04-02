@@ -11,14 +11,13 @@
 package org.eclipse.risev2g.evcc.states;
 
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-
 import org.eclipse.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
+import org.eclipse.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateInstallationReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateUpdateReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
@@ -34,34 +33,27 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		if (isIncomingMessageValid(message, PaymentServiceSelectionResType.class)) {
 			if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT)) {
-				X509Certificate contractCert = SecurityUtils.getContractCertificate();
 				
-				/*
-				 * 1. Check if certificate installation is needed
-				 * No valid contract certificate means:
-				 * - no contract certificate is stored, or
-				 * - existing contract certificates are expired or revoked
-				 */
-				if (contractCert == null || (contractCert != null && !SecurityUtils.isCertificateValid(contractCert))) {
+				if (getCommSessionContext().getContractCertStatus().equals(ContractCertificateStatus.UNKNOWN)) {
+					getCommSessionContext().setContractCertStatus(SecurityUtils.getContractCertificateStatus());
+				}
+				
+				// 1. Check if certificate installation is needed
+				if (getCommSessionContext().getContractCertStatus().equals(ContractCertificateStatus.INSTALLATION_NEEDED)) {
 					if (getCommSessionContext().isCertificateServiceAvailable((short) 1)) {
-						if (contractCert == null) getLogger().info("No contract certificate stored, trying to install contract certificate");
-						else getLogger().info("Stored contract certificate not valid, trying to install new contract certificate");
-						
+						getLogger().info("Trying to install new contract certificate");
 						return getSendMessage(getCertificateInstallationReq(), V2GMessages.CERTIFICATE_INSTALLATION_RES);
 					} else return new TerminateSession("Certificate installation needed but service is not available");
-				} 
+				}
 				
 				// 2. Check if certificate update is needed (means: certificate is available but expires soon)
-				short validityOfContractCert = SecurityUtils.getValidityPeriod(contractCert);
-				
-				if (validityOfContractCert <= GlobalValues.CERTIFICATE_EXPIRES_SOON_PERIOD.getShortValue()) {
+				if (getCommSessionContext().getContractCertStatus().equals(ContractCertificateStatus.UPDATE_NEEDED)) {
 					if (getCommSessionContext().isCertificateServiceAvailable((short) 2)) {
-						getLogger().info("Stored contract certificate is about to expire in " + validityOfContractCert +
-										 " days, trying to update contract certificate");
+						getLogger().info("Trying to update contract certificate");
 						return getSendMessage(getCertificateUpdateReq(), V2GMessages.CERTIFICATE_UPDATE_RES);
 					} else return new TerminateSession("Certificate update needed but service is not available");
-				} 
-					
+				}
+
 				return getSendMessage(getPaymentDetailsReq(), V2GMessages.PAYMENT_DETAILS_RES);
 			} else if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.EXTERNAL_PAYMENT)) {
 				return getSendMessage(getAuthorizationReq(null), V2GMessages.AUTHORIZATION_RES);

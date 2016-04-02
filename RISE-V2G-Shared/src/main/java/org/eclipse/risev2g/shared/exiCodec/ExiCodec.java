@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -26,6 +25,7 @@ import javax.xml.bind.ValidationEventHandler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -39,6 +39,7 @@ public abstract class ExiCodec {
 	private InputStream inStream;
 	private Object decodedMessage;
 	private String decodedExi;
+	private boolean xmlRepresentation;
 	
 	public ExiCodec() {
 		try {
@@ -57,6 +58,12 @@ public abstract class ExiCodec {
 				                                       event.getLinkedException());
 				        }
 				});
+			
+			// Check if XML representation of sent messages is to be shown (for debug purposes)
+			if ((boolean) MiscUtils.getPropertyValue("XMLRepresentationOfMessages")) 
+				setXMLRepresentation(true);
+			else
+				setXMLRepresentation(false);
 		} catch (JAXBException e) {
 			getLogger().error("A JAXBException occurred while trying to instantiate " + this.getClass().getSimpleName(), e);
 		}
@@ -72,23 +79,25 @@ public abstract class ExiCodec {
 			setInStream(new ByteArrayInputStream(baos.toByteArray()));
 			baos.close();
 			
-			// For debugging purposes, you can view the XML representation of marshalled messages
-			StringWriter sw = new StringWriter();
-			String className = "";
-
-			if (jaxbObject instanceof V2GMessage) {
-				className = ((V2GMessage) jaxbObject).getBody().getBodyElement().getName().getLocalPart();
-			} else if (jaxbObject instanceof SupportedAppProtocolReq) {
-				className = "SupportedAppProtocolReq"; 
-			} else if (jaxbObject instanceof SupportedAppProtocolRes) {
-				className = "SupportedAppProtocolRes";
-			} else {
-				className = "marshalled JAXBElement";
+			if (isXMLRepresentation()) {
+				// For debugging purposes, you can view the XML representation of marshalled messages
+				StringWriter sw = new StringWriter();
+				String className = "";
+	
+				if (jaxbObject instanceof V2GMessage) {
+					className = ((V2GMessage) jaxbObject).getBody().getBodyElement().getName().getLocalPart();
+				} else if (jaxbObject instanceof SupportedAppProtocolReq) {
+					className = "SupportedAppProtocolReq"; 
+				} else if (jaxbObject instanceof SupportedAppProtocolRes) {
+					className = "SupportedAppProtocolRes";
+				} else {
+					className = "marshalled JAXBElement";
+				}
+				
+				getMarshaller().marshal(jaxbObject, sw);
+				getLogger().debug("XML representation of " + className + ":\n" + sw.toString());
+				sw.close();
 			}
-			
-			getMarshaller().marshal(jaxbObject, sw);
-			getLogger().debug("XML representation of " + className + ":\n" + sw.toString());
-			sw.close();
 			
 			return getInStream();
 		} catch (JAXBException | IOException e) {
@@ -170,5 +179,14 @@ public abstract class ExiCodec {
 
 	public void setInStream(InputStream inStream) {
 		this.inStream = inStream;
+	}
+	
+	
+	private void setXMLRepresentation(boolean showXMLRepresentation) {
+		this.xmlRepresentation = showXMLRepresentation;
+	}
+	
+	public boolean isXMLRepresentation() {
+		return xmlRepresentation;
 	}
 }

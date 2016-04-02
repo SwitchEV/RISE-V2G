@@ -13,6 +13,7 @@ package org.eclipse.risev2g.evcc.states;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+
 import org.eclipse.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.eclipse.risev2g.evcc.transportLayer.TLSClient;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
@@ -21,6 +22,7 @@ import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
+import org.eclipse.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
@@ -101,24 +103,12 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 		if (getCommSessionContext().getTransportLayerClient() instanceof TLSClient) {
 			// Check if certificate service is needed
 			if (isCertificateServiceOffered(serviceDiscoveryRes.getServiceList())) { 
-				KeyStore evccKeyStore = SecurityUtils.getKeyStore(
-						GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),
-						GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
+				getCommSessionContext().setContractCertStatus(SecurityUtils.getContractCertificateStatus());
 				
-				CertificateChainType contractCertificateChain = 
-						SecurityUtils.getCertificateChain(evccKeyStore, GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString());
-				
-				if (contractCertificateChain != null) {
-					if (!SecurityUtils.isCertificateChainValid(contractCertificateChain)) {
-						addSelectedService(2, (short) 1); 
-					} else {
-						if (isContractCertificateUpdateNeeded(contractCertificateChain)) {
-							addSelectedService(2, (short) 2); 
-						} 
-					}
-				} else {
+				if (getCommSessionContext().getContractCertStatus().equals(ContractCertificateStatus.INSTALLATION_NEEDED))
 					addSelectedService(2, (short) 1); 
-				}
+				else if (getCommSessionContext().getContractCertStatus().equals(ContractCertificateStatus.UPDATE_NEEDED))
+					addSelectedService(2, (short) 2); 
 			}
 			
 			// Optionally, other value added services can be checked for here ...
@@ -143,6 +133,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 		getCommSessionContext().getServiceDetailsToBeRequested().add((short) serviceID);
 	}
 	
+	
 	private boolean isCertificateServiceOffered(ServiceListType offeredServiceList) {
 		for (ServiceType service : offeredServiceList.getService()) {
 			if (service.getServiceCategory().equals(ServiceCategoryType.CONTRACT_CERTIFICATE))
@@ -150,22 +141,5 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 		}
 		
 		return false;
-	}
-	
-	
-	private boolean isContractCertificateUpdateNeeded(CertificateChainType contractCertificateChain) {
-		Date today = new Date();
-		X509Certificate contractCertificate = SecurityUtils.getCertificate(contractCertificateChain.getCertificate());
-		long validityDays = contractCertificate.getNotAfter().getTime() - today.getTime();
-		
-		if (contractCertificate != null && validityDays < 
-			( ((long) (int) MiscUtils.getPropertyValue("ContractCertificateUpdateTimespan")) * 24 * 60 * 60 * 1000 )) {
-			
-			getLogger().info("Contract certificate with distinguished name '" + 
-							 contractCertificate.getSubjectX500Principal().getName() + 
-							 "' is only valid for " + validityDays / (1000 * 60 * 60 * 24) + 
-							 " days and needs to be updated");
-			return true;
-		} else return false;
 	}
 }

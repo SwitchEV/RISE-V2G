@@ -212,6 +212,10 @@ public final class MiscUtils {
 		case "PrivateEnvironment": // EVSE property
 			returnValue = Boolean.parseBoolean(propertyValue);
 			break;
+		case "XMLRepresentationOfMessages": // EV + EVSE property
+			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
+			else returnValue = false;
+			break;
 		default:
 			getLogger().error("No property with name '" + propertyName + "' found");
 		}
