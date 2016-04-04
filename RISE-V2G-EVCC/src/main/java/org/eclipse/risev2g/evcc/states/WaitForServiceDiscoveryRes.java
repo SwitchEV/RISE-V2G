@@ -10,20 +10,13 @@
  *******************************************************************************/
 package org.eclipse.risev2g.evcc.states;
 
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.util.Date;
-
 import org.eclipse.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.eclipse.risev2g.evcc.transportLayer.TLSClient;
-import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
-import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
-import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SelectedServiceType;

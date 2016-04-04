@@ -18,7 +18,6 @@ import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentDetailsResType;
-import org.eclipse.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForPaymentDetailsRes extends ClientState {

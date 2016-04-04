@@ -29,7 +29,6 @@ import org.eclipse.risev2g.shared.messageHandling.MessageHandler;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
 import org.eclipse.risev2g.shared.utils.ByteUtils;
-import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.v2gMessages.SECCDiscoveryReq;
 import org.eclipse.risev2g.shared.v2gMessages.SECCDiscoveryRes;
 

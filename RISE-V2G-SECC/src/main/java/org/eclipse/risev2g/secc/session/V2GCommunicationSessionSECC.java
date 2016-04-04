@@ -86,7 +86,6 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	private EnergyTransferModeType requestedEnergyTransferMode;
 	private CertificateChainType contractSignatureCertChain;
 	private MeterInfoType sentMeterInfo;
-	private boolean tlsConnection;
 	
 	public V2GCommunicationSessionSECC(ConnectionHandler connectionHandler) {
 		setConnectionHandler(connectionHandler);
@@ -447,15 +446,5 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 
 	public void setEvseController(IEVSEController evseController) {
 		this.evseController = evseController;
-	}
-
-
-	public boolean isTlsConnection() {
-		return tlsConnection;
-	}
-
-
-	public void setTlsConnection(boolean tlsConnection) {
-		this.tlsConnection = tlsConnection;
 	}
 }
