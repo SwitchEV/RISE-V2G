@@ -72,7 +72,13 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 		
 		CertificateInstallationReqType certInstallationReq = new CertificateInstallationReqType();
-		certInstallationReq.setId("certificateInstallationReq");
+		/*
+		 * Experience from the test symposium in San Diego (April 2016):
+		 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+		 */
+		certInstallationReq.setId("id1");
 		certInstallationReq.setListOfRootCertificateIDs(
 				SecurityUtils.getListOfRootCertificateIDs(
 						GlobalValues.EVCC_TRUSTSTORE_FILEPATH.toString(),
@@ -105,7 +111,13 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 								GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()), 
 						GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString()));	
 		certificateUpdateReq.setEMAID(SecurityUtils.getEMAID(GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()).getValue());
-		certificateUpdateReq.setId("certificateUpdateReq");
+		/*
+		 * Experience from the test symposium in San Diego (April 2016):
+		 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+		 */
+		certificateUpdateReq.setId("id1");
 		certificateUpdateReq.setListOfRootCertificateIDs(
 				SecurityUtils.getListOfRootCertificateIDs(
 						GlobalValues.EVCC_TRUSTSTORE_FILEPATH.toString(),

@@ -78,8 +78,19 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 		chargeService.setSupportedEnergyTransferMode(supportedEnergyTransferModes);
 		chargeService.setServiceCategory(ServiceCategoryType.EV_CHARGING);
 		chargeService.setServiceID(1); // according to Table 105 ISO/IEC 15118-2
-		chargeService.setServiceName("EV charging (AC/DC)"); // optional value
-		chargeService.setServiceScope("");  // optional value
+		
+		/*
+		 * Is an optional value, but fill it with a non-empty string if used, 
+		 * otherwise an EXI decoding error could occur on the other side!
+		 */
+		chargeService.setServiceName("EV charging (AC/DC)"); 
+		
+		/*
+		 * Is an optional value, but fill it with a non-empty string if used, 
+		 * otherwise an EXI decoding error could occur on the other side!
+		 */
+//		chargeService.setServiceScope("");
+		
 		chargeService.setFreeService(false); // it is supposed that charging is by default not for free
 		
 		return chargeService;

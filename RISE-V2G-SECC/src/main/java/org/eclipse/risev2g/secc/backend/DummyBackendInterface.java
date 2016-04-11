@@ -20,7 +20,6 @@ import javax.xml.namespace.QName;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.risev2g.secc.session.V2GCommunicationSessionSECC;
-import org.eclipse.risev2g.secc.states.ServerState;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
@@ -33,6 +32,11 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleTupleType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SalesTariffEntryType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SalesTariffType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
+
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class DummyBackendInterface implements IBackendInterface {
 
@@ -97,7 +101,13 @@ public class DummyBackendInterface implements IBackendInterface {
 		 * IMPORTANT: check that you do not add more sales tariff entries than parameter maxEntriesSAScheduleTuple
 		 */
 		SalesTariffType salesTariff = new SalesTariffType();
-		salesTariff.setId("salesTariff");
+		/*
+		 * Experience from the test symposium in San Diego (April 2016):
+		 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+		 */
+		salesTariff.setId("id1"); 
 		salesTariff.setSalesTariffID((short) 1);
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(0L, (short) 1));
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
@@ -179,11 +189,19 @@ public class DummyBackendInterface implements IBackendInterface {
 	
 	@Override
 	public ECPrivateKey getSAProvisioningCertificatePrivateKey() {
-		KeyStore keyStore = SecurityUtils.getPKCS12KeyStore(
-				"./provServiceCert.p12", 
-				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
-		return SecurityUtils.getPrivateKey(keyStore);
+		Path pathToPrivateKey = FileSystems.getDefault().getPath("./MOSub2_ISO-UG_2016-1_key.bin");
+        byte[] moSub2PrivateKey = null;
+		
+        try {
+			moSub2PrivateKey = Files.readAllBytes(pathToPrivateKey);
+		} catch (IOException e) {
+			getLogger().error("IOException occurred while trying to read MOSub2 private key for signing sales tariff");
+			return null;
+		}
+        
+		return SecurityUtils.getPrivateKey(moSub2PrivateKey);
 	}
+	
 	
 	@Override
 	public CertificateChainType getSAProvisioningCertificateChain() {

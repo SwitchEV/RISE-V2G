@@ -48,10 +48,12 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	
 	@Override
 	public PaymentOptionType getPaymentOption(PaymentOptionListType paymentOptionsOffered) {
-		if (paymentOptionsOffered.getPaymentOption().contains(PaymentOptionType.CONTRACT))
-			return PaymentOptionType.CONTRACT; 
-		else 
-			return PaymentOptionType.EXTERNAL_PAYMENT;
+		if (paymentOptionsOffered.getPaymentOption().contains(PaymentOptionType.CONTRACT)) {
+			if (!getCommSessionContext().isTlsConnection()) {
+				getLogger().warn("SECC offered CONTRACT based payment although no TLS connectionis used. Choosing EIM instead");
+				return PaymentOptionType.EXTERNAL_PAYMENT;
+			} else return PaymentOptionType.CONTRACT; 
+		} else return PaymentOptionType.EXTERNAL_PAYMENT;
 	}
 
 

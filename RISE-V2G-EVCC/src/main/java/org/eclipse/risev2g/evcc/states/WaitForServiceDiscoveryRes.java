@@ -93,7 +93,8 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 	 * Furthermore, it must be checked if VAS are allowed (-> only if TLS connection is used)
 	 */
 	private boolean useVAS(ServiceDiscoveryResType serviceDiscoveryRes) {
-		if (getCommSessionContext().getTransportLayerClient() instanceof TLSClient) {
+		if (serviceDiscoveryRes.getServiceList() != null && 
+			getCommSessionContext().getTransportLayerClient() instanceof TLSClient) {
 			// Check if certificate service is needed
 			if (isCertificateServiceOffered(serviceDiscoveryRes.getServiceList())) { 
 				getCommSessionContext().setContractCertStatus(SecurityUtils.getContractCertificateStatus());
@@ -128,6 +129,11 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 	
 	
 	private boolean isCertificateServiceOffered(ServiceListType offeredServiceList) {
+		if (offeredServiceList == null) {
+			getLogger().debug("No value added services offered by EVCC");
+			return false;
+		}
+		
 		for (ServiceType service : offeredServiceList.getService()) {
 			if (service.getServiceCategory().equals(ServiceCategoryType.CONTRACT_CERTIFICATE))
 				return true;

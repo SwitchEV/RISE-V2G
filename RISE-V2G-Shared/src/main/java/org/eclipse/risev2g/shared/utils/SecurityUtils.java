@@ -600,7 +600,13 @@ public final class SecurityUtils {
 	 */
 	public static DiffieHellmanPublickeyType getDHPublicKey(KeyPair ecdhKeyPair) {
 		DiffieHellmanPublickeyType dhPublicKey = new DiffieHellmanPublickeyType();
-		dhPublicKey.setId("dhPublicKey"); 
+		/*
+		 * Experience from the test symposium in San Diego (April 2016):
+		 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+		 */
+		dhPublicKey.setId("id1"); // dhPublicKey
 		dhPublicKey.setValue(ecdhKeyPair.getPublic().getEncoded());
 		
 		return dhPublicKey;
@@ -1537,7 +1543,7 @@ public final class SecurityUtils {
 				SignatureType signature, 
 				HashMap<String, byte[]> verifyXMLSigRefElements, 
 				ECPublicKey ecPublicKey) {
-		byte[] providedDigest; 
+		byte[] calculatedReferenceDigest; 
 		boolean match;
 		
 		/*
@@ -1548,17 +1554,28 @@ public final class SecurityUtils {
 		for (String id : verifyXMLSigRefElements.keySet()) {
 			getLogger().debug("Verifying digest for element '" + id + "'");
 			match = false;
-			providedDigest = verifyXMLSigRefElements.get(id);
+			calculatedReferenceDigest = verifyXMLSigRefElements.get(id);
 			
 			// A bit inefficient, but there are max. 4 elements to iterate over (what would be more efficient?)
 			for (ReferenceType reference : signature.getSignedInfo().getReference()) {
-				if (reference.getId().equals(id) && Arrays.equals(reference.getDigestValue(), providedDigest))
+				if (reference == null) {
+					getLogger().warn("Reference element to check is null");
+					continue;
+				}
+				
+				// We need to check the URI attribute, the Id attribute is likely to be null
+				if (reference.getURI() == null) {
+					getLogger().warn("Reference ID element is null");
+					continue;
+				}
+				
+				if (reference.getURI().equals('#' + id) && Arrays.equals(reference.getDigestValue(), calculatedReferenceDigest))
 					match = true;
 			}
 			
 			if (!match) {
 				getLogger().error("No matching signature found for ID '" + id + "' and digest value " + 
-								  ByteUtils.toHexString(providedDigest));
+								  ByteUtils.toHexString(calculatedReferenceDigest));
 				return false;
 			}
 		}

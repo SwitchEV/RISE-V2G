@@ -77,9 +77,17 @@ public class WaitForSupportedAppProtocolReq extends ServerState {
 		} else if (message instanceof SECCDiscoveryReq) {
 			getLogger().debug("Another SECCDiscoveryReq was received, changing to state WaitForSECCDiscoveryReq");
 			return new ChangeProcessingState(message, getCommSessionContext().getStates().get(V2GMessages.SECC_DISCOVERY_REQ));
-		} else {
+		} else if (message != null) {
+			/*
+			 * This check has been introduced to make sure the application can deal with incoming messages which rely 
+			 * on the DINSPEC 70121 XSD schema (which is different from the ISO 15118-2 schema. Without this check, 
+			 * the message.getClass() would throw a NullPointerException and the application would die.
+			 */
 			getLogger().error("Invalid message (" + message.getClass().getSimpleName() + 
 							  ") at this state (" + this.getClass().getSimpleName() + ")");
+			supportedAppProtocolRes.setResponseCode(ResponseCodeType.FAILED_NO_NEGOTIATION);
+		} else {
+			getLogger().error("Invalid message at this state, message seems to be null. Check if same XSD schema is used on EVCC side.");
 			supportedAppProtocolRes.setResponseCode(ResponseCodeType.FAILED_NO_NEGOTIATION);
 		}
 		

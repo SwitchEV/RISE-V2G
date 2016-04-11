@@ -264,7 +264,7 @@ public final class MiscUtils {
 	 * (I don't know how to infer the type correctly)
 	 * 
 	 * @param messageOrField The message or field for which a digest is to be generated
-	 * @return
+	 * @return The JAXBElement of the provided message or field
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static JAXBElement getJaxbElement(Object messageOrField) {

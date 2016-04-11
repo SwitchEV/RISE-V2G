@@ -162,7 +162,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			X509Certificate moSub2Certificate = SecurityUtils.getMOSub2Certificate(
 													GlobalValues.EVCC_KEYSTORE_FILEPATH.toString());
 			if (moSub2Certificate == null) {
-				getLogger().error("No MOSub2Certificate found");
+				getLogger().error("No MOSub2Certificate found, signature of sales tariff could therefore not be verified");
 				return false;
 			} else {
 				ECPublicKey ecPublicKey = (ECPublicKey) moSub2Certificate.getPublicKey();

@@ -43,6 +43,7 @@ public class WaitForPaymentDetailsRes extends ClientState {
 			} else {
 				// Set xml reference element
 				AuthorizationReqType authorizationReq = getAuthorizationReq(paymentDetailsRes.getGenChallenge());
+				
 				getXMLSignatureRefElements().put(
 						authorizationReq.getId(), 
 						SecurityUtils.generateDigest(authorizationReq, false));
