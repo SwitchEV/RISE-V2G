@@ -183,23 +183,26 @@ public class DummyBackendInterface implements IBackendInterface {
 		KeyStore keyStore = SecurityUtils.getPKCS12KeyStore(
 				"./contractCert.p12", 
 				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
-		return SecurityUtils.getPrivateKey(keyStore);
+		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(keyStore);
+		
+		if (privateKey == null) 
+			getLogger().error("No private key available from contract certificate keystore");
+		
+		return privateKey;
 	}
 	
 	
 	@Override
 	public ECPrivateKey getSAProvisioningCertificatePrivateKey() {
-		Path pathToPrivateKey = FileSystems.getDefault().getPath("./MOSub2_ISO-UG_2016-1_key.bin");
-        byte[] moSub2PrivateKey = null;
+		KeyStore keyStore = SecurityUtils.getPKCS12KeyStore(
+				"./provServiceCert.p12", 
+				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
+		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(keyStore);
 		
-        try {
-			moSub2PrivateKey = Files.readAllBytes(pathToPrivateKey);
-		} catch (IOException e) {
-			getLogger().error("IOException occurred while trying to read MOSub2 private key for signing sales tariff");
-			return null;
-		}
-        
-		return SecurityUtils.getPrivateKey(moSub2PrivateKey);
+		if (privateKey == null) 
+			getLogger().error("No private key available from provisioning service keystore");
+		
+		return privateKey;
 	}
 	
 	
