@@ -55,14 +55,22 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 				
 				/*
 				 * Request a new schedule in case of first ChargeParameterDiscoveryReq.
-				 * If EVSEProcessingType.ONGOING was sent in previous ChargeParameterDiscoveryReq
-				 * response message, do not request again.
+				 * If EVSEProcessingType.ONGOING was sent in previous ChargeParameterDiscoveryRes
+				 * message, do not request again.
 				 */
 				if (!isWaitingForSchedule()) {
 					// TODO we need a timeout mechanism here so that a response can be sent within 2s
 					setWaitingForSchedule(true);
+					
+					// The max. number of PMaxScheduleEntries and SalesTariffEntries is 1024 if not provided otherwise by EVCC
+					int maxEntriesSAScheduleTuple = (chargeParameterDiscoveryReq.getMaxEntriesSAScheduleTuple() != null) ? 
+													chargeParameterDiscoveryReq.getMaxEntriesSAScheduleTuple() : 1024;
+					
 					getCommSessionContext().setSaSchedules(
-							getCommSessionContext().getBackendInterface().getSAScheduleList());
+							getCommSessionContext().getBackendInterface().getSAScheduleList(
+									maxEntriesSAScheduleTuple, 
+									getXMLSignatureRefElements())
+							);
 				}
 				
 				// Wait a bit and check if the schedule has already been provided
@@ -97,6 +105,9 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 					setWaitingForSchedule(false);
 					chargeParameterDiscoveryRes.setSASchedules(
 							getSASchedulesAsJAXBElement(getCommSessionContext().getSaSchedules()));
+					
+					// Set signing private key
+					setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getSAProvisioningCertificatePrivateKey());
 					
 					if (chargeParameterDiscoveryReq.getRequestedEnergyTransferMode().toString().startsWith("AC")) 
 						return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.POWER_DELIVERY_REQ);

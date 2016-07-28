@@ -212,6 +212,10 @@ public final class MiscUtils {
 		case "PrivateEnvironment": // EVSE property
 			returnValue = Boolean.parseBoolean(propertyValue);
 			break;
+		case "XMLRepresentationOfMessages": // EV + EVSE property
+			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
+			else returnValue = false;
+			break;
 		default:
 			getLogger().error("No property with name '" + propertyName + "' found");
 		}
@@ -260,7 +264,7 @@ public final class MiscUtils {
 	 * (I don't know how to infer the type correctly)
 	 * 
 	 * @param messageOrField The message or field for which a digest is to be generated
-	 * @return
+	 * @return The JAXBElement of the provided message or field
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static JAXBElement getJaxbElement(Object messageOrField) {

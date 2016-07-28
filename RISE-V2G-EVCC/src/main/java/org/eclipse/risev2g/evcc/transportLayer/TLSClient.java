@@ -15,14 +15,10 @@ import java.net.Inet6Address;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;

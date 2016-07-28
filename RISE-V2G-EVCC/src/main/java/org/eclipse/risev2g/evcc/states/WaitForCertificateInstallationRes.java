@@ -20,7 +20,6 @@ import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
-import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateInstallationResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;

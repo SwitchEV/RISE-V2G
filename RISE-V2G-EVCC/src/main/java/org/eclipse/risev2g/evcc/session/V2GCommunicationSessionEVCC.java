@@ -48,6 +48,7 @@ import org.eclipse.risev2g.shared.messageHandling.SendMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.misc.V2GCommunicationSession;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
+import org.eclipse.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.AppProtocolType;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
@@ -91,6 +92,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	private long saSchedulesReceived;
 	private CPStates changeToState; // signals a needed state change (checked when sending the request message)
 	private StatefulTransportLayerClient transportLayerClient;
+	private ContractCertificateStatus contractCertStatus;
 	
 	public V2GCommunicationSessionEVCC(StatefulTransportLayerClient transportLayerClient) {
 		setTransportLayerClient(transportLayerClient);
@@ -127,6 +129,9 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		 * TODO check if this timing requirement is still up to date
 		 */
 		setV2gEVCCCommunicationSetupTimer(System.currentTimeMillis());
+		
+		// Set default value for contract certificate status to UNKNOWN
+		setContractCertStatus(ContractCertificateStatus.UNKNOWN);
 			
 		getLogger().debug("\n*******************************************" +
 						  "\n* New V2G communication session initialized" +
@@ -442,6 +447,16 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		}
 
 		return false;
+	}
+
+
+	public ContractCertificateStatus getContractCertStatus() {
+		return contractCertStatus;
+	}
+
+
+	public void setContractCertStatus(ContractCertificateStatus contractCertStatus) {
+		this.contractCertStatus = contractCertStatus;
 	}
 
 }

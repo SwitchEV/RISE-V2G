@@ -38,7 +38,7 @@ public abstract class V2GCommunicationSession extends Observable {
 	private byte[] sessionID;
 	private V2GTPMessage v2gTpMessage;
 	private V2GMessage v2gMessage;
-	private boolean secureCommunication;
+	private boolean tlsConnection;
 	
 	public V2GCommunicationSession() {
 		setStates(new HashMap<V2GMessages, State>());
@@ -120,6 +120,10 @@ public abstract class V2GCommunicationSession extends Observable {
 			paymentOptions = new ArrayList<PaymentOptionType>();
 		}
 		
+		// Contract-based payment may only be offered if TLS is used
+		if (!isTlsConnection()) 
+			paymentOptions.remove(PaymentOptionType.CONTRACT);
+				
 		PaymentOptionListType paymentOptionList = new PaymentOptionListType();
 		paymentOptionList.getPaymentOption().addAll(paymentOptions);
 		
@@ -209,14 +213,13 @@ public abstract class V2GCommunicationSession extends Observable {
 	public void setV2gMessage(V2GMessage v2gMessage) {
 		this.v2gMessage = v2gMessage;
 	}
-
-
-	public boolean isSecureCommunication() {
-		return secureCommunication;
+	
+	public boolean isTlsConnection() {
+		return tlsConnection;
 	}
 
 
-	public void setSecureCommunication(boolean secureCommunication) {
-		this.secureCommunication = secureCommunication;
+	public void setTlsConnection(boolean tlsConnection) {
+		this.tlsConnection = tlsConnection;
 	}
 }

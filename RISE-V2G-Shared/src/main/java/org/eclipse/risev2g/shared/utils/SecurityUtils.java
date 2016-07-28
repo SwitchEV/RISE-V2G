@@ -105,6 +105,13 @@ public final class SecurityUtils {
 	static Logger logger = LogManager.getLogger(SecurityUtils.class.getSimpleName());
 	static ExiCodec exiCodec;
 	
+	public static enum ContractCertificateStatus {
+		UPDATE_NEEDED,
+		INSTALLATION_NEEDED,
+		OK,
+		UNKNOWN // is used as default for communication session context
+	}
+	
 	public static Logger getLogger() {
 		return logger;
 	}
@@ -594,7 +601,13 @@ public final class SecurityUtils {
 	 */
 	public static DiffieHellmanPublickeyType getDHPublicKey(KeyPair ecdhKeyPair) {
 		DiffieHellmanPublickeyType dhPublicKey = new DiffieHellmanPublickeyType();
-		dhPublicKey.setId("dhPublicKey"); 
+		/*
+		 * Experience from the test symposium in San Diego (April 2016):
+		 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+		 */
+		dhPublicKey.setId("id1"); // dhPublicKey
 		dhPublicKey.setValue(ecdhKeyPair.getPublic().getEncoded());
 		
 		return dhPublicKey;
@@ -828,9 +841,12 @@ public final class SecurityUtils {
 				keyStore.store(fos, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
 				fos.close();
 				
+				X509Certificate contractCert = getCertificate(contractCertChain.getCertificate());
+				
 				getLogger().info("Contract certificate with distinguished name '" + 
-								 getCertificate(contractCertChain.getCertificate())
-								 .getSubjectX500Principal().getName() + "' saved"); 
+								 contractCert.getSubjectX500Principal().getName() + "' saved. " + 
+								 "Valid until " + contractCert.getNotAfter()
+								 ); 
 			} else {
 				return false;
 			}
@@ -844,6 +860,13 @@ public final class SecurityUtils {
 	}
 	
 	
+	/**
+	 * Checks if the private key is a valid key (according to requirement [V2G2-823]) for the received contract 
+	 * certificate before saving it to the keystore.
+	 * @param privateKey The private key corresponding to the contract certificate
+	 * @param contractCertChain The received contract certificate chain 
+	 * @return True, if the private key is a valid key, false otherwise.
+	 */
 	private static boolean isPrivateKeyValid(ECPrivateKey privateKey, CertificateChainType contractCertChain) {
 		AlgorithmParameters parameters;
 		
@@ -885,7 +908,12 @@ public final class SecurityUtils {
 		return true;
 	}
 	
-	
+
+	/**
+	 * Gets the contract certificate from the EVCC keystore.
+	 * 
+	 * @return The contract certificate if present, null otherwise
+	 */
 	public static X509Certificate getContractCertificate() {
 		X509Certificate contractCertificate = null;
 		
@@ -901,6 +929,89 @@ public final class SecurityUtils {
 		}
 		
 		return contractCertificate;
+	}
+	
+	
+	/**
+	 * A convenience function which checks if a contract certificate installation is needed.
+	 * Normally not needed because of function getContractCertificateStatus().
+	 * 
+	 * @return True, if no contract certificate is store or if the stored certificate is not valid, false otherwise
+	 */
+	public static boolean isContractCertificateInstallationNeeded() {
+		X509Certificate contractCert = getContractCertificate();
+		
+		if (contractCert == null) {
+			getLogger().info("No contract certificate stored");
+			return true;
+		} else if (contractCert != null && !isCertificateValid(contractCert)) {
+			getLogger().info("Stored contract certificate with distinguished name '" + 
+							 contractCert.getSubjectX500Principal().getName() + "' is not valid");
+			return true;
+		} else return false;
+	}
+	
+	
+	/**
+	 * A convenience function which checks if a contract certificate update is needed.
+	 * Normally not needed because of function getContractCertificateStatus().
+	 * 
+	 * @return True, if contract certificate is still valid but about to expire, false otherwise.
+	 * 		   The expiration period is given in GlobalValues.CERTIFICATE_EXPIRES_SOON_PERIOD.
+	 */
+	public static boolean isContractCertificateUpdateNeeded() {
+		X509Certificate contractCert = getContractCertificate();
+		short validityOfContractCert = getValidityPeriod(contractCert);
+		
+		if (validityOfContractCert < 0) {
+			getLogger().warn("Contract certificate with distinguished name '" + 
+							 contractCert.getSubjectX500Principal().getName() + "' is not valid any more, expired " + 
+							 Math.abs(validityOfContractCert) + " days ago");
+			return false;
+		} else if (validityOfContractCert <= GlobalValues.CERTIFICATE_EXPIRES_SOON_PERIOD.getShortValue()) {
+			getLogger().info("Contract certificate with distinguished name '" + 
+							 contractCert.getSubjectX500Principal().getName() + "' is about to expire in " + 
+							 validityOfContractCert + " days");
+			return true;
+		} else return false;
+	}
+	
+	
+	/**
+	 * Checks whether a contract certificate 
+	 * - is stored
+	 * - in case it is stored, if it is valid
+	 * - in case it is valid, if it expires soon
+	 * 
+	 * This method is intended to reduce cryptographic computation overhead by checking both, if installation or
+	 * update is needed, at the same time. When executing either method by itself (isContractCertificateUpdateNeeded() and
+	 * isContractCertificateInstallationNeeded()), each time the certificate is read anew from the Java keystore
+	 * holding the contract certificate. With this method the contract certificate is read just once from the keystore.
+	 * 
+	 * @return An enumeration value ContractCertificateStatus (either UPDATE_NEEDED, INSTALLATION_NEEDED, or OK)
+	 */
+	public static ContractCertificateStatus getContractCertificateStatus() {
+		X509Certificate contractCert = getContractCertificate();
+		
+		if (contractCert == null) {
+			getLogger().info("No contract certificate stored");
+			return ContractCertificateStatus.INSTALLATION_NEEDED;
+		} else if (contractCert != null && !isCertificateValid(contractCert)) {
+			getLogger().info("Stored contract certificate with distinguished name '" + 
+							 contractCert.getSubjectX500Principal().getName() + "' is not valid");
+			return ContractCertificateStatus.INSTALLATION_NEEDED;
+		} else {
+			short validityOfContractCert = getValidityPeriod(contractCert);
+			// Checking for a negative value of validityOfContractCert is not needed because the method
+			// isCertificateValid() already checks for that
+			if (validityOfContractCert <= GlobalValues.CERTIFICATE_EXPIRES_SOON_PERIOD.getShortValue()) {
+				getLogger().info("Contract certificate with distinguished name '" + 
+							 	 contractCert.getSubjectX500Principal().getName() + "' is about to expire in " + 
+							 	 validityOfContractCert + " days");
+				return ContractCertificateStatus.UPDATE_NEEDED;
+			}
+			return ContractCertificateStatus.OK;
+		}
 	}
 	
 	
@@ -1487,7 +1598,7 @@ public final class SecurityUtils {
 				SignatureType signature, 
 				HashMap<String, byte[]> verifyXMLSigRefElements, 
 				ECPublicKey ecPublicKey) {
-		byte[] providedDigest; 
+		byte[] calculatedReferenceDigest; 
 		boolean match;
 		
 		/*
@@ -1498,17 +1609,28 @@ public final class SecurityUtils {
 		for (String id : verifyXMLSigRefElements.keySet()) {
 			getLogger().debug("Verifying digest for element '" + id + "'");
 			match = false;
-			providedDigest = verifyXMLSigRefElements.get(id);
+			calculatedReferenceDigest = verifyXMLSigRefElements.get(id);
 			
 			// A bit inefficient, but there are max. 4 elements to iterate over (what would be more efficient?)
 			for (ReferenceType reference : signature.getSignedInfo().getReference()) {
-				if (reference.getId().equals(id) && Arrays.equals(reference.getDigestValue(), providedDigest))
+				if (reference == null) {
+					getLogger().warn("Reference element to check is null");
+					continue;
+				}
+				
+				// We need to check the URI attribute, the Id attribute is likely to be null
+				if (reference.getURI() == null) {
+					getLogger().warn("Reference ID element is null");
+					continue;
+				}
+				
+				if (reference.getURI().equals('#' + id) && Arrays.equals(reference.getDigestValue(), calculatedReferenceDigest))
 					match = true;
 			}
 			
 			if (!match) {
 				getLogger().error("No matching signature found for ID '" + id + "' and digest value " + 
-								  ByteUtils.toHexString(providedDigest));
+								  ByteUtils.toHexString(calculatedReferenceDigest));
 				return false;
 			}
 		}

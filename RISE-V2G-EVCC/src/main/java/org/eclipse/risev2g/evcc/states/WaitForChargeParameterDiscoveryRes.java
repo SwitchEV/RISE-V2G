@@ -28,6 +28,7 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEChargeParameterType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleTupleType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
@@ -78,7 +79,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					SAScheduleListType saSchedules = (SAScheduleListType) chargeParameterDiscoveryRes.getSASchedules().getValue();
 					
 					// If TLS is used, verify each sales tariff (if present) with the mobility operator sub 2 certificate
-					if (getCommSessionContext().isSecureCommunication() && saSchedules != null) {
+					if (getCommSessionContext().isTlsConnection() && saSchedules != null) {
 						if (!verifySalesTariffs(saSchedules, v2gMessageRes.getHeader().getSignature()))
 							getLogger().warn("Verification of sales tariffs failed. They are therefore ignored in the "
 										   + "charge process.");
@@ -115,8 +116,31 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 		}
 	}
 	
-	
+	/**
+	 * Verifies each sales tariff given with the ChargeParameterDiscoveryRes message with the 
+	 * mobility operator sub 2 certificate.
+	 * 
+	 * @param saSchedules The SASchedule list which holds all PMaxSchedules and SalesTariffs
+	 * @param signature The signature for the sales tariffs
+	 * @return True, if the verification of the sales tariffs was successful, false otherwise
+	 */
 	private boolean verifySalesTariffs(SAScheduleListType saSchedules, SignatureType signature) {
+		 /* 
+		 * Some important requirements: 
+		 * 
+		 * 1. In case of PnC, and if a Tariff Table is used by the secondary actor, the secondary actor SHALL
+		 * sign the field SalesTariff of type SalesTariffType. In case of EIM, the secondary actor MAY sign
+		 * this field.
+		 * 
+		 * 2. If the EVCC treats the SalesTariff as invalid, it shall ignore the SalesTariff table, i.e. the
+		 * behaviour of the EVCC shall be the same as if no tariff tables were received. Furthermore, the
+		 * EVCC MAY close the connection. It then may reopen the connection again.
+		 */
+		
+		boolean salesTariffSignatureAvailable = (signature == null) ? false : true;
+		boolean ignoreSalesTariffs = (getCommSessionContext().isTlsConnection() && !salesTariffSignatureAvailable) ? true : false;
+		short ignoredSalesTariffs = 0;
+		
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		List<SAScheduleTupleType> saScheduleTuples = saSchedules.getSAScheduleTuple();
 		int salesTariffCounter = 0;
@@ -124,6 +148,13 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 		for (SAScheduleTupleType saScheduleTuple : saScheduleTuples) {
 			// verification regards only sales tariffs, not PMaxSchedules
 			if (saScheduleTuple.getSalesTariff() == null) continue;
+			
+			// Check if signature is given during TLS communication. If no signature is given, delete SalesTariff
+			if (ignoreSalesTariffs) {
+				ignoredSalesTariffs++;
+				saScheduleTuple.setSalesTariff(null);
+				continue;
+			}
 			
 			salesTariffCounter++;
 			
@@ -136,7 +167,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			X509Certificate moSub2Certificate = SecurityUtils.getMOSub2Certificate(
 													GlobalValues.EVCC_KEYSTORE_FILEPATH.toString());
 			if (moSub2Certificate == null) {
-				getLogger().warn("No MOSub2Certificate found.");
+				getLogger().error("No MOSub2Certificate found, signature of sales tariff could therefore not be verified");
 				return false;
 			} else {
 				ECPublicKey ecPublicKey = (ECPublicKey) moSub2Certificate.getPublicKey();
@@ -144,6 +175,11 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					return false;
 				}
 			}
+		}
+		
+		if (ignoredSalesTariffs > 0) {
+			getLogger().info("Sales tariffs could not be verified because of missing signature and will therefore be ignored");
+			return false;
 		}
 		
 		return true;

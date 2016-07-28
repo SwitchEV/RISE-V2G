@@ -20,6 +20,7 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEChargeParameterType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.IsolationLevelType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
@@ -87,7 +88,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 		dcEvseStatus.setNotificationMaxDelay(0);
 		dcEvseStatus.setEVSENotification((notification != null) ? notification : EVSENotificationType.NONE);
 		dcEvseStatus.setEVSEStatusCode(DCEVSEStatusCodeType.EVSE_READY);
-//		dcEvseStatus.setEVSEIsolationStatus(IsolationLevelType.INVALID);
+		dcEvseStatus.setEVSEIsolationStatus(IsolationLevelType.VALID);
 		
 		return dcEvseStatus;
 	}

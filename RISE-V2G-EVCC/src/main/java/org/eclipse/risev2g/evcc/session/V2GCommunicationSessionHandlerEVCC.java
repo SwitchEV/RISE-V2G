@@ -138,6 +138,11 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 			getTransportLayerClient().addObserver(getV2gCommunicationSessionEVCC());
 			
 			getV2gCommunicationSessionEVCC().addObserver(this);
+			
+			// Set TLS security flag for communication session
+			boolean secureConn = (((Byte) getSecurity()).compareTo((Byte) GlobalValues.V2G_SECURITY_WITH_TLS.getByteValue()) == 0) ? true : false;
+			getV2gCommunicationSessionEVCC().setTlsConnection(secureConn);
+			
 			sendSupportedAppProtocolReq();
 		} else {
 			getLogger().fatal("Maximum number of SECCDiscoveryReq messages reached");

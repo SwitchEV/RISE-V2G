@@ -42,9 +42,15 @@ public class WaitForChargingStatusRes extends ClientState {
 			 * a MeteringReceiptRequest. If no TLS is used, a MeteringReceiptRequest may not be sent because
 			 * a signature cannot be applied without private key of the contract certificate.
 			 */
-			if (chargingStatusRes.isReceiptRequired() && getCommSessionContext().isSecureCommunication()) {
+			if (chargingStatusRes.isReceiptRequired() && getCommSessionContext().isTlsConnection()) {
 				MeteringReceiptReqType meteringReceiptReq = new MeteringReceiptReqType();
-				meteringReceiptReq.setId("meteringReceiptReq");
+				/*
+				 * Experience from the test symposium in San Diego (April 2016):
+				 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+				 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+				 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+				 */
+				meteringReceiptReq.setId("id1");
 				meteringReceiptReq.setMeterInfo(chargingStatusRes.getMeterInfo());
 				meteringReceiptReq.setSAScheduleTupleID(chargingStatusRes.getSAScheduleTupleID());
 				meteringReceiptReq.setSessionID(getCommSessionContext().getSessionID());

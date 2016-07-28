@@ -37,6 +37,9 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 			PaymentServiceSelectionReqType paymentServiceSelectionReq = 
 					(PaymentServiceSelectionReqType) v2gMessageReq.getBody().getBodyElement().getValue();
 			
+			getLogger().info("Payment option " + paymentServiceSelectionReq.getSelectedPaymentOption().toString() + 
+							 " has been chosen by EVCC");
+			
 			if (isResponseCodeOK(paymentServiceSelectionReq)) {
 				// see [V2G2-551]
 				if (paymentServiceSelectionReq.getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT)) {

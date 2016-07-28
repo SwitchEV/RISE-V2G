@@ -37,7 +37,13 @@ public class WaitForCurrentDemandRes extends ClientState {
 			// ReceiptRequired has higher priority than a possible EVSENotification=Renegotiate
 			if (currentDemandRes.isReceiptRequired()) {
 				MeteringReceiptReqType meteringReceiptReq = new MeteringReceiptReqType();
-				meteringReceiptReq.setId("MeterInfo");
+				/*
+				 * Experience from the test symposium in San Diego (April 2016):
+				 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
+				 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
+				 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
+				 */
+				meteringReceiptReq.setId("id1");
 				meteringReceiptReq.setMeterInfo(currentDemandRes.getMeterInfo());
 				meteringReceiptReq.setSAScheduleTupleID(currentDemandRes.getSAScheduleTupleID());
 				meteringReceiptReq.setSessionID(getCommSessionContext().getSessionID());
