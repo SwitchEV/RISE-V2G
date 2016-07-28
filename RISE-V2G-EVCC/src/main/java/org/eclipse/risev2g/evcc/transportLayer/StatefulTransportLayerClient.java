@@ -54,7 +54,16 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 		try {
 			setBytesReadFromInputStream(getInStream().read(getV2gTPHeader()));
 		} catch (IOException e) {
-			
+			/* 
+			 * If there are no bytes buffered on the socket, or all buffered bytes have been consumed by read, 
+			 * then all subsequent calls to read will throw an IOException.
+			 */
+			stopAndNotify("IOExeption occurred while trying to read the header of the incoming message. "
+							+ "Maybe timeout occurred?", e);
+			return false;
+		} catch (NullPointerException e2) {
+			stopAndNotify("NullPointerException occurred while trying to read the header of the incoming message", e2);
+			return false;
 		}
 	
 		if (getBytesReadFromInputStream() < 0) {

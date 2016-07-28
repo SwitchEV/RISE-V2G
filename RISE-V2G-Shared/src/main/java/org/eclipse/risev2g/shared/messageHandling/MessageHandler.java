@@ -117,7 +117,7 @@ public class MessageHandler {
 		byte[] encodedEXI = getExiCodec().encodeEXI(jaxbObject, false);
 		
 		// For test purposes you can log the byte array
-//		getLogger().debug("Encoded EXI byte array: " + ByteUtils.toStringFromByteArray(encodedEXI));
+//		getLogger().debug("Encoded EXI byte array: " + ByteUtils.toHexString(encodedEXI));
 		
 		return encodedEXI;
 	}
