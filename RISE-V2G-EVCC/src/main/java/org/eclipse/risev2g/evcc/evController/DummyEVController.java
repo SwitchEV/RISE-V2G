@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.evcc.evController;
 
@@ -48,7 +48,9 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	
 	@Override
 	public PaymentOptionType getPaymentOption(PaymentOptionListType paymentOptionsOffered) {
-		if (paymentOptionsOffered.getPaymentOption().contains(PaymentOptionType.CONTRACT))
+		// Contract payment option may only be chosen if offered by SECC AND if communication is secured by TLS
+		if (paymentOptionsOffered.getPaymentOption().contains(PaymentOptionType.CONTRACT) && 
+			getCommSessionContext().isSecureCommunication())
 			return PaymentOptionType.CONTRACT; 
 		else 
 			return PaymentOptionType.EXTERNAL_PAYMENT;

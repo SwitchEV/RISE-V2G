@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.secc.session;
 
@@ -60,6 +60,7 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.MessageHeaderType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PMaxScheduleType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ServiceType;
@@ -84,6 +85,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	private byte[] genChallenge;
 	private SAScheduleListType saSchedules;
 	private EnergyTransferModeType requestedEnergyTransferMode;
+	private PaymentOptionType selectedPaymentOption;
 	private CertificateChainType contractSignatureCertChain;
 	private MeterInfoType sentMeterInfo;
 	private boolean tlsConnection;
@@ -457,5 +459,15 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 
 	public void setTlsConnection(boolean tlsConnection) {
 		this.tlsConnection = tlsConnection;
+	}
+
+
+	public PaymentOptionType getSelectedPaymentOption() {
+		return selectedPaymentOption;
+	}
+
+
+	public void setSelectedPaymentOption(PaymentOptionType selectedPaymentOption) {
+		this.selectedPaymentOption = selectedPaymentOption;
 	}
 }

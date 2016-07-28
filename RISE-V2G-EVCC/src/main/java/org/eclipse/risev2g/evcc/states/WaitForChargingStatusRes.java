@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.evcc.states;
 
@@ -35,8 +35,14 @@ public class WaitForChargingStatusRes extends ClientState {
 			ChargingStatusResType chargingStatusRes = 
 					(ChargingStatusResType) v2gMessageRes.getBody().getBodyElement().getValue();
 		
-			// ReceiptRequired has higher priority than a possible EVSENotification=Renegotiate
-			if (chargingStatusRes.isReceiptRequired()) {
+			/*
+			 * ReceiptRequired has higher priority than a possible EVSENotification=Renegotiate
+			 * 
+			 * Check if communication is secured with TLS before reacting upon a possible request from the SECC to send
+			 * a MeteringReceiptRequest. If no TLS is used, a MeteringReceiptRequest may not be sent because
+			 * a signature cannot be applied without private key of the contract certificate.
+			 */
+			if (chargingStatusRes.isReceiptRequired() && getCommSessionContext().isSecureCommunication()) {
 				MeteringReceiptReqType meteringReceiptReq = new MeteringReceiptReqType();
 				meteringReceiptReq.setId("meteringReceiptReq");
 				meteringReceiptReq.setMeterInfo(chargingStatusRes.getMeterInfo());

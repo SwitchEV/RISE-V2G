@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.evcc.states;
 
@@ -77,9 +77,13 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					
 					SAScheduleListType saSchedules = (SAScheduleListType) chargeParameterDiscoveryRes.getSASchedules().getValue();
 					
-					// Verify each sales tariff with the mobility operator sub 2 certificate
-					if (saSchedules != null && !verifySalesTariffs(saSchedules, v2gMessageRes.getHeader().getSignature()))
-						return new TerminateSession("Verification of sales tariffs failed");
+					// If TLS is used, verify each sales tariff (if present) with the mobility operator sub 2 certificate
+					if (getCommSessionContext().isSecureCommunication() && saSchedules != null) {
+						if (!verifySalesTariffs(saSchedules, v2gMessageRes.getHeader().getSignature()))
+							getLogger().warn("Verification of sales tariffs failed. They are therefore ignored in the "
+										   + "charge process.");
+							deleteUnverifiedSalesTariffs(saSchedules);
+					}
 					
 					// Save the list of SASchedules (saves the time of reception as well)
 					getCommSessionContext().setSaSchedules(saSchedules);
@@ -132,7 +136,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			X509Certificate moSub2Certificate = SecurityUtils.getMOSub2Certificate(
 													GlobalValues.EVCC_KEYSTORE_FILEPATH.toString());
 			if (moSub2Certificate == null) {
-				getLogger().error("No MOSub2Certificate found");
+				getLogger().warn("No MOSub2Certificate found.");
 				return false;
 			} else {
 				ECPublicKey ecPublicKey = (ECPublicKey) moSub2Certificate.getPublicKey();
@@ -143,5 +147,21 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * If the signature of one ore more sales tariffs cannot be verified, then the sales tariffs should be ignored
+	 * rather than terminating the charge process. The charge process can then proceed based solely on the 
+	 * PMaxSchedule
+	 * 
+	 * @param saSchedules The schedule(s) from the secondary actor including PMaxSchedule and potential SalesTariff
+	 * 					  elements.
+	 */
+	private void deleteUnverifiedSalesTariffs(SAScheduleListType saSchedules) {
+		List<SAScheduleTupleType> saScheduleTuples = saSchedules.getSAScheduleTuple();
+		
+		for (SAScheduleTupleType saScheduleTuple : saScheduleTuples) {
+			saScheduleTuple.setSalesTariff(null);
+		}
 	}
 }

@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.shared.messageHandling;
 
@@ -19,11 +19,13 @@ import javax.xml.bind.JAXBElement;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
+import org.eclipse.risev2g.shared.exiCodec.EXIficientCodec;
 import org.eclipse.risev2g.shared.exiCodec.ExiCodec;
 import org.eclipse.risev2g.shared.exiCodec.OpenEXICodec;
 import org.eclipse.risev2g.shared.misc.V2GCommunicationSession;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
 import org.eclipse.risev2g.shared.utils.ByteUtils;
+import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.BodyType;
@@ -56,8 +58,8 @@ public class MessageHandler {
 	 */
 	public MessageHandler() {
 		// Choose which implementation of an EXI codec to use
-//		setExiCodec(EXIficientCodec.getInstance());
-		setExiCodec(OpenEXICodec.getInstance());
+		setExiCodec(EXIficientCodec.getInstance());
+//		setExiCodec(OpenEXICodec.getInstance());
 	} 
 	
 	public boolean isV2GTPMessageValid(V2GTPMessage v2gTpMessage) {
@@ -112,7 +114,12 @@ public class MessageHandler {
 	
 
 	public synchronized Object v2gMsgToExi(Object jaxbObject) {
-		return getExiCodec().encodeEXI(jaxbObject, false);
+		byte[] encodedEXI = getExiCodec().encodeEXI(jaxbObject, false);
+		
+		// For test purposes you can log the byte array
+//		getLogger().debug("Encoded EXI byte array: " + ByteUtils.toStringFromByteArray(encodedEXI));
+		
+		return encodedEXI;
 	}
 	
 
@@ -121,6 +128,9 @@ public class MessageHandler {
 	}
 	
 	public synchronized Object exiToV2gMsg(byte[] exiEncodedMessage) {
+		// For debugging purposes
+//		getLogger().debug("Hex string of encoded EXI byte array: " + ByteUtils.toHexString(exiEncodedMessage));
+		
 		return getExiCodec().decodeEXI(exiEncodedMessage, false);
 	}
 	

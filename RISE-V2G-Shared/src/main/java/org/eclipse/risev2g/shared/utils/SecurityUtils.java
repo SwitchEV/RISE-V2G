@@ -1,12 +1,12 @@
 /*******************************************************************************
- *  Copyright (c) 2015 Marc Mültin (Chargepartner GmbH).
+ *  Copyright (c) 2016 Dr.-Ing. Marc Mültin.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  *  Contributors:
- *    Dr.-Ing. Marc Mültin (Chargepartner GmbH) - initial API and implementation and initial documentation
+ *    Dr.-Ing. Marc Mültin - initial API and implementation and initial documentation
  *******************************************************************************/
 package org.eclipse.risev2g.shared.utils;
 
@@ -47,6 +47,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
@@ -615,6 +616,7 @@ public final class SecurityUtils {
 			ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(new BigInteger(privateKeyBytes), ecParameterSpec);
 			
 			ECPrivateKey privateKey = (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(ecPrivateKeySpec);
+			
 			return privateKey;
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidParameterSpecException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred when trying to get private key from raw bytes", e);
@@ -810,27 +812,73 @@ public final class SecurityUtils {
 	public static boolean saveContractCertificateChain(
 			String keyStorePassword, 
 			CertificateChainType contractCertChain,
-			PrivateKey contractCertPrivateKey) {
+			ECPrivateKey contractCertPrivateKey) {
 		KeyStore keyStore = getKeyStore(GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(), keyStorePassword);
 
 		try {
-			keyStore.setKeyEntry(
-					GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString(), 
-					contractCertPrivateKey, 
-					keyStorePassword.toCharArray(), 
-					getCertificateChain(contractCertChain)); 
-			
-			// Save the keystore persistently
-			FileOutputStream fos = new FileOutputStream("evccKeystore.jks");
-			keyStore.store(fos, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
-			fos.close();
-			
-			getLogger().info("Contract certificate with distinguished name '" + 
-							 getCertificate(contractCertChain.getCertificate())
-							 .getSubjectX500Principal().getName() + "' saved"); 
+			if (!isPrivateKeyValid(contractCertPrivateKey, contractCertChain)) {
+				keyStore.setKeyEntry(
+						GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString(), 
+						contractCertPrivateKey, 
+						keyStorePassword.toCharArray(), 
+						getCertificateChain(contractCertChain)); 
+				
+				// Save the keystore persistently
+				FileOutputStream fos = new FileOutputStream("evccKeystore.jks");
+				keyStore.store(fos, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
+				fos.close();
+				
+				getLogger().info("Contract certificate with distinguished name '" + 
+								 getCertificate(contractCertChain.getCertificate())
+								 .getSubjectX500Principal().getName() + "' saved"); 
+			} else {
+				return false;
+			}
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | NullPointerException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to save contract " +
 							  "certificate chain", e);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	private static boolean isPrivateKeyValid(ECPrivateKey privateKey, CertificateChainType contractCertChain) {
+		AlgorithmParameters parameters;
+		
+		try {
+			parameters = AlgorithmParameters.getInstance("EC");
+			parameters.init(new ECGenParameterSpec("secp256r1"));
+			
+			ECParameterSpec ecParameterSpec = parameters.getParameterSpec(ECParameterSpec.class);
+			
+			// Now we need to check if the private key is correct (see requirement [V2G2-823]) 
+			BigInteger order = ecParameterSpec.getOrder();
+			ECPoint basePoint = ecParameterSpec.getGenerator();
+			BigInteger privateKeyValue = privateKey.getS();
+			X509Certificate contractCert = getCertificate(contractCertChain.getCertificate());
+			ECPublicKey publicKey = (ECPublicKey) contractCert.getPublicKey();
+			
+			// 1. check
+			if (privateKeyValue.compareTo(order) != -1) {
+				getLogger().error("Validation of private key failed: its value is not strictly smaller than the "
+								+ "order of the base point");
+				return false;
+			}
+			
+			// 2. check
+			/*
+			 * TODO: 
+			 * No idea how to check for 
+			 * "multiplication of the base point with this value must generate a key matching the public key of 
+			 * the contract certificate"
+			 * "this value" = value of private key
+			 * -> some more expert knowledge on the arithmetic of elliptic curves is needed to tackle this!
+			 */
+			
+		} catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+			getLogger().error(e.getClass().getSimpleName() + " occurred when trying to get private key from raw bytes", e);
 			return false;
 		}
 		
