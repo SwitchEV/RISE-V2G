@@ -50,7 +50,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 					GlobalValues.SECC_KEYSTORE_FILEPATH.toString(), 
 					GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(),
 					GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
-			
+
 			SSLServerSocketFactory tlsServerSocketFactory =
 				(SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 			setTlsServerSocket((SSLServerSocket) tlsServerSocketFactory
@@ -94,7 +94,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 				getLogger().debug("TLS client connection with IP address " + 
 						  getTlsClientSocket().getInetAddress().getHostAddress() + " and port " +
 						  getTlsClientSocket().getPort());
-		
+				
 				ConnectionHandler connectionHandler = new ConnectionHandler(tlsClientSocket);
 				
 				// Notify the V2GCommunicationSessionHandlerSECC about a newly connected TCP client Socket

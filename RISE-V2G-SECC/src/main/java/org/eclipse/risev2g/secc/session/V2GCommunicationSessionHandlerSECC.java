@@ -123,42 +123,46 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 	private void processSECCDiscoveryReq(DatagramPacket udpClientPacket) {
 		setV2gTpMessage(new V2GTPMessage(udpClientPacket.getData()));
 		
-		if (getMessageHandler().isV2GTPMessageValid(getV2gTpMessage()) &&
-		    Arrays.equals(getV2gTpMessage().getPayloadType(), GlobalValues.V2GTP_PAYLOAD_TYPE_SDP_REQUEST_MESSAGE.getByteArrayValue())) {
-			
-			SECCDiscoveryReq seccDiscoveryReq = new SECCDiscoveryReq(getV2gTpMessage().getPayload());
-			setSecurity(seccDiscoveryReq.getSecurity());
-			getLogger().debug("SECCDiscoveryReq received");
-			
-			/*
-			 * The TCP and TLS server ports are created upon initialization of the TCP/TLS server and will 
-			 * remain the same for every connected EV. Only TCP or TLS are allowed as transport 
-			 * protocols for further communication beyond the SECCDiscoveryReq/-Res handshake (not UDP).
-			 * 
-			 * One might implement further decision rules for dealing with the security level (TCP or TLS)
-			 * requested by the EVCC (see also Table 3 and 4 of ISO/IEC 15118-2). For now, the requested
-			 * security level of the EVCC will always be accepted.
-			 */
-			byte[] seccAddress = (isSecureCommunication()) ? TLSServer.getInstance().getServerAddress().getAddress() : TCPServer.getInstance().getServerAddress().getAddress();
-			int seccPort = (isSecureCommunication()) ? TLSServer.getInstance().getServerPort() : TCPServer.getInstance().getServerPort();
-					
-			SECCDiscoveryRes seccDiscoveryRes = new SECCDiscoveryRes(
-														seccAddress,
-														ByteUtils.toByteArrayFromInt(seccPort, true),
-														getSecurity(),
-														GlobalValues.V2G_TRANSPORT_PROTOCOL_TCP.getByteValue()
-													);
-			
-			setV2gTpMessage(new V2GTPMessage(GlobalValues.V2GTP_VERSION_1_IS.getByteValue(), 
-											 GlobalValues.V2GTP_PAYLOAD_TYPE_SDP_RESPONSE_MESSAGE.getByteArrayValue(),
-											 seccDiscoveryRes.getPayload()));
-			
-			getLogger().debug("Preparing to send SECCDiscoveryRes ...");
-			
-			// The SECCDiscoveryRes must be sent via UDP before the requested TCP/TLS server can be used
-			UDPServer.getInstance().send(getV2gTpMessage(), (Inet6Address) udpClientPacket.getAddress(), udpClientPacket.getPort());
-		} else {
-			getLogger().warn("Incoming DatagramPacket could not be identified as a SECCDiscoveryReq");
+		try {
+			if (getMessageHandler().isV2GTPMessageValid(getV2gTpMessage()) &&
+			    Arrays.equals(getV2gTpMessage().getPayloadType(), GlobalValues.V2GTP_PAYLOAD_TYPE_SDP_REQUEST_MESSAGE.getByteArrayValue())) {
+				
+				SECCDiscoveryReq seccDiscoveryReq = new SECCDiscoveryReq(getV2gTpMessage().getPayload());
+				setSecurity(seccDiscoveryReq.getSecurity());
+				getLogger().debug("SECCDiscoveryReq received");
+				
+				/*
+				 * The TCP and TLS server ports are created upon initialization of the TCP/TLS server and will 
+				 * remain the same for every connected EV. Only TCP or TLS are allowed as transport 
+				 * protocols for further communication beyond the SECCDiscoveryReq/-Res handshake (not UDP).
+				 * 
+				 * One might implement further decision rules for dealing with the security level (TCP or TLS)
+				 * requested by the EVCC (see also Table 3 and 4 of ISO/IEC 15118-2). For now, the requested
+				 * security level of the EVCC will always be accepted.
+				 */
+				byte[] seccAddress = (isSecureCommunication()) ? TLSServer.getInstance().getServerAddress().getAddress() : TCPServer.getInstance().getServerAddress().getAddress();
+				int seccPort = (isSecureCommunication()) ? TLSServer.getInstance().getServerPort() : TCPServer.getInstance().getServerPort();
+						
+				SECCDiscoveryRes seccDiscoveryRes = new SECCDiscoveryRes(
+															seccAddress,
+															ByteUtils.toByteArrayFromInt(seccPort, true),
+															getSecurity(),
+															GlobalValues.V2G_TRANSPORT_PROTOCOL_TCP.getByteValue()
+														);
+				
+				setV2gTpMessage(new V2GTPMessage(GlobalValues.V2GTP_VERSION_1_IS.getByteValue(), 
+												 GlobalValues.V2GTP_PAYLOAD_TYPE_SDP_RESPONSE_MESSAGE.getByteArrayValue(),
+												 seccDiscoveryRes.getPayload()));
+				
+				getLogger().debug("Preparing to send SECCDiscoveryRes ...");
+				
+				// The SECCDiscoveryRes must be sent via UDP before the requested TCP/TLS server can be used
+				UDPServer.getInstance().send(getV2gTpMessage(), (Inet6Address) udpClientPacket.getAddress(), udpClientPacket.getPort());
+			} else {
+				getLogger().warn("Incoming DatagramPacket could not be identified as a SECCDiscoveryReq");
+			}
+		} catch (NullPointerException e) {
+			getLogger().error("NullPointerException occurred while processing SECCDiscoveryReq", e);
 		}
 	}
 	

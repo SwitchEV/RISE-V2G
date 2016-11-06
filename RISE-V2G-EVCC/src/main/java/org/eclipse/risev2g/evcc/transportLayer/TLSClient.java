@@ -20,6 +20,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
+import org.eclipse.risev2g.shared.misc.TimeRestrictions;
 import org.eclipse.risev2g.shared.misc.V2GTPMessage;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 
@@ -78,7 +79,9 @@ public class TLSClient extends StatefulTransportLayerClient {
 					GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 			
 			SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+			getLogger().debug("Creating socket to TLS server ...");
 			setTlsSocketToServer((SSLSocket) sslSocketFactory.createSocket(host, port));
+			getLogger().debug("TLS socket to server created");
 			setInStream(getTlsSocketToServer().getInputStream());
 			setOutStream(getTlsSocketToServer().getOutputStream());
 			
@@ -95,7 +98,17 @@ public class TLSClient extends StatefulTransportLayerClient {
 			String[] enabledProtocols = {"TLSv1.2"};
 			getTlsSocketToServer().setEnabledProtocols(enabledProtocols);
 			
+			/*
+			 * The communication session setup timeout needs to be set here in case there is any problem with the
+			 * TLS handshake.
+			 * The timeout value will be overwritten with every new message being sent
+			 */
+			getTlsSocketToServer().setSoTimeout(TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT);
+			
+			getLogger().debug("Starting TLS handshake ...");
 			getTlsSocketToServer().startHandshake();
+			getLogger().debug("TLS handshake finished");
+			
 			Certificate[] seccCertificates = getTlsSocketToServer().getSession().getPeerCertificates();
 			X509Certificate seccLeafCertificate = (X509Certificate) seccCertificates[0];
 			
@@ -116,11 +129,13 @@ public class TLSClient extends StatefulTransportLayerClient {
 			getLogger().error("TLS client connection failed (UnknownHostException)!", e);
 		} catch (SSLHandshakeException e) {
 			getLogger().error("TLS client connection failed (SSLHandshakeException)", e);
+		} catch (SocketTimeoutException e) {
+			getLogger().fatal("TLS client connection failed (SocketTimeoutException) due to session setup timeout", e);
 		} catch (IOException e) {
 			getLogger().error("TLS client connection failed (IOException)!", e);
 		} catch (NullPointerException e) {
 			getLogger().fatal("NullPointerException while trying to set keystores, resource path to keystore/truststore might be incorrect");
-		}
+		} 
 		
 		return false;
 	}

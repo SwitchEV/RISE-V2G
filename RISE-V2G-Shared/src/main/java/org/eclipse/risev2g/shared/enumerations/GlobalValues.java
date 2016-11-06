@@ -27,7 +27,7 @@ public enum GlobalValues {
 	 */
 	PASSPHRASE_FOR_CERTIFICATES_AND_KEYS("123456"),
 	
-	// Aliases for contract certificate chain and OEM provisioning certficiate chain
+	// Aliases for contract certificate chain and OEM provisioning certificate chain
 	ALIAS_CONTRACT_CERTIFICATE("contract_cert"),
 	ALIAS_OEM_PROV_CERTIFICATE("oem_prov_cert"),
 	
