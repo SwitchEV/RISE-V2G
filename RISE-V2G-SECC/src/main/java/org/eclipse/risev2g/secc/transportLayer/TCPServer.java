@@ -31,7 +31,7 @@ public final class TCPServer extends StatefulTransportLayerServer {
 
 	public boolean initialize() {
 		super.initialize();
-		
+
 		try {
 			setTcpServerSocket(new ServerSocket(getServerPort(), 50, getServerAddress()));
 			getLogger().debug("TCP server initialized at link-local address " + 

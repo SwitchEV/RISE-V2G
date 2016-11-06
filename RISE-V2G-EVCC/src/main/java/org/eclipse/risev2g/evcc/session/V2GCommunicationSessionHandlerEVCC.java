@@ -51,7 +51,7 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 	private Thread transportLayerThread;
 	private StatefulTransportLayerClient transportLayerClient;
 	
-	public V2GCommunicationSessionHandlerEVCC() {
+	public V2GCommunicationSessionHandlerEVCC() {	
 		setMessageHandler(new MessageHandler());
 		
 		setSecurity(
