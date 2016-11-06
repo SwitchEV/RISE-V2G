@@ -763,7 +763,7 @@ public final class SecurityUtils {
 	 */
 	public static SignedInfoType getSignedInfo(HashMap<String, byte[]> xmlSignatureRefElements) {
 		/*
-		 * According to requirement [V2G2-771] in ISO/IEC 15118-2 the following messages elements of the 
+		 * According to requirement [V2G2-771] in ISO/IEC 15118-2 the following message elements of the 
 		 * XML signature framework shall not be used:
 		 * - Id (attribute in SignedInfo)
  		 * - ##any in SignedInfo – CanonicalizationMethod
@@ -829,7 +829,7 @@ public final class SecurityUtils {
 		KeyStore keyStore = getKeyStore(GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(), keyStorePassword);
 
 		try {
-			if (!isPrivateKeyValid(contractCertPrivateKey, contractCertChain)) {
+			if (isPrivateKeyValid(contractCertPrivateKey, contractCertChain)) {
 				keyStore.setKeyEntry(
 						GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString(), 
 						contractCertPrivateKey, 
@@ -848,6 +848,7 @@ public final class SecurityUtils {
 								 "Valid until " + contractCert.getNotAfter()
 								 ); 
 			} else {
+				getLogger().error("Private key for contract certificate is not valid");
 				return false;
 			}
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | NullPointerException e) {
