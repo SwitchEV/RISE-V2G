@@ -205,6 +205,18 @@ public class DummyBackendInterface implements IBackendInterface {
 		return privateKey;
 	}
 	
+	@Override
+	public ECPrivateKey getMOSubCA2CertificatePrivateKey() {
+		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(
+				"./PKI-1_CRT_MO_SUB2_VALID.key", 
+				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
+		
+		if (privateKey == null) 
+			getLogger().error("No private key available from MO Sub-CA 2 PKCS#8 file");
+		
+		return privateKey;
+	}
+	
 	
 	@Override
 	public CertificateChainType getSAProvisioningCertificateChain() {

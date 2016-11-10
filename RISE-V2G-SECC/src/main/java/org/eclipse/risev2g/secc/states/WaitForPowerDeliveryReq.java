@@ -110,6 +110,7 @@ public class WaitForPowerDeliveryReq extends ServerState {
 		SAScheduleTupleType chosenSASchedule = getChosenSASCheduleTuple(powerDeliveryReq.getSAScheduleTupleID());
 		
 		if (chosenSASchedule == null) {
+			getLogger().warn("Chosen SAScheduleTupleID in PowerDeliveryReq is null, but parameter is mandatory");
 			powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_TARIFF_SELECTION_INVALID);
 			return false;
 		}

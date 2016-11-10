@@ -57,4 +57,11 @@ public interface IBackendInterface {
 	 * @return PrivateKey of the SA provisioning certificate
 	 */
 	public ECPrivateKey getSAProvisioningCertificatePrivateKey();
+	
+	
+	/**
+	 * Provides the private key belonging to the MO Sub-CA 2 certificate (signature of SalesTariff).
+	 * @return PrivateKey of the MO Sub-CA 2 certificate
+	 */
+	public ECPrivateKey getMOSubCA2CertificatePrivateKey();
 }

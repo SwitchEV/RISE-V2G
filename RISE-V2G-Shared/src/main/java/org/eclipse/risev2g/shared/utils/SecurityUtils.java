@@ -12,6 +12,7 @@ package org.eclipse.risev2g.shared.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -30,7 +31,6 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
@@ -645,13 +645,13 @@ public final class SecurityUtils {
 	 * contract certificate, its private key and an optional chain of intermediate CAs.
 	 * 
 	 * @param keyStore The PKCS#12 keystore provided by the secondary actor
-	 * @return The private key contained in the given keystore
+	 * @return The private key contained in the given keystore as an ECPrivateKey
 	 */
 	public static ECPrivateKey getPrivateKey(KeyStore keyStore) {
 		/*
 		 * For testing purposes, the respective PKCS12 container file chain has already been put in the 
 		 * resources folder. However, when implementing a real interface to a secondary actor's backend, 
-		 * the retrieval of a PKCS12 container file must be done via some other online mechanism.
+		 * the retrieval of a PKCS#12 container file must be done via some other online mechanism.
 		 */
 		
 		ECPrivateKey privateKey = null;
@@ -671,6 +671,34 @@ public final class SecurityUtils {
 		}
 		
 		return privateKey;
+	}
+	
+	
+	/**
+	 * Read a private key from a .key file and return it as an ECPrivateKey
+	 * 
+	 * @param A .key file containing the private key
+	 * @return The private key stored in the .key file as an ECPrivateKey
+	 */
+	public static ECPrivateKey getPrivateKey(String keyFilePath, String password) {
+		File file = null;
+		FileInputStream fis = null;
+		
+		try {
+			file = new File(keyFilePath);
+			fis = new FileInputStream(file);
+			byte[] privateKeyByteArray = new byte[(int) file.length()];
+			
+			ECPrivateKey privateKey = getPrivateKey(privateKeyByteArray);
+
+			fis.close();
+			
+			return privateKey;
+		} catch (NullPointerException | IOException e) {
+			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to access private key at " +
+							  "location '" + keyFilePath + "'");
+			return null;
+		}
 	}
 	
 	

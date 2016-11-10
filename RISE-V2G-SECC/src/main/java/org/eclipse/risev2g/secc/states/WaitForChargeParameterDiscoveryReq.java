@@ -106,8 +106,8 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 					chargeParameterDiscoveryRes.setSASchedules(
 							getSASchedulesAsJAXBElement(getCommSessionContext().getSaSchedules()));
 					
-					// Set signing private key
-					setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getSAProvisioningCertificatePrivateKey());
+					// Set signing private key of Mobility Operator Sub-CA 2
+					setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getMOSubCA2CertificatePrivateKey());
 					
 					if (chargeParameterDiscoveryReq.getRequestedEnergyTransferMode().toString().startsWith("AC")) 
 						return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.POWER_DELIVERY_REQ);
