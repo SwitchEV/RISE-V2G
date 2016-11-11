@@ -34,6 +34,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.siemens.ct.exi.EXIFactory;
+import com.siemens.ct.exi.EncodingOptions;
 import com.siemens.ct.exi.GrammarFactory;
 import com.siemens.ct.exi.api.sax.EXIResult;
 import com.siemens.ct.exi.api.sax.EXISource;
@@ -54,6 +55,7 @@ public final class EXIficientCodec extends ExiCodec {
 	private GrammarFactory grammarFactory;
 	private Grammars grammarAppProtocol;
 	private Grammars grammarMsgDef;
+	private Grammars grammarXMLDSig;
 	private OutputStream encodeOS;
 	
 	private EXIficientCodec() {
@@ -61,6 +63,7 @@ public final class EXIficientCodec extends ExiCodec {
 		
 		setExiFactory(DefaultEXIFactory.newInstance());
 		getExiFactory().setValuePartitionCapacity(0);
+		setFragment(false);  // needs to be set to true when encoding signatures
 		setGrammarFactory(GrammarFactory.newInstance());
 		
 		/*
@@ -72,6 +75,9 @@ public final class EXIficientCodec extends ExiCodec {
 					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString())));
 			setGrammarMsgDef(getGrammarFactory().createGrammars(
 					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_MSG_DEF.toString()),
+					XSDResolver.getInstance()));
+			setGrammarXMLDSig(getGrammarFactory().createGrammars(
+					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_XMLDSIG.toString()),
 					XSDResolver.getInstance()));
 		} catch (EXIException e) {
 			getLogger().error("Error occurred while trying to initialize EXIficientCodec (EXIException)!", e);
@@ -86,21 +92,30 @@ public final class EXIficientCodec extends ExiCodec {
 
 
 	
-	public synchronized byte[] encodeEXI(Object jaxbObject, boolean supportedAppProtocolHandshake) {
+	public synchronized byte[] encodeEXI(Object jaxbObject, String xsdSchemaPath) {
+		Grammars grammar = null;
+		
+		if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString()))
+			grammar = getGrammarAppProtocol();
+		else if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_MSG_DEF.toString()))
+			grammar = getGrammarMsgDef();
+		else if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_XMLDSIG.toString()))
+			grammar = getGrammarXMLDSig();
+		else {
+			getLogger().error("False schema path provided for encoding jaxbObject into EXI");
+			return null;
+		}
+			
 		InputStream inStream = marshalToInputStream(jaxbObject);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		baos = ((ByteArrayOutputStream) encode(inStream, supportedAppProtocolHandshake));
+		baos = ((ByteArrayOutputStream) encode(inStream, grammar));
+		
+		// If needed for debugging
+//		getLogger().debug("Encoded EXI byte stream to be sent: " + ByteUtils.toHexString(baos.toByteArray()));
 		
 		return baos.toByteArray();
 	}
 
-	
-	private synchronized OutputStream encode(InputStream jaxbXML, boolean supportedAppProtocolHandshake) {
-		if (supportedAppProtocolHandshake) return encode(jaxbXML, getGrammarAppProtocol());
-		else return encode(jaxbXML, getGrammarMsgDef());
-	}
-	
-	
 	private synchronized OutputStream encode(InputStream jaxbXML, Grammars grammar) {
 		EXIResult exiResult = null;
 		
@@ -126,6 +141,9 @@ public final class EXIficientCodec extends ExiCodec {
 	
 	@Override
 	public synchronized Object decodeEXI(byte[] exiEncodedMessage, boolean supportedAppProtocolHandshake) {
+		// If needed for debugging
+//		getLogger().debug("Decoded incoming EXI stream: " + ByteUtils.toHexString(exiEncodedMessage));
+		
 		ByteArrayInputStream bais = new ByteArrayInputStream(exiEncodedMessage);
 		setDecodedExi(decode(bais, supportedAppProtocolHandshake));
 		
@@ -177,8 +195,17 @@ public final class EXIficientCodec extends ExiCodec {
 	private void setGrammarMsgDef(Grammars grammarMsgDef) {
 		this.grammarMsgDef = grammarMsgDef;
 	}
+	
 
-	private EXIFactory getExiFactory() {
+	public Grammars getGrammarXMLDSig() {
+		return grammarXMLDSig;
+	}
+
+	public void setGrammarXMLDSig(Grammars grammarXMLDSig) {
+		this.grammarXMLDSig = grammarXMLDSig;
+	}
+
+	public EXIFactory getExiFactory() {
 		return exiFactory;
 	}
 
@@ -192,5 +219,10 @@ public final class EXIficientCodec extends ExiCodec {
 
 	private void setGrammarFactory(GrammarFactory grammarFactory) {
 		this.grammarFactory = grammarFactory;
+	}
+	
+	@Override
+	public void setFragment(boolean useFragmentGrammar) {
+		getExiFactory().setFragment(useFragmentGrammar);
 	}
 }

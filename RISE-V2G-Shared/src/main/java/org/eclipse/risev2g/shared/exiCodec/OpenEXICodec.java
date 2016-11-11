@@ -49,6 +49,7 @@ public final class OpenEXICodec extends ExiCodec {
 	private InputStream schemaAppProtocolIS;
 	private EXISchema exiSchemaAppProtocol;
 	private EXISchema exiSchemaMsgDef;
+	private EXISchema exiSchemaXMLDSig;
 	private short options;
 	private SAXTransformerFactory saxTransformerFactory;
 	private SAXParserFactory saxParserFactory;
@@ -64,7 +65,8 @@ public final class OpenEXICodec extends ExiCodec {
         // The Transmogrifier performs the translation from XML to EXI format
         setTransmogrifier(new Transmogrifier());
         getTransmogrifier().setValuePartitionCapacity(0);
-//        getTransmogrifier().setDivertBuiltinGrammarToAnyType(true); // enable V2G's built-in grammar usage
+        getTransmogrifier().setFragment(false);
+//      getTransmogrifier().setDivertBuiltinGrammarToAnyType(true); // enable V2G's built-in grammar usage
         
         // Standard SAX methods parse content and lexical values
         setSaxTransformerFactory((SAXTransformerFactory) SAXTransformerFactory.newInstance());
@@ -109,7 +111,7 @@ public final class OpenEXICodec extends ExiCodec {
 	
 	
 	@Override
-	public byte[] encodeEXI(Object jaxbObject, boolean supportedAppProtocolHandshake) {
+	public byte[] encodeEXI(Object jaxbObject, String xsdSchemaPath) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		
 		try {
@@ -118,10 +120,16 @@ public final class OpenEXICodec extends ExiCodec {
 			 * The Grammar Cache stores the XML schema and options used to encode an EXI file. 
 			 * The settings must match when encoding and subsequently decoding a data set.
 			 */
-			if (supportedAppProtocolHandshake)
+			if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString()))
 				setGrammarCache(new GrammarCache(getExiSchemaAppProtocol(), getOptions()));
-			else 
+			else if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_MSG_DEF.toString()))
 				setGrammarCache(new GrammarCache(getExiSchemaMsgDef(), getOptions()));
+			else if (xsdSchemaPath.equals(GlobalValues.SCHEMA_PATH_XMLDSIG.toString()))
+				setGrammarCache(new GrammarCache(getExiSchemaXMLDSig(), getOptions()));
+			else {
+				getLogger().error("False schema path provided for encoding jaxbObject into EXI");
+				return null;
+			}
 			
 			// Set the configuration options in the Transmogrifier
 			getTransmogrifier().setGrammarCache(getGrammarCache());
@@ -275,5 +283,18 @@ public final class OpenEXICodec extends ExiCodec {
 
 	public void setExiSchemaMsgDef(EXISchema exiSchemaMsgDef) {
 		this.exiSchemaMsgDef = exiSchemaMsgDef;
+	}
+	
+	public EXISchema getExiSchemaXMLDSig() {
+		return exiSchemaXMLDSig;
+	}
+
+	public void setExiSchemaXMLDSig(EXISchema exiSchemaXMLDSig) {
+		this.exiSchemaXMLDSig = exiSchemaXMLDSig;
+	}
+
+	@Override
+	public void setFragment(boolean useFragmentGrammar) {
+		getTransmogrifier().setFragment(useFragmentGrammar);
 	}
 }

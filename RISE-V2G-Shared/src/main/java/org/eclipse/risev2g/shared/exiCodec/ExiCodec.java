@@ -15,14 +15,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.risev2g.shared.utils.MiscUtils;
@@ -112,17 +110,18 @@ public abstract class ExiCodec {
 			if (getInStream() != null) getInStream().reset();
 			setInStream(new ByteArrayInputStream(decodedExiString.getBytes()));
 			return getUnmarshaller().unmarshal(getInStream());
-		} catch (IOException | JAXBException e) {
+		} catch (IOException | JAXBException | RuntimeException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to unmarshall decoded message", e);
 			return null;
 		}
 	}
 	
 	
-	public abstract byte[] encodeEXI(Object jaxbXML, boolean supportedAppProtocolHandshake);
+	public abstract byte[] encodeEXI(Object jaxbXML, String xsdSchemaPath);
 	
 	public abstract Object decodeEXI(byte[] exiEncodedMessage, boolean supportedAppProtocolHandshake);
 
+	public abstract void setFragment(boolean useFragmentGrammar);
 	
 	public Marshaller getMarshaller() {
 		return marshaller;

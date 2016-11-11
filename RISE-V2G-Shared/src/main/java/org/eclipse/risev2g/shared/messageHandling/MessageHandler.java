@@ -109,12 +109,12 @@ public class MessageHandler {
 	
 
 	public synchronized Object suppAppProtocolMsgToExi(Object suppAppProtocolObject) {
-		return getExiCodec().encodeEXI(suppAppProtocolObject, true);
+		return getExiCodec().encodeEXI(suppAppProtocolObject, GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString());
 	}
 	
 
 	public synchronized Object v2gMsgToExi(Object jaxbObject) {
-		byte[] encodedEXI = getExiCodec().encodeEXI(jaxbObject, false);
+		byte[] encodedEXI = getExiCodec().encodeEXI(jaxbObject, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
 		
 		// For test purposes you can log the byte array
 //		getLogger().debug("Encoded EXI byte array: " + ByteUtils.toHexString(encodedEXI));

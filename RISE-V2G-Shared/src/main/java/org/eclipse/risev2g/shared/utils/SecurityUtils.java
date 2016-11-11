@@ -60,7 +60,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -79,7 +78,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.bind.JAXBElement;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
@@ -1567,17 +1565,26 @@ public final class SecurityUtils {
 	 * needs to be set to false.
 	 * 
 	 * @param messageOrField The message or field for which a digest is to be generated
-	 * @param signature True if a digest for a signature is to be generated, false otherwise
+	 * @param digestForSignedInfoElement True if a digest for the SignedInfoElement of the header's signature is to be generated, false otherwise
 	 * @return The SHA-256 digest for message or field
 	 */
-	public static byte[] generateDigest(Object messageOrField, boolean signature) {
+	public static byte[] generateDigest(Object messageOrField, boolean digestForSignedInfoElement) {
 		JAXBElement jaxbElement = MiscUtils.getJaxbElement(messageOrField);
 		byte[] encoded; 
 		
-		// TODO what was again the difference?
-		if (signature) encoded = getExiCodec().encodeEXI(jaxbElement, false);
-		else encoded = getExiCodec().encodeEXI(jaxbElement, false);
-			
+		// The schema-informed fragment grammar option needs to be used for EXI encodings in the header's signature
+		getExiCodec().setFragment(true);
+		
+		/*
+		 * When creating the signature value for the SignedInfoElement, we need to use the XMLdsig schema,
+		 * whereas for creating the reference elements of the signature, we need to use the V2G_CI_MsgDef schema.
+		 */
+		if (digestForSignedInfoElement) encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
+		else encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
+		
+		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
+		getExiCodec().setFragment(false);
+		
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
 			md.update(encoded);
