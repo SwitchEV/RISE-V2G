@@ -62,7 +62,10 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			 * - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
 			 * - TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
 			 */
-			String[] enabledCipherSuites = {"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256"};
+			String[] enabledCipherSuites = {
+					"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 
+					"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256"
+			};
 			getTlsServerSocket().setEnabledCipherSuites(enabledCipherSuites);
 			
 			// Set the supported TLS protocol

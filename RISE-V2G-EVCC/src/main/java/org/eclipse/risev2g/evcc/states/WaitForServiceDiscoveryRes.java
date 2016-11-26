@@ -124,7 +124,13 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 		selectedService.setParameterSetID(parameterSetID);
 		
 		getCommSessionContext().getSelectedServices().getSelectedService().add(selectedService);
-		getCommSessionContext().getServiceDetailsToBeRequested().add((short) serviceID);
+		
+		/*
+		 * There are no service details (a ServiceParameterList) yet defined for a charge service, 
+		 * so don't send a ServiceDetailReq for a ChargeService
+		 */
+		if (serviceID != 1)
+			getCommSessionContext().getServiceDetailsToBeRequested().add((short) serviceID);
 	}
 	
 	

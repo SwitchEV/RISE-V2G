@@ -91,6 +91,9 @@ public class WaitForSupportedAppProtocolReq extends ServerState {
 			supportedAppProtocolRes.setResponseCode(ResponseCodeType.FAILED_NO_NEGOTIATION);
 		}
 		
+		if (supportedAppProtocolRes.getResponseCode().equals(ResponseCodeType.FAILED_NO_NEGOTIATION)) 
+			getLogger().error("Response code '" + supportedAppProtocolRes.getResponseCode() + "' will be sent");
+		
 		return getSendMessage(supportedAppProtocolRes, 
 							  (supportedAppProtocolRes.getResponseCode().toString().startsWith("OK") ? 
 							  V2GMessages.SESSION_SETUP_REQ : V2GMessages.NONE)
