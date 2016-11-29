@@ -77,6 +77,8 @@ public class WaitForMeteringReceiptReq extends ServerState {
 					.getAllowedRequests().add(V2GMessages.POWER_DELIVERY_REQ);
 				((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 					.getAllowedRequests().add(V2GMessages.CHARGING_STATUS_REQ);
+				((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
+					.getAllowedRequests().add(V2GMessages.CURRENT_DEMAND_REQ);
 				
 				return getSendMessage(meteringReceiptRes, V2GMessages.FORK);
 			} else {
@@ -115,13 +117,22 @@ public class WaitForMeteringReceiptReq extends ServerState {
 	}
 	
 	
-	private boolean meterInfoEquals(MeterInfoType sentMeterInfo, MeterInfoType receivedMeterInfo) {
-		// Only meterID is mandatory field, thus check for null values as well
-		if (!sentMeterInfo.getMeterID().equals(receivedMeterInfo.getMeterID()) ||
-			(sentMeterInfo.getMeterReading() != null && !sentMeterInfo.getMeterReading().equals(receivedMeterInfo.getMeterReading())) ||
-			(sentMeterInfo.getMeterStatus() != null && !sentMeterInfo.getMeterStatus().equals(receivedMeterInfo.getMeterStatus())) ||
-			(sentMeterInfo.getSigMeterReading() != null && !Arrays.equals(sentMeterInfo.getSigMeterReading(), receivedMeterInfo.getSigMeterReading())) ||
-			(sentMeterInfo.getTMeter() != null && !sentMeterInfo.getTMeter().equals(receivedMeterInfo.getTMeter()))) return false;
-		else return true;
+	private boolean meterInfoEquals(MeterInfoType meterInfoSentBySECC, MeterInfoType meterInfoReceivedFromEVCC) {
+		if (meterInfoSentBySECC == null) {
+			getLogger().error("MeterInfo sent by SECC is not saved in session context, value is null");
+			return false;
+		} else if (meterInfoReceivedFromEVCC == null) {
+			getLogger().error("MeterInfo received from EVCC is null");
+			return false;
+		} else {	
+			// Only meterID is mandatory field, thus check for null values as well
+			if (!meterInfoSentBySECC.getMeterID().equals(meterInfoReceivedFromEVCC.getMeterID()) ||
+				(meterInfoSentBySECC.getMeterReading() != null && !meterInfoSentBySECC.getMeterReading().equals(meterInfoReceivedFromEVCC.getMeterReading())) ||
+				(meterInfoSentBySECC.getMeterStatus() != null && !meterInfoSentBySECC.getMeterStatus().equals(meterInfoReceivedFromEVCC.getMeterStatus())) ||
+				(meterInfoSentBySECC.getSigMeterReading() != null && !Arrays.equals(meterInfoSentBySECC.getSigMeterReading(), meterInfoReceivedFromEVCC.getSigMeterReading())) ||
+				(meterInfoSentBySECC.getTMeter() != null && !meterInfoSentBySECC.getTMeter().equals(meterInfoReceivedFromEVCC.getTMeter()))
+				) return false;
+			else return true;
+		}
 	}
 }

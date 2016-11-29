@@ -56,6 +56,7 @@ public class WaitForCurrentDemandReq extends ServerState {
 			currentDemandRes.setEVSEPresentCurrent(evseController.getPresentCurrent());
 			currentDemandRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
 			currentDemandRes.setMeterInfo(evseController.getMeterInfo());
+			getCommSessionContext().setSentMeterInfo(evseController.getMeterInfo());
 			currentDemandRes.setSAScheduleTupleID(getCommSessionContext().getChosenSAScheduleTuple());
 			
 			// TODO how to determine if a receipt is required or not?

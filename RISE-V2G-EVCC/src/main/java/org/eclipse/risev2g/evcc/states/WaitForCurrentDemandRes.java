@@ -11,9 +11,11 @@
 package org.eclipse.risev2g.evcc.states;
 
 import org.eclipse.risev2g.evcc.session.V2GCommunicationSessionEVCC;
+import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
+import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
@@ -47,6 +49,18 @@ public class WaitForCurrentDemandRes extends ClientState {
 				meteringReceiptReq.setMeterInfo(currentDemandRes.getMeterInfo());
 				meteringReceiptReq.setSAScheduleTupleID(currentDemandRes.getSAScheduleTupleID());
 				meteringReceiptReq.setSessionID(getCommSessionContext().getSessionID());
+				
+				// Set xml reference element
+				getXMLSignatureRefElements().put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq, false));
+				
+				// Set signing private key
+				setSignaturePrivateKey(SecurityUtils.getPrivateKey(
+						SecurityUtils.getKeyStore(
+								GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),
+								GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()), 
+						GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString())
+				);
+				
 				return getSendMessage(meteringReceiptReq, V2GMessages.METERING_RECEIPT_RES);
 			}
 				
