@@ -45,7 +45,13 @@ public class WaitForCurrentDemandReq extends ServerState {
 			
 			// TODO how to deal with the remaining parameters of currentDemandReq?
 			
-			currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
+			/*
+			 * TODO check if a renegotiation is wanted or not
+			 * Change EVSENotificationType to NONE if you want more than one charge loop iteration, 
+			 * but then make sure the EV is stopping the charge loop
+			 */
+			currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.STOP_CHARGING));
+			
 			currentDemandRes.setEVSECurrentLimitAchieved(evseController.isEVSECurrentLimitAchieved());
 			currentDemandRes.setEVSEVoltageLimitAchieved(evseController.isEVSEVoltageLimitAchieved());
 			currentDemandRes.setEVSEPowerLimitAchieved(evseController.isEVSEPowerLimitAchieved());

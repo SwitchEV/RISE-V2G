@@ -123,10 +123,12 @@ public class DummyBackendInterface implements IBackendInterface {
 		SAScheduleListType saScheduleList = new SAScheduleListType();
 		saScheduleList.getSAScheduleTuple().add(saScheduleTuple);
 		
-		// Set xml reference elements (repeat this for every sales tariff)
-		xmlSignatureRefElements.put(
-				salesTariff.getId(), 
-				SecurityUtils.generateDigest(salesTariff, false));
+		// Set xml reference elements for SalesTariff elements (repeat this for every sales tariff) if they are sent
+		if (saScheduleTuple.getSalesTariff() != null) {
+			xmlSignatureRefElements.put(
+					salesTariff.getId(), 
+					SecurityUtils.generateDigest(salesTariff, false));
+		}
 	
 		return saScheduleList;
 	}
@@ -208,7 +210,7 @@ public class DummyBackendInterface implements IBackendInterface {
 	@Override
 	public ECPrivateKey getMOSubCA2CertificatePrivateKey() {
 		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(
-				"./PKI-1_CRT_MO_SUB2_VALID.key", 
+				"./moSub2CA.key", 
 				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 		
 		if (privateKey == null) 
