@@ -19,6 +19,11 @@
 #
 # Author: Marc Mültin (marc.mueltin@chargepartner.com) 
 
+# 0) Create directories if not yet existing
+mkdir -p certs
+mkdir -p csrs
+mkdir -p keystores
+mkdir -p privateKeys
 
 # 1) Create a self-signed V2GRootCA certificate
 # 1.1) Create a 
