@@ -23,5 +23,5 @@ A thorough documentation for RISE V2G will follow soon.
 
 
 ### License
-RISE V2G is published under the MIT License.
+RISE V2G is published under the [MIT License](https://github.com/V2GClarity/RISE-V2G/blob/master/LICENSE).
 
