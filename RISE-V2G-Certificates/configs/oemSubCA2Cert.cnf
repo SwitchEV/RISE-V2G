@@ -3,13 +3,13 @@ prompt 					= no
 distinguished_name		= ca_dn
 
 [ca_dn]
-commonName				= MOSub2CA
+commonName				= OEMSubCA2
 organizationName		= RISE V2G Project
 countryName				= DE
-domainComponent			= MO
+domainComponent			= OEM
 
 [ext]
 basicConstraints		= critical,CA:true,pathlen:0
-keyUsage				= critical,digitalSignature,nonRepudiation,keyCertSign,cRLSign
+keyUsage				= critical,keyCertSign,cRLSign
 subjectKeyIdentifier	= hash
 

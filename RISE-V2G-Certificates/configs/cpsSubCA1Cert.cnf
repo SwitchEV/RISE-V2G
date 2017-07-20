@@ -3,7 +3,7 @@ prompt 					= no
 distinguished_name		= ca_dn
 
 [ca_dn]
-commonName				= ProvSub1CA
+commonName				= ProvSubCA1
 organizationName		= RISE V2G Project
 countryName				= DE
 domainComponent			= CPS
