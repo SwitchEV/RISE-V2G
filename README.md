@@ -1,5 +1,13 @@
-# RISE V2G
+![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500560160/182/ "RISE V2G logo")
+
 The open source reference implementation of the Vehicle-2-Grid communication interface ISO 15118
+
+### Get Prioritized Email Support
+I'd like to know which companies and institutions are using or plan to use RISE V2G across the planet and how it helps them in their daily business. Therefore, I'd appreciate if you shared this information with me by [signing up in an email form](https://www.v2g-clarity.com/en/risev2g/), preferably providing the **email address of the company or organization you are associated with**.
+
+And as a little thank you, you will get prioritized email support by me for any questions which you might have regarding RISE V2G. Sounds like a win-win situation, right?
+
+
 
 ### About RISE V2G
 
