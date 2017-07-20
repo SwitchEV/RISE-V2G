@@ -171,8 +171,10 @@ public class MessageHandler {
 		if (xmlSignatureRefElements != null && xmlSignatureRefElements.size() != 0) {
 			SignedInfoType signedInfo = SecurityUtils.getSignedInfo(xmlSignatureRefElements);
 			
-			byte[] digest = SecurityUtils.generateDigest(signedInfo, true);
-			byte[] signature = SecurityUtils.signSignatureInfo(digest, signaturePrivateKey);
+			byte[] signature = SecurityUtils.signSignedInfoElement(
+									getExiCodec().getExiEncodedSignedInfo(signedInfo), 
+									signaturePrivateKey
+							   );
 			
 			SignatureValueType signatureValue = new SignatureValueType();
 			signatureValue.setValue(signature);

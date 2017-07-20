@@ -173,5 +173,14 @@ public abstract class ServerState extends State {
 		this.responseCode = responseCode;
 		return true;
 	}
+	
+	
+	/**
+	 * In case a FAILED response code is sent, the mandatory fields still need to be set with minimum required values,
+	 * otherwise the EVCC's EXI decoder will raise an error.
+	 * 
+	 * @param response The respective response message whose mandatory fields are to be set
+	 */
+	protected abstract void setMandatoryFieldsForFailedRes();
 
 }

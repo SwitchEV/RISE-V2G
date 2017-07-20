@@ -46,11 +46,22 @@ public class WaitForWeldingDetectionReq extends ServerState {
 			.getAllowedRequests().add(V2GMessages.WELDING_DETECTION_REQ);
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 			.getAllowedRequests().add(V2GMessages.SESSION_STOP_REQ);
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(weldingDetectionRes, 
 				 			  (weldingDetectionRes.getResponseCode().toString().startsWith("OK") ? 
 				 			  V2GMessages.FORK : V2GMessages.NONE)
 			 			 	 );
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
+		
+		weldingDetectionRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
+		weldingDetectionRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
 	}
 }

@@ -24,6 +24,7 @@ import org.eclipse.risev2g.shared.v2gMessages.appProtocol.AppProtocolType;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 
 public class WaitForSupportedAppProtocolReq extends ServerState {
 	
@@ -120,6 +121,12 @@ public class WaitForSupportedAppProtocolReq extends ServerState {
 		supportedAppProtocols.add(appProtocol1);
 		
 		return supportedAppProtocols;
+	}
+	
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		// No additional mandatory fields besides response code
 	}
 	
 }

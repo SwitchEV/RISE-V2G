@@ -106,8 +106,17 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 					chargeParameterDiscoveryRes.setSASchedules(
 							getSASchedulesAsJAXBElement(getCommSessionContext().getSaSchedules()));
 					
-					// Set signing private key of Mobility Operator Sub-CA 2
-					setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getMOSubCA2CertificatePrivateKey());
+					/*
+					 * Note 3 of [V2G2-905] states:
+					 * "If the secondary actor is unaware of which authentication mode is used during EVCC-SECC 
+					 * communication (EIM/ PnC), it can simply always sign the SalesTariff."
+					 * 
+					 * Therefore, we do not check here if PnC is used but just always sign the SalesTariff. 
+					 * Without a real backend functionality, we must sign the SalesTariff by using the SecurityUtils
+					 * class.
+					 */
+					//Set signing private key of Mobility Operator Sub-CA 2
+					setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getMOSubCA2PrivateKey());
 					
 					if (chargeParameterDiscoveryReq.getRequestedEnergyTransferMode().toString().startsWith("AC")) 
 						return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.POWER_DELIVERY_REQ);
@@ -116,8 +125,11 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 				}
 			} else {
 				getLogger().error("Response code '" + chargeParameterDiscoveryRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.NONE);
 	}
@@ -180,6 +192,14 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 
 	private void setWaitingForSchedule(boolean waitingForSchedule) {
 		this.waitingForSchedule = waitingForSchedule;
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		chargeParameterDiscoveryRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
+		chargeParameterDiscoveryRes.setEVSEChargeParameter(
+					((IACEVSEController) getCommSessionContext().getACEvseController()).getACEVSEChargeParameter());
 	}
 
 }

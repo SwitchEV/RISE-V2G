@@ -51,7 +51,7 @@ public class WaitForCurrentDemandRes extends ClientState {
 				meteringReceiptReq.setSessionID(getCommSessionContext().getSessionID());
 				
 				// Set xml reference element
-				getXMLSignatureRefElements().put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq, false));
+				getXMLSignatureRefElements().put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq));
 				
 				// Set signing private key
 				setSignaturePrivateKey(SecurityUtils.getPrivateKey(

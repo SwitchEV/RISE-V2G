@@ -39,8 +39,14 @@ public class ForkState extends ServerState {
 	@Override
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		V2GMessage v2gMessageReq = (V2GMessage) message;
-		V2GMessages incomingMessage = 
+		V2GMessages incomingMessage = null;
+		
+		try {
+			incomingMessage = 
 				V2GMessages.fromValue(v2gMessageReq.getBody().getBodyElement().getValue().getClass().getSimpleName());
+		} catch (NullPointerException e) {
+			return new TerminateSession("No valid V2GMessage received");
+		}
 		
 		if (allowedRequests.contains(incomingMessage)) {
 			State newState = getCommSessionContext().getStates().get(incomingMessage);
@@ -76,6 +82,11 @@ public class ForkState extends ServerState {
 		}
 		
 		return allowedRequests;
+	}
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		// Nothing to do here
 	}
 
 }

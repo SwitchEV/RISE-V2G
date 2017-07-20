@@ -57,7 +57,9 @@ public class WaitForCableCheckReq extends ServerState {
 				cableCheckRes.setEVSEProcessing(EVSEProcessingType.ONGOING);
 				return getSendMessage(cableCheckRes, V2GMessages.CABLE_CHECK_REQ);
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(cableCheckRes, V2GMessages.NONE);
 	}
@@ -69,6 +71,15 @@ public class WaitForCableCheckReq extends ServerState {
 
 	public void setEvseProcessingFinished(boolean evseProcessingFinished) {
 		this.evseProcessingFinished = evseProcessingFinished;
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		cableCheckRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
+		cableCheckRes.setDCEVSEStatus(
+				((IDCEVSEController) getCommSessionContext().getDCEvseController()).getDCEVSEStatus(EVSENotificationType.NONE)
+				);
 	}
 
 }

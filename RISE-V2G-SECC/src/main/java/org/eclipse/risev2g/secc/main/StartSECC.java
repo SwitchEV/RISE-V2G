@@ -34,17 +34,25 @@ public class StartSECC {
 		} else {
 			Thread udpServerThread = new Thread(udpServer);
 			udpServerThread.setName("UDPServerThread");
-			udpServerThread.start();
 			
 			Thread tcpServerThread = new Thread(tcpServer);
 			tcpServerThread.setName("TCPServerThread");
-			tcpServerThread.start();
 			
 			Thread tlsServerThread = new Thread(tlsServer);
 			tlsServerThread.setName("TLSServerThread");
-			tlsServerThread.start();
 			
+			// All transport layer threads need to be initialized before initializing the SECC session handler.
 			V2GCommunicationSessionHandlerSECC sessionHandler = new V2GCommunicationSessionHandlerSECC();
+			
+			/*
+			 * To avoid possible race conditions, the transport layer threads need to be started AFTER the SECC
+			 * session handler has been initialized. Otherwise the situation might occur that the UDPServer is 
+			 * receiving a UDP client packet and tries to access the MessageHandler object before this object has
+			 * been created by the SECC session handler.
+			 */
+			udpServerThread.start();
+			tcpServerThread.start();
+			tlsServerThread.start();
 		} 
 	}
 }

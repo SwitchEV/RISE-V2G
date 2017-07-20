@@ -34,7 +34,7 @@ public class DummyACEVSEController implements IACEVSEController {
 	
 	@Override
 	public String getEvseID() {
-		return "EVSEID-0";
+		return "DE*V2G*E12345";
 	}
 
 	@Override

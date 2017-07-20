@@ -11,7 +11,6 @@
 package org.eclipse.risev2g.evcc.states;
 
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 import java.util.List;
 
@@ -28,7 +27,6 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEChargeParameterType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
-import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SAScheduleTupleType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
@@ -53,14 +51,20 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			} else {
 				// Check for the EVSENotification
 				EVSENotificationType evseNotification = null;
-				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC"))
+				
+				try {
+					if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC"))
 					evseNotification = ((ACEVSEChargeParameterType) chargeParameterDiscoveryRes
 											.getEVSEChargeParameter().getValue())
 											.getACEVSEStatus().getEVSENotification();
-				else
-					evseNotification = ((DCEVSEChargeParameterType) chargeParameterDiscoveryRes
-											.getEVSEChargeParameter().getValue())
-											.getDCEVSEStatus().getEVSENotification();
+					else
+						evseNotification = ((DCEVSEChargeParameterType) chargeParameterDiscoveryRes
+												.getEVSEChargeParameter().getValue())
+												.getDCEVSEStatus().getEVSENotification();
+				} catch (ClassCastException e) {
+					return new TerminateSession("Sent EVSEChargeParameter do not match requested energy transfer mode " + 
+												getCommSessionContext().getRequestedEnergyTransferMode().toString());
+				}
 				
 				if (evseNotification.equals(EVSENotificationType.STOP_CHARGING)) {
 					getLogger().debug("The EVSE requested to stop the charging process");
@@ -81,8 +85,8 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					// If TLS is used, verify each sales tariff (if present) with the mobility operator sub 2 certificate
 					if (getCommSessionContext().isTlsConnection() && saSchedules != null) {
 						if (!verifySalesTariffs(saSchedules, v2gMessageRes.getHeader().getSignature()))
-							getLogger().warn("Verification of sales tariffs failed. They are therefore ignored in the "
-										   + "charge process.");
+							getLogger().warn("The SalesTariff will be ignored for the charge process due to "
+										   + "failed signature verification during TLS communication.");
 							deleteUnverifiedSalesTariffs(saSchedules);
 					}
 					
@@ -128,12 +132,12 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 		 /* 
 		 * Some important requirements: 
 		 * 
-		 * 1. In case of PnC, and if a Tariff Table is used by the secondary actor, the secondary actor SHALL
+		 * 1. In case of PnC, and if a SalesTariff is used by the secondary actor, the secondary actor SHALL
 		 * sign the field SalesTariff of type SalesTariffType. In case of EIM, the secondary actor MAY sign
 		 * this field.
 		 * 
-		 * 2. If the EVCC treats the SalesTariff as invalid, it shall ignore the SalesTariff table, i.e. the
-		 * behaviour of the EVCC shall be the same as if no tariff tables were received. Furthermore, the
+		 * 2. If the EVCC treats the SalesTariff as invalid, it shall ignore the SalesTariff, i.e. the
+		 * behavior of the EVCC shall be the same as if no SalesTariff was received. Furthermore, the
 		 * EVCC MAY close the connection. It then may reopen the connection again.
 		 */
 		
@@ -160,25 +164,26 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			
 			verifyXMLSigRefElements.put(
 					saScheduleTuple.getSalesTariff().getId(),
-					SecurityUtils.generateDigest(saScheduleTuple.getSalesTariff(), false));
+					SecurityUtils.generateDigest(saScheduleTuple.getSalesTariff()));
 		}
 		
 		if (salesTariffCounter > 0) {
-			X509Certificate moSub2Certificate = SecurityUtils.getMOSub2Certificate(
+			X509Certificate moSubCA2Certificate = SecurityUtils.getMOSubCA2Certificate(
 													GlobalValues.EVCC_KEYSTORE_FILEPATH.toString());
-			if (moSub2Certificate == null) {
-				getLogger().error("No MOSub2Certificate found, signature of sales tariff could therefore not be verified");
+			if (moSubCA2Certificate == null) {
+				getLogger().error("No MOSubCA2 certificate found, signature of SalesTariff could therefore not be verified");
 				return false;
 			} else {
-				ECPublicKey ecPublicKey = (ECPublicKey) moSub2Certificate.getPublicKey();
-				if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+				if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, moSubCA2Certificate)) {
+					getLogger().warn("Verification of SalesTariff failed using certificate with distinguished name '" + 
+									 moSubCA2Certificate.getSubjectX500Principal().getName() + "'"); 
 					return false;
 				}
 			}
 		}
 		
 		if (ignoredSalesTariffs > 0) {
-			getLogger().info("Sales tariffs could not be verified because of missing signature and will therefore be ignored");
+			getLogger().info("SalesTariffs could not be verified because of missing signature and will therefore be ignored");
 			return false;
 		}
 		

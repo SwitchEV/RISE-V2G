@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.risev2g.secc.states;
 
-import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -20,7 +19,6 @@ import javax.xml.namespace.QName;
 import org.eclipse.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
-import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ACEVSEStatusType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
@@ -50,28 +48,7 @@ public class WaitForMeteringReceiptReq extends ServerState {
 					(MeteringReceiptReqType) v2gMessageReq.getBody().getBodyElement().getValue();
 			
 			if (isResponseCodeOK(meteringReceiptReq, v2gMessageReq.getHeader().getSignature())) {
-				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
-					/*
-					 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
-					 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
-					 */
-					JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
-							ACEVSEStatusType.class, 
-							getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
-					meteringReceiptRes.setEVSEStatus(jaxbEVSEStatus);
-				} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
-					/*
-					 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
-					 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
-					 */
-					JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
-							DCEVSEStatusType.class, 
-							getCommSessionContext().getDCEvseController().getDCEVSEStatus(EVSENotificationType.NONE));
-					meteringReceiptRes.setEVSEStatus(jaxbACEVSEStatus);
-				} else {
-					return new TerminateSession("RequestedEnergyTransferMode '" + getCommSessionContext().getRequestedEnergyTransferMode().toString() + 
-												"is neither of type AC nor DC");
-				}
+				setEVSEStatus(meteringReceiptRes);
 				
 				((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 					.getAllowedRequests().add(V2GMessages.POWER_DELIVERY_REQ);
@@ -83,8 +60,11 @@ public class WaitForMeteringReceiptReq extends ServerState {
 				return getSendMessage(meteringReceiptRes, V2GMessages.FORK);
 			} else {
 				getLogger().error("Response code '" + meteringReceiptRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(meteringReceiptRes, V2GMessages.NONE);
 	}
@@ -104,11 +84,12 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		
 		// Verify signature
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-		verifyXMLSigRefElements.put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq, false));
-		ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
-				getCommSessionContext().getContractSignatureCertChain().getCertificate())
-				.getPublicKey();
-		if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+		verifyXMLSigRefElements.put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq));
+
+		if (!SecurityUtils.verifySignature(
+				signature, 
+				verifyXMLSigRefElements, 
+				getCommSessionContext().getContractSignatureCertChain().getCertificate())) {
 			meteringReceiptRes.setResponseCode(ResponseCodeType.FAILED_METERING_SIGNATURE_NOT_VALID);
 			return false;
 		}
@@ -134,5 +115,37 @@ public class WaitForMeteringReceiptReq extends ServerState {
 				) return false;
 			else return true;
 		}
+	}
+	
+	
+	private void setEVSEStatus(MeteringReceiptResType meteringReceiptRes) {
+		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
+			/*
+			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
+			 */
+			JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
+					ACEVSEStatusType.class, 
+					getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
+			meteringReceiptRes.setEVSEStatus(jaxbEVSEStatus);
+		} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
+			/*
+			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
+			 */
+			JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
+					DCEVSEStatusType.class, 
+					getCommSessionContext().getDCEvseController().getDCEVSEStatus(EVSENotificationType.NONE));
+			meteringReceiptRes.setEVSEStatus(jaxbACEVSEStatus);
+		} else {
+			getLogger().warn("RequestedEnergyTransferMode '" + getCommSessionContext().getRequestedEnergyTransferMode().toString() + 
+										"is neither of type AC nor DC");
+		}
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		setEVSEStatus(meteringReceiptRes); 		
 	}
 }

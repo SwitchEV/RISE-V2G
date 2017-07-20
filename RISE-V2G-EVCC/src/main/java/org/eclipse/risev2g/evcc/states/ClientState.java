@@ -259,7 +259,7 @@ public abstract class ClientState extends State {
 			 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
 			 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 			 */
-			authorizationReq.setId("id1");
+			authorizationReq.setId("ID1");
 		}
 		
 		return authorizationReq;

@@ -60,7 +60,9 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 				.getAllowedRequests().add(V2GMessages.SERVICE_DETAIL_REQ);
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 				.getAllowedRequests().add(V2GMessages.PAYMENT_SERVICE_SELECTION_REQ);
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(serviceDiscoveryRes, 
 				  			  (serviceDiscoveryRes.getResponseCode().toString().startsWith("OK") ? 
@@ -83,13 +85,13 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 		 * Is an optional value, but fill it with a non-empty string if used, 
 		 * otherwise an EXI decoding error could occur on the other side!
 		 */
-		chargeService.setServiceName("EV charging (AC/DC)"); 
+		chargeService.setServiceName("AC_DC_Charging"); 
 		
 		/*
 		 * Is an optional value, but fill it with a non-empty string if used, 
 		 * otherwise an EXI decoding error could occur on the other side!
 		 */
-//		chargeService.setServiceScope("");
+		chargeService.setServiceScope("chargingServiceScope");
 		
 		chargeService.setFreeService(false); // it is supposed that charging is by default not for free
 		
@@ -100,7 +102,10 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 	private ServiceListType getServiceList(ServiceCategoryType serviceCategoryFilter, String serviceScopeFilter) {
 		ServiceListType serviceList = new ServiceListType();
 		
-		// Currently no filter based on service scope is applied since its string value is not standardised somehow
+		if (serviceCategoryFilter != null)
+			getLogger().debug("EVCC filters offered services by category: " + serviceScopeFilter.toString());
+		
+		// Currently no filter based on service scope is applied since its string value is not standardized somehow
 		if (getCommSessionContext().isTlsConnection() && (
 				(serviceCategoryFilter != null && serviceCategoryFilter.equals(ServiceCategoryType.CONTRACT_CERTIFICATE)) ||
 				serviceCategoryFilter == null)) {
@@ -118,12 +123,24 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 	
 	private ServiceType getCertificateService() {
 		ServiceType certificateService = new ServiceType();
-		certificateService.setFreeService(false); // it is supposed that certificate installation is by default not for free
+		certificateService.setFreeService(true);
 		certificateService.setServiceCategory(ServiceCategoryType.CONTRACT_CERTIFICATE);
 		certificateService.setServiceID(2); // according to Table 105 ISO/IEC 15118-2
-		certificateService.setServiceName("Contrac certificate installation/update"); // optional value
-		certificateService.setServiceScope(""); // optional value
+		certificateService.setServiceName("Certificate"); // optional value
+		
+		/*
+		 * Is an optional value, but fill it with a non-empty string if used, 
+		 * otherwise an EXI decoding error could occur on the other side!
+		 */
+		certificateService.setServiceScope("certificateServiceScope"); 
 		
 		return certificateService;
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		serviceDiscoveryRes.setChargeService(getChargeService());
+		serviceDiscoveryRes.setPaymentOptionList(getCommSessionContext().getPaymentOptions());
 	}
 }

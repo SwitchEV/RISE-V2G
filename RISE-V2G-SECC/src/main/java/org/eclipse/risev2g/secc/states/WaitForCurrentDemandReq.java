@@ -17,6 +17,8 @@ import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CurrentDemandReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForCurrentDemandReq extends ServerState {
@@ -50,7 +52,7 @@ public class WaitForCurrentDemandReq extends ServerState {
 			 * Change EVSENotificationType to NONE if you want more than one charge loop iteration, 
 			 * but then make sure the EV is stopping the charge loop
 			 */
-			currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.STOP_CHARGING));
+			currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
 			
 			currentDemandRes.setEVSECurrentLimitAchieved(evseController.isEVSECurrentLimitAchieved());
 			currentDemandRes.setEVSEVoltageLimitAchieved(evseController.isEVSEVoltageLimitAchieved());
@@ -66,7 +68,7 @@ public class WaitForCurrentDemandReq extends ServerState {
 			currentDemandRes.setSAScheduleTupleID(getCommSessionContext().getChosenSAScheduleTuple());
 			
 			// TODO how to determine if a receipt is required or not?
-			currentDemandRes.setReceiptRequired(false);
+			currentDemandRes.setReceiptRequired(true);
 			
 			if (currentDemandRes.isReceiptRequired()) {
 				return getSendMessage(currentDemandRes, V2GMessages.METERING_RECEIPT_REQ);
@@ -78,9 +80,30 @@ public class WaitForCurrentDemandReq extends ServerState {
 				
 				return getSendMessage(currentDemandRes, V2GMessages.FORK);
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(currentDemandRes, V2GMessages.NONE);
+	}
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
+		
+		PhysicalValueType physicalValueType = new PhysicalValueType();
+		physicalValueType.setMultiplier(new Byte("0"));
+		physicalValueType.setUnit(UnitSymbolType.V);  // does not matter which unit symbol if FAILED response is sent
+		physicalValueType.setValue((short) 1);
+		
+		currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
+		currentDemandRes.setEVSEPresentVoltage(physicalValueType);
+		currentDemandRes.setEVSEPresentCurrent(physicalValueType);
+		currentDemandRes.setEVSECurrentLimitAchieved(false);
+		currentDemandRes.setEVSEVoltageLimitAchieved(false);
+		currentDemandRes.setEVSEPowerLimitAchieved(false);
+		currentDemandRes.setEVSEID(evseController.getEvseID());
+		currentDemandRes.setSAScheduleTupleID((short) 1); 
 	}
 
 }

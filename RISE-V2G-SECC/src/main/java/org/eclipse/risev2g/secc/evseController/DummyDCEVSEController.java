@@ -40,7 +40,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 	
 	@Override
 	public String getEvseID() {
-		return "EVSEID-0";
+		return "DE*V2G*E12345";
 	}
 	
 	
@@ -88,7 +88,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 		dcEvseStatus.setNotificationMaxDelay(0);
 		dcEvseStatus.setEVSENotification((notification != null) ? notification : EVSENotificationType.NONE);
 		dcEvseStatus.setEVSEStatusCode(DCEVSEStatusCodeType.EVSE_READY);
-		dcEvseStatus.setEVSEIsolationStatus(IsolationLevelType.VALID);
+		dcEvseStatus.setEVSEIsolationStatus(IsolationLevelType.INVALID);
 		
 		return dcEvseStatus;
 	}

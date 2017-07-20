@@ -61,6 +61,7 @@ public enum GlobalValues {
 	// Schema information
 	V2G_CI_MSG_DEF_NAMESPACE("urn:iso:15118:2:2013:MsgDef"),
 	V2G_CI_MSG_BODY_NAMESPACE("urn:iso:15118:2:2013:MsgBody"), 
+	V2G_CI_MSG_DATATYPES_NAMESPACE("urn:iso:15118:2:2013:MsgDataTypes"), 
 	V2G_CI_XMLDSIG_NAMESPACE("http://www.w3.org/2000/09/xmldsig#"), 
 	SCHEMA_PATH_APP_PROTOCOL("/schemas/V2G_CI_AppProtocol.xsd"),
 	SCHEMA_PATH_MSG_DEF("/schemas/V2G_CI_MsgDef.xsd"),
@@ -136,33 +137,35 @@ public enum GlobalValues {
 		case SECC_CONFIG_PROPERTIES_PATH:
 			 return stringValue;
 		case PASSPHRASE_FOR_CERTIFICATES_AND_KEYS:
-			 return "123456";
+			 return stringValue;
 		case SDP_MULTICAST_ADDRESS:
-			 return "FF02::1";
+			 return stringValue;
 		case V2G_UDP_SDP_SERVER_PORT:
-			 return "15118";
+			 return stringValue;
 		case V2GTP_HEADER_MAX_PAYLOAD_LENGTH:
 			 return "4294967295 bytes";
 		case V2GTP_VERSION_1_IS:
 			 return "version 1 (IS compliant)";
 		case V2G_CI_MSG_DEF_NAMESPACE:
-			 return "urn:iso:15118:2:2013:MsgDef";
+			 return stringValue;
 		case V2G_CI_MSG_BODY_NAMESPACE:
-			 return "urn:iso:15118:2:2013:MsgBody";
+			 return stringValue;
+		case V2G_CI_MSG_DATATYPES_NAMESPACE:
+			 return stringValue;
 		case V2G_CI_XMLDSIG_NAMESPACE:
-			 return "http://www.w3.org/2000/09/xmldsig#";
+			 return stringValue;
 		case SCHEMA_PATH_APP_PROTOCOL:
-			 return "/schemas/V2G_CI_AppProtocol.xsd";
+			 return stringValue;
 		case SCHEMA_PATH_MSG_DEF:
-			 return "/schemas/V2G_CI_MsgDef.xsd";
+			 return stringValue;
 		case SCHEMA_PATH_XMLDSIG:
-			 return "/schemas/xmldsig-core-schema.xsd";
+			 return stringValue;
 		case SCHEMA_PATH_MSG_BODY:
-			 return "/schemas/V2G_CI_MsgBody.xsd";
+			 return stringValue;
 		case SCHEMA_PATH_MSG_HEADER:
-			 return "/schemas/V2G_CI_MsgHeader.xsd";
+			 return stringValue;
 		case SCHEMA_PATH_MSG_DATA_TYPES:
-			 return "/schemas/V2G_CI_MsgDataTypes.xsd";
+			 return stringValue;
 		case V2G_SECURITY_WITH_TLS:
 			 return "TLS enabled";
 		case V2G_SECURITY_WITHOUT_TLS:
@@ -178,19 +181,19 @@ public enum GlobalValues {
 		case V2GTP_PAYLOAD_TYPE_SDP_RESPONSE_MESSAGE:
 			 return "SDP response message";
 		case ALIAS_CONTRACT_CERTIFICATE:
-			return "contract_cert";
+			return stringValue;
 		case ALIAS_OEM_PROV_CERTIFICATE:
-			return "oem_prov_cert";
+			return stringValue;
 		case EVCC_KEYSTORE_FILEPATH:
-			return "./evccKeystore.jks";
+			return stringValue;
 		case EVCC_TRUSTSTORE_FILEPATH:
-			return "./evccTruststore.jks";
+			return stringValue;
 		case SECC_KEYSTORE_FILEPATH:
-			return "./seccKeystore.jks";
+			return stringValue;
 		case SECC_TRUSTSTORE_FILEPATH:
-			return "./seccTruststore.jks";
+			return stringValue;
 		case CERTIFICATE_EXPIRES_SOON_PERIOD:
-			return "21 days";
+			return shortValue + " days";
 		default: return "Invalid GlobalValue type";
 		}
 	}

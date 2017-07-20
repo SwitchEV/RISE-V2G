@@ -10,10 +10,13 @@
  *******************************************************************************/
 package org.eclipse.risev2g.secc.states;
 
+import java.security.cert.X509Certificate;
+
 import org.eclipse.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.eclipse.risev2g.shared.utils.ByteUtils;
 import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentDetailsReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentDetailsResType;
@@ -46,8 +49,11 @@ public class WaitForPaymentDetailsReq extends ServerState {
 				paymentDetailsRes.setGenChallenge(genChallenge);
 			} else {
 				getLogger().error("Response code '" + paymentDetailsRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(paymentDetailsRes, 
 				  			  (paymentDetailsRes.getResponseCode().toString().startsWith("OK") ? 
@@ -88,5 +94,12 @@ public class WaitForPaymentDetailsReq extends ServerState {
 		}
 		
 		return true;
+	}
+	
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		paymentDetailsRes.setEVSETimeStamp(0L);
+		paymentDetailsRes.setGenChallenge(new byte[1]);
 	}
 }

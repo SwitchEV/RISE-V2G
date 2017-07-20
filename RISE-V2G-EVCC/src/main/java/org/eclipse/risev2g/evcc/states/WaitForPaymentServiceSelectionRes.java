@@ -78,7 +78,7 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
 		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 		 */
-		certInstallationReq.setId("id1");
+		certInstallationReq.setId("ID1");
 		certInstallationReq.setListOfRootCertificateIDs(
 				SecurityUtils.getListOfRootCertificateIDs(
 						GlobalValues.EVCC_TRUSTSTORE_FILEPATH.toString(),
@@ -88,7 +88,7 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 						evccKeyStore, GlobalValues.ALIAS_OEM_PROV_CERTIFICATE.toString()).getCertificate());
 		
 		// Set xml reference element
-		getXMLSignatureRefElements().put(certInstallationReq.getId(), SecurityUtils.generateDigest(certInstallationReq, false));
+		getXMLSignatureRefElements().put(certInstallationReq.getId(), SecurityUtils.generateDigest(certInstallationReq));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(
@@ -117,7 +117,7 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
 		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 		 */
-		certificateUpdateReq.setId("id1");
+		certificateUpdateReq.setId("ID1");
 		certificateUpdateReq.setListOfRootCertificateIDs(
 				SecurityUtils.getListOfRootCertificateIDs(
 						GlobalValues.EVCC_TRUSTSTORE_FILEPATH.toString(),
@@ -126,7 +126,7 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		// Set xml reference element
 		getXMLSignatureRefElements().put(
 				certificateUpdateReq.getId(), 
-				SecurityUtils.generateDigest(certificateUpdateReq, false));
+				SecurityUtils.generateDigest(certificateUpdateReq));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(

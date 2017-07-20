@@ -49,19 +49,19 @@ public interface IBackendInterface {
 	 * the provisioning certificate and possible intermediate certificates (sub CAs) included.
 	 * @return Certificate chain for provisioning certificate
 	 */
-	public CertificateChainType getSAProvisioningCertificateChain();
+	public CertificateChainType getCPSCertificateChain();
 	
 	
 	/**
 	 * Provides the private key belonging to the SA provisioning certificate.
 	 * @return PrivateKey of the SA provisioning certificate
 	 */
-	public ECPrivateKey getSAProvisioningCertificatePrivateKey();
+	public ECPrivateKey getCPSLeafPrivateKey();
 	
 	
 	/**
 	 * Provides the private key belonging to the MO Sub-CA 2 certificate (signature of SalesTariff).
 	 * @return PrivateKey of the MO Sub-CA 2 certificate
 	 */
-	public ECPrivateKey getMOSubCA2CertificatePrivateKey();
+	public ECPrivateKey getMOSubCA2PrivateKey();
 }

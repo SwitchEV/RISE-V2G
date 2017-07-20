@@ -95,6 +95,12 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 	private boolean useVAS(ServiceDiscoveryResType serviceDiscoveryRes) {
 		if (serviceDiscoveryRes.getServiceList() != null && 
 			getCommSessionContext().getTransportLayerClient() instanceof TLSClient) {
+			
+			getLogger().debug("List of offered value added services: ");
+			for (ServiceType service : serviceDiscoveryRes.getServiceList().getService()) {
+				getLogger().debug("ID = " + service.getServiceID() + ", name = " + service.getServiceName());
+			}
+			
 			// Check if certificate service is needed
 			if (isCertificateServiceOffered(serviceDiscoveryRes.getServiceList())) { 
 				getCommSessionContext().setContractCertStatus(SecurityUtils.getContractCertificateStatus());

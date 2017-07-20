@@ -23,6 +23,8 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateUpdateReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.CertificateUpdateResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ContractSignatureEncryptedPrivateKeyType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.DiffieHellmanPublickeyType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -49,7 +51,7 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 					contractCertificateChain, 
 					v2gMessageReq.getHeader().getSignature())) {
 				// The ECDH (elliptic curve Diffie Hellman) key pair is also needed for the generation of the shared secret
-				KeyPair ecdhKeyPair = SecurityUtils.getECDHKeyPair();
+				KeyPair ecdhKeyPair = SecurityUtils.getECKeyPair();
 				if (ecdhKeyPair == null) {
 					getLogger().error("ECDH keypair could not be generated");
 					return null;
@@ -76,7 +78,7 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				certificateUpdateRes.getDHpublickey().setId("id3"); // dhPublicKey
 				certificateUpdateRes.setEMAID(SecurityUtils.getEMAID(contractCertificateChain));
 				certificateUpdateRes.getEMAID().setId("id4"); // emaid
-				certificateUpdateRes.setSAProvisioningCertificateChain(getCommSessionContext().getBackendInterface().getSAProvisioningCertificateChain());
+				certificateUpdateRes.setSAProvisioningCertificateChain(getCommSessionContext().getBackendInterface().getCPSCertificateChain());
 				
 				// In case of negative response code, try at next charging (retryCounter = 0)
 				if (!certificateUpdateRes.getResponseCode().toString().startsWith("OK"))
@@ -85,22 +87,25 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				// Set xml reference elements
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureCertChain().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureCertChain(), false));
+						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureCertChain()));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
-						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureEncryptedPrivateKey(), false));
+						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureEncryptedPrivateKey()));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getDHpublickey().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getDHpublickey(), false));
+						SecurityUtils.generateDigest(certificateUpdateRes.getDHpublickey()));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getEMAID().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getEMAID(), false));
+						SecurityUtils.generateDigest(certificateUpdateRes.getEMAID()));
 				
 				// Set signing private key
-				setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getSAProvisioningCertificatePrivateKey());
+				setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getCPSLeafPrivateKey());
 			} else {
 				getLogger().error("Response code '" + certificateUpdateRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
+		} else {
+			setMandatoryFieldsForFailedRes();
 		}
 		
 		return getSendMessage(certificateUpdateRes, 
@@ -146,15 +151,44 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 		
 		// Verify signature
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-		verifyXMLSigRefElements.put(certificateUpdateReq.getId(), SecurityUtils.generateDigest(certificateUpdateReq, false));
-		ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
-				certificateUpdateReq.getContractSignatureCertChain().getCertificate())
-				.getPublicKey();
-		if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+		verifyXMLSigRefElements.put(certificateUpdateReq.getId(), SecurityUtils.generateDigest(certificateUpdateReq));
+
+		if (!SecurityUtils.verifySignature(
+				signature, 
+				verifyXMLSigRefElements, 
+				certificateUpdateReq.getContractSignatureCertChain().getCertificate())) {
 			certificateUpdateRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
 			return false;
 		}
 		
 		return true;
+	}
+	
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		CertificateChainType saProvisioningCertificateChain = new CertificateChainType();
+		saProvisioningCertificateChain.setCertificate(new byte[1]);
+		certificateUpdateRes.setSAProvisioningCertificateChain(saProvisioningCertificateChain);
+		
+		CertificateChainType contractSignatureCertChain = new CertificateChainType();
+		contractSignatureCertChain.setCertificate(new byte[1]);
+		contractSignatureCertChain.setId("ID1");
+		certificateUpdateRes.setContractSignatureCertChain(contractSignatureCertChain);
+		
+		ContractSignatureEncryptedPrivateKeyType contractSignatureEncryptedPrivateKey = new ContractSignatureEncryptedPrivateKeyType();
+		contractSignatureEncryptedPrivateKey.setValue(new byte[1]);
+		contractSignatureEncryptedPrivateKey.setId("ID2");
+		certificateUpdateRes.setContractSignatureEncryptedPrivateKey(contractSignatureEncryptedPrivateKey);
+		
+		DiffieHellmanPublickeyType dhPublicKeyType = new DiffieHellmanPublickeyType();
+		dhPublicKeyType.setValue(new byte[1]);
+		dhPublicKeyType.setId("ID3");
+		certificateUpdateRes.setDHpublickey(dhPublicKeyType);
+		
+		EMAIDType emaid = new EMAIDType();
+		emaid.setValue("DEV2G1234512345");
+		emaid.setId("ID4");
+		certificateUpdateRes.setEMAID(emaid);
 	}
 }

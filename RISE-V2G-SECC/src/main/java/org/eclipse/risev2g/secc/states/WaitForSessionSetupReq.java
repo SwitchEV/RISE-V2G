@@ -32,12 +32,20 @@ public class WaitForSessionSetupReq extends ServerState {
 			
 			// Unix time stamp is needed (seconds instead of milliseconds)
 			sessionSetupRes.setEVSETimeStamp(System.currentTimeMillis() / 1000L);
+		} else {
+			setMandatoryFieldsForFailedRes();
 		} 
 			
 		return getSendMessage(sessionSetupRes, 
 				  			  (sessionSetupRes.getResponseCode().toString().startsWith("OK") ? 
 				  			  V2GMessages.SERVICE_DISCOVERY_REQ : V2GMessages.NONE)
 				 			 );
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		sessionSetupRes.setEVSEID(getCommSessionContext().getEvseController().getEvseID());
 	}
 
 }

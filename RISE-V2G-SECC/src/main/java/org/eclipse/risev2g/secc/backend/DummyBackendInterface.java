@@ -91,7 +91,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		// PMaxSchedule
 		// IMPORTANT: check that you do not add more pMax entries than parameter maxEntriesSAScheduleTuple
 		PMaxScheduleType pMaxSchedule = new PMaxScheduleType();
-		pMaxSchedule.getPMaxScheduleEntry().add(createPMaxScheduleEntry("3", (short) 11, 0, 7200L));
+		pMaxSchedule.getPMaxScheduleEntry().add(createPMaxScheduleEntry("3", (short) 11, 0, 86400L));
 		
 		/*
 		 * SalesTariff (add some meaningful things)
@@ -107,7 +107,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
 		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 		 */
-		salesTariff.setId("id1"); 
+		salesTariff.setId("ID1"); 
 		salesTariff.setSalesTariffID((short) 1);
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(0L, (short) 1));
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
@@ -127,7 +127,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		if (saScheduleTuple.getSalesTariff() != null) {
 			xmlSignatureRefElements.put(
 					salesTariff.getId(), 
-					SecurityUtils.generateDigest(salesTariff, false));
+					SecurityUtils.generateDigest(salesTariff));
 		}
 	
 		return saScheduleList;
@@ -154,8 +154,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		pMaxValue.setValue(pMax);
 		
 		RelativeTimeIntervalType pMaxTimeInterval = new RelativeTimeIntervalType();
-		pMaxTimeInterval.setStart(0);
-		pMaxTimeInterval.setDuration(7200L); // 2 hours
+		pMaxTimeInterval.setStart(start);
 		
 		PMaxScheduleEntryType pMaxScheduleEntry = new PMaxScheduleEntryType();
 		pMaxScheduleEntry.setTimeInterval(new JAXBElement<RelativeTimeIntervalType>(
@@ -177,13 +176,13 @@ public class DummyBackendInterface implements IBackendInterface {
 
 	@Override
 	public CertificateChainType getContractCertificateChain() {
-		return SecurityUtils.getCertificateChain("./contractCert.p12");
+		return SecurityUtils.getCertificateChain("./moCertChain.p12");
 	}
 	
 	@Override
 	public ECPrivateKey getContractCertificatePrivateKey() {
 		KeyStore keyStore = SecurityUtils.getPKCS12KeyStore(
-				"./contractCert.p12", 
+				"./moCertChain.p12", 
 				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(keyStore);
 		
@@ -195,23 +194,21 @@ public class DummyBackendInterface implements IBackendInterface {
 	
 	
 	@Override
-	public ECPrivateKey getSAProvisioningCertificatePrivateKey() {
+	public ECPrivateKey getCPSLeafPrivateKey() {
 		KeyStore keyStore = SecurityUtils.getPKCS12KeyStore(
-				"./provServiceCert.p12", 
+				"./cpsCertChain.p12", 
 				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(keyStore);
 		
 		if (privateKey == null) 
-			getLogger().error("No private key available from provisioning service keystore");
+			getLogger().error("No private key available from Certificate Provisioning Service keystore");
 		
 		return privateKey;
 	}
 	
 	@Override
-	public ECPrivateKey getMOSubCA2CertificatePrivateKey() {
-		ECPrivateKey privateKey = SecurityUtils.getPrivateKey(
-				"./moSub2CA.key", 
-				GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
+	public ECPrivateKey getMOSubCA2PrivateKey() {
+		ECPrivateKey privateKey = SecurityUtils.getPrivateKey("./moSubCA2.pkcs8.der");
 		
 		if (privateKey == null) 
 			getLogger().error("No private key available from MO Sub-CA 2 PKCS#8 file");
@@ -221,8 +218,8 @@ public class DummyBackendInterface implements IBackendInterface {
 	
 	
 	@Override
-	public CertificateChainType getSAProvisioningCertificateChain() {
-		return SecurityUtils.getCertificateChain("./provServiceCert.p12");
+	public CertificateChainType getCPSCertificateChain() {
+		return SecurityUtils.getCertificateChain("./cpsCertChain.p12");
 	}
 	
 	

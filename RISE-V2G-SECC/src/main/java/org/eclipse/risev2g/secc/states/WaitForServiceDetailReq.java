@@ -45,7 +45,7 @@ public class WaitForServiceDetailReq extends ServerState {
 					serviceParameterList.getParameterSet().add(getCertificateInstallationParameters());
 					serviceParameterList.getParameterSet().add(getCertificateUpdateParameters());
 				} else if (serviceDetailReq.getServiceID() == 3) {
-					// Comment out internet access service which will not be available
+					// Comment out Internet access service which will not be available
 					serviceParameterList.getParameterSet().add(getInternetAccessFTPPort20Parameters());
 					serviceParameterList.getParameterSet().add(getInternetAccessFTPPort21Parameters());
 					serviceParameterList.getParameterSet().add(getInternetAccessHTTPParameters());
@@ -69,8 +69,11 @@ public class WaitForServiceDetailReq extends ServerState {
 				return getSendMessage(serviceDetailRes, V2GMessages.FORK);
 			} else {
 				getLogger().error("Response code '" + serviceDetailRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(serviceDetailRes, V2GMessages.NONE);
 	}
@@ -91,7 +94,7 @@ public class WaitForServiceDetailReq extends ServerState {
 		ParameterSetType parameterSet = new ParameterSetType();
 		
 		ParameterType certInstallation = new ParameterType();
-		certInstallation.setName("Certificate Installation");
+		certInstallation.setName("Service");
 		certInstallation.setStringValue("Installation");
 		
 		parameterSet.getParameter().add(certInstallation);
@@ -105,7 +108,7 @@ public class WaitForServiceDetailReq extends ServerState {
 		ParameterSetType parameterSet = new ParameterSetType();
 		
 		ParameterType certUpdate = new ParameterType();
-		certUpdate.setName("Certificate Update");
+		certUpdate.setName("Service");
 		certUpdate.setStringValue("Update");
 		
 		parameterSet.getParameter().add(certUpdate);
@@ -119,7 +122,7 @@ public class WaitForServiceDetailReq extends ServerState {
 		ParameterSetType parameterSet = new ParameterSetType();
 		
 		ParameterType ftpPort20 = new ParameterType();
-		ftpPort20.setName("FTP port 20");
+		ftpPort20.setName("FTP20");
 		ftpPort20.setStringValue("ftp");
 		ftpPort20.setIntValue(20);
 		
@@ -134,7 +137,7 @@ public class WaitForServiceDetailReq extends ServerState {
 		ParameterSetType parameterSet = new ParameterSetType();
 		
 		ParameterType ftpPort21 = new ParameterType();
-		ftpPort21.setName("FTP port 21");
+		ftpPort21.setName("FTP21");
 		ftpPort21.setStringValue("ftp");
 		ftpPort21.setIntValue(21);
 		
@@ -172,6 +175,12 @@ public class WaitForServiceDetailReq extends ServerState {
 		parameterSet.setParameterSetID((short) 4);
 		
 		return parameterSet;
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		serviceDetailRes.setServiceID(1);
 	}
 
 }

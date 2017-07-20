@@ -16,7 +16,6 @@ import javax.xml.namespace.QName;
 import org.eclipse.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
 import org.eclipse.risev2g.shared.messageHandling.ReactionToIncomingMessage;
-import org.eclipse.risev2g.shared.messageHandling.TerminateSession;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ACEVSEStatusType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ChargingProfileType;
@@ -54,29 +53,7 @@ public class WaitForPowerDeliveryReq extends ServerState {
 				
 				// TODO regard [V2G2-866]
 				
-				
-				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
-					/*
-					 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
-					 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
-					 */
-					JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
-							ACEVSEStatusType.class, 
-							getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
-					powerDeliveryRes.setEVSEStatus(jaxbEVSEStatus);
-				} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
-					/*
-					 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
-					 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
-					 */
-					JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
-							DCEVSEStatusType.class, 
-							getCommSessionContext().getDCEvseController().getDCEVSEStatus(EVSENotificationType.NONE));
-					powerDeliveryRes.setEVSEStatus(jaxbACEVSEStatus);
-				} else {
-					return new TerminateSession("RequestedEnergyTransferMode '" + getCommSessionContext().getRequestedEnergyTransferMode().toString() + 
-												"is neither of type AC nor DC");
-				}
+				setEVSEStatus(powerDeliveryRes);
 				
 				if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.START)) {
 					if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC"))
@@ -99,8 +76,11 @@ public class WaitForPowerDeliveryReq extends ServerState {
 				}
 			} else {
 				getLogger().error("Response code '" + powerDeliveryRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(powerDeliveryRes, V2GMessages.NONE);
 	}
@@ -155,6 +135,32 @@ public class WaitForPowerDeliveryReq extends ServerState {
 	}
 	
 	
+	private void setEVSEStatus(PowerDeliveryResType powerDeliveryRes) {
+		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
+			/*
+			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
+			 */
+			JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
+					ACEVSEStatusType.class, 
+					getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
+			powerDeliveryRes.setEVSEStatus(jaxbEVSEStatus);
+		} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
+			/*
+			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
+			 */
+			JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
+					DCEVSEStatusType.class, 
+					getCommSessionContext().getDCEvseController().getDCEVSEStatus(EVSENotificationType.NONE));
+			powerDeliveryRes.setEVSEStatus(jaxbACEVSEStatus);
+		} else {
+			getLogger().warn("RequestedEnergyTransferMode '" + getCommSessionContext().getRequestedEnergyTransferMode().toString() + 
+										"is neither of type AC nor DC");
+		}
+	}
+	
+	
 	private SAScheduleTupleType getChosenSASCheduleTuple(short chosenSAScheduleTupleID) {
 		for (SAScheduleTupleType saSchedule : getCommSessionContext().getSaSchedules().getSAScheduleTuple()) {
 			if (saSchedule.getSAScheduleTupleID() == chosenSAScheduleTupleID) return saSchedule;
@@ -169,5 +175,11 @@ public class WaitForPowerDeliveryReq extends ServerState {
 		// TODO check for validity of charging profile
 		
 		return true;
+	}
+	
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		setEVSEStatus(powerDeliveryRes);
 	}
 }

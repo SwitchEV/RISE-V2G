@@ -39,6 +39,7 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 			
 			getLogger().info("Payment option " + paymentServiceSelectionReq.getSelectedPaymentOption().toString() + 
 							 " has been chosen by EVCC");
+			getCommSessionContext().setSelectedPaymentOption(paymentServiceSelectionReq.getSelectedPaymentOption());
 			
 			if (isResponseCodeOK(paymentServiceSelectionReq)) {
 				// see [V2G2-551]
@@ -56,8 +57,11 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 				}
 			} else {
 				getLogger().error("Response code '" + paymentServiceSelectionRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 
 		return getSendMessage(paymentServiceSelectionRes, V2GMessages.NONE);
 	}
@@ -106,6 +110,12 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 		}
 		
 		return true;
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		// No other mandatory fields to be set besides response code
 	}
 
 }

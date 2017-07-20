@@ -12,16 +12,19 @@ package org.eclipse.risev2g.shared.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -49,24 +52,28 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -78,6 +85,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.bind.JAXBElement;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
@@ -98,10 +106,16 @@ import org.eclipse.risev2g.shared.v2gMessages.msgDef.TransformType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.TransformsType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.X509IssuerSerialType;
 
-public final class SecurityUtils {
+import java.util.Base64;
 
+public final class SecurityUtils {
+	/*
+	 * Add VM (virtual machine) argument "-Djavax.net.debug=ssl" if you want more detailed debugging output
+	 */
+	
 	static Logger logger = LogManager.getLogger(SecurityUtils.class.getSimpleName());
 	static ExiCodec exiCodec;
+	static boolean showSignatureVerificationLog = ((boolean) MiscUtils.getPropertyValue("SignatureVerificationLog")); 
 	
 	public static enum ContractCertificateStatus {
 		UPDATE_NEEDED,
@@ -345,10 +359,13 @@ public final class SecurityUtils {
 			return true;
 		} catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | 
 				 NoSuchProviderException | SignatureException e) {
-			getLogger().warn("Signature verification of certificate having distinguished name '" + 
-							  subject.getName() + "' with certificate having distinguished name (the issuer) '" + 
-							  issuerSubject.getName() + "' failed. Expected issuer has distinguished name '" +
-							  expectedIssuerSubject.getName() + "' (" + e.getClass().getSimpleName() + ")", e);
+			getLogger().warn("\n"
+						   + "\tSignature verification of certificate having distinguished name \n" 
+						   + "\t'" + subject.getName() + "'\n" 
+						   + "\twith certificate having distinguished name (the issuer) \n" 
+						   + "\t'" + issuerSubject.getName() + "'\n"
+						   + "\tfailed. Expected issuer has distinguished name \n"
+						   + "\t'" + expectedIssuerSubject.getName() + "' (" + e.getClass().getSimpleName() + ")", e);
 		} 
 		
 		return false;
@@ -372,7 +389,7 @@ public final class SecurityUtils {
 			if (leafCertificate != null) {
 				SubCertificatesType subCertificates = certChain.getSubCertificates();
 				if (subCertificates != null) {
-					// Sub certificates must be in the right order (leaf -> SubCA2 -> SubCA1 -> ... -> RootCA)
+					// Sub certificates must be in the right order (leaf -> SubCA2 -> SubCA1 -> RootCA)
 					issuingCertificate = getCertificate(subCertificates.getCertificate().get(0));
 					if (!isCertificateVerified(leafCertificate, issuingCertificate)) return false;
 					
@@ -541,16 +558,16 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Returns the mobility operator sub 2 certificate (MOSub2Certificate) which signs the contract 
-	 * certificate from the given keystore. The MOSub2Certificate is then used to verify the signature of
-	 * sales tariffs.
+	 * Returns the mobility operator Sub-CA 2 certificate (MOSubCA2 certificate) which can verify the signature of the  
+	 * contract certificate from the given keystore. The public key of the MOSub2Certificate is then used to verify 
+	 * the signature of sales tariffs.
 	 * 
 	 * @param keyStoreFileName The relative path and file name of the keystore
-	 * @return The X.509 mobility operator sub 2 certficiate (a certificate from a sub CA)
+	 * @return The X.509 mobility operator Sub-CA2 certificate (a certificate from a Sub-CA)
 	 */
-	public static X509Certificate getMOSub2Certificate(String keyStoreFileName) {
+	public static X509Certificate getMOSubCA2Certificate(String keyStoreFileName) {
 		KeyStore keystore = getKeyStore(keyStoreFileName, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
-		X509Certificate moSub2Certificate = null;
+		X509Certificate moSubCA2Certificate = null;
 		
 		try {
 			Certificate[] certChain = keystore.getCertificateChain(GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString());
@@ -561,33 +578,47 @@ public final class SecurityUtils {
 				X509Certificate x509Cert = getCertificate(certificate);
 				if (contractCertificate.getIssuerX500Principal().getName().equals(
 					x509Cert.getSubjectX500Principal().getName())) {
-					moSub2Certificate = x509Cert;
+					moSubCA2Certificate = x509Cert;
 					break;
 				}
 			}
 		} catch (KeyStoreException e) {
-			getLogger().error("KeyStoreException occurred while trying to get MOSub2 certificate");
+			getLogger().error("KeyStoreException occurred while trying to get MOSubCA2 certificate");
 		}
 		
-		return moSub2Certificate;
+		return moSubCA2Certificate;
 	}
 
 	
 	/**
-	 * Returns the ECPublicKey instance from its raw bytes
+	 * Returns the ECPublicKey instance from its encoded raw bytes. 
+	 * The first byte has the fixed value 0x04 indicating the uncompressed form.
+	 * Therefore, the byte array must be of form: [0x04, x coord of point (32 bytes), y coord of point (32 bytes)]
 	 * 
-	 * @param dhPublicKeyBytes The byte array representing the ECPublicKey instance
+	 * @param publicKeyBytes The byte array representing the encoded raw bytes of the public key
 	 * @return The ECPublicKey instance
 	 */
 	public static ECPublicKey getPublicKey(byte[] publicKeyBytes) {
+		// First we separate x and y of coordinates into separate variables
+	    byte[] x = new byte[32];
+	    byte[] y = new byte[32];
+	    System.arraycopy(publicKeyBytes, 1, x, 0, 32);
+	    System.arraycopy(publicKeyBytes, 33, y, 0, 32);
+	    
 	    try {
-	    	X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-	    	ECPublicKey publicKey = (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(keySpec);
-	    	return publicKey;
-	    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-	        getLogger().error(e.getClass().getSimpleName() + " occurred when trying to get public key from raw bytes", e);
+			KeyFactory kf = KeyFactory.getInstance("EC");
+			
+			AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC");
+			parameters.init(new ECGenParameterSpec("secp256r1"));
+			ECParameterSpec ecParameterSpec = parameters.getParameterSpec(ECParameterSpec.class);
+			
+			ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(x), new BigInteger(y)), ecParameterSpec);
+			ECPublicKey ecPublicKey = (ECPublicKey) kf.generatePublic(ecPublicKeySpec);
+			return ecPublicKey;
+	    } catch (NoSuchAlgorithmException | InvalidParameterSpecException | InvalidKeySpecException e) {
+			getLogger().error(e.getClass().getSimpleName() + " occurred when trying to get public key from raw bytes", e);
 	        return null;
-	    }
+		}
 	}
 	
 	
@@ -606,16 +637,17 @@ public final class SecurityUtils {
 		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 		 */
 		dhPublicKey.setId("id1"); // dhPublicKey
-		dhPublicKey.setValue(ecdhKeyPair.getPublic().getEncoded());
+		dhPublicKey.setValue(getUncompressedSubjectPublicKey((ECPublicKey) ecdhKeyPair.getPublic()));
 		
 		return dhPublicKey;
 	}
 	
 	
 	/**
-	 * Returns the ECPrivateKey instance from its raw bytes
+	 * Returns the ECPrivateKey instance from its raw bytes. Note that you must provide the "s" value of the 
+	 * private key, not e.g. the byte array from reading a PKCS#8 key file.
 	 * 
-	 * @param privateKeyBytes The byte array representing the ECPrivateKey instance
+	 * @param privateKeyBytes The byte array (the "s" value) of the private key
 	 * @return The ECPrivateKey instance
 	 */
 	public static ECPrivateKey getPrivateKey(byte[] privateKeyBytes) {
@@ -627,7 +659,7 @@ public final class SecurityUtils {
 			ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(new BigInteger(privateKeyBytes), ecParameterSpec);
 			
 			ECPrivateKey privateKey = (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(ecPrivateKeySpec);
-			
+
 			return privateKey;
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidParameterSpecException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred when trying to get private key from raw bytes", e);
@@ -639,19 +671,13 @@ public final class SecurityUtils {
 	/**
 	 * Searches the given keystore for the private key. It is assumed that the given keystore holds
 	 * only one private key entry whose alias is not known before, which is the case during certificate
-	 * installation when the SECC receives a PKCS#12 container from a secondary actor encapsulating the 
+	 * installation when the SECC uses a PKCS#12 container encapsulating the 
 	 * contract certificate, its private key and an optional chain of intermediate CAs.
 	 * 
-	 * @param keyStore The PKCS#12 keystore provided by the secondary actor
+	 * @param keyStore The PKCS#12 keystore 
 	 * @return The private key contained in the given keystore as an ECPrivateKey
 	 */
 	public static ECPrivateKey getPrivateKey(KeyStore keyStore) {
-		/*
-		 * For testing purposes, the respective PKCS12 container file chain has already been put in the 
-		 * resources folder. However, when implementing a real interface to a secondary actor's backend, 
-		 * the retrieval of a PKCS#12 container file must be done via some other online mechanism.
-		 */
-		
 		ECPrivateKey privateKey = null;
 		
 		try {
@@ -673,30 +699,33 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Read a private key from a .key file and return it as an ECPrivateKey
+	 * Reads the private key from an encrypted PKCS#8 file and returns it as an ECPrivateKey instance.
 	 * 
-	 * @param A .key file containing the private key
-	 * @return The private key stored in the .key file as an ECPrivateKey
+	 * @param A PKCS#8 (.key) file containing the private key with value "s"
+	 * @return The private key as an ECPrivateKey instance
 	 */
-	public static ECPrivateKey getPrivateKey(String keyFilePath, String password) {
-		File file = null;
-		FileInputStream fis = null;
+	public static ECPrivateKey getPrivateKey(String keyFilePath) {
+		Path fileLocation = Paths.get(keyFilePath);
+		byte[] pkcs8ByteArray;
 		
 		try {
-			file = new File(keyFilePath);
-			fis = new FileInputStream(file);
-			byte[] privateKeyByteArray = new byte[(int) file.length()];
+			pkcs8ByteArray = Files.readAllBytes(fileLocation);
 			
-			ECPrivateKey privateKey = getPrivateKey(privateKeyByteArray);
+			// The DER encoded private key is encrypted in PKCS#8. So we need to decrypt it first
+			PBEKeySpec pbeKeySpec = new PBEKeySpec(GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
+		    EncryptedPrivateKeyInfo encryptedPrivKeyInfo = new EncryptedPrivateKeyInfo(pkcs8ByteArray);
+		    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivKeyInfo.getAlgName());
+		    Key secret = secretKeyFactory.generateSecret(pbeKeySpec);
+		    PKCS8EncodedKeySpec pkcs8PrivKeySpec = encryptedPrivKeyInfo.getKeySpec(secret);
+			
+			ECPrivateKey privateKey = (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(pkcs8PrivKeySpec);
 
-			fis.close();
-			
 			return privateKey;
-		} catch (NullPointerException | IOException e) {
+		} catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException | InvalidKeyException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to access private key at " +
-							  "location '" + keyFilePath + "'");
+					  "location '" + keyFilePath + "'");
 			return null;
-		}
+		} 
 	}
 	
 	
@@ -807,7 +836,7 @@ public final class SecurityUtils {
 		digestMethod.setAlgorithm("http://www.w3.org/2001/04/xmlenc#sha256");
 		
 		TransformType transform = new TransformType();
-		transform.setAlgorithm("http://www.w3.org/TR/canonical-exi");
+		transform.setAlgorithm("http://www.w3.org/TR/canonical-exi/");
 		TransformsType transforms = new TransformsType();
 		transforms.getTransform().add(transform);
 		
@@ -816,7 +845,6 @@ public final class SecurityUtils {
 			ReferenceType reference = new ReferenceType();
 			reference.setDigestMethod(digestMethod);
 			reference.setDigestValue(v);
-			reference.setId(k);
 			reference.setTransforms(transforms);
 			reference.setURI("#" + k);
 			
@@ -824,7 +852,7 @@ public final class SecurityUtils {
 		});
 		
 		CanonicalizationMethodType canonicalizationMethod = new CanonicalizationMethodType();
-		canonicalizationMethod.setAlgorithm("http://www.w3.org/TR/canonical-exi");
+		canonicalizationMethod.setAlgorithm("http://www.w3.org/TR/canonical-exi/");
 		
 		SignatureMethodType signatureMethod = new SignatureMethodType(); 
 		signatureMethod.setAlgorithm("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256");
@@ -1068,19 +1096,20 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Generates an elliptic curve Diffie-Hellman keypair.
+	 * Generates an elliptic curve key pair using the named curve "secp256r1". 
+	 * This function is mainly used for the ECDH procedure.
 	 * 
 	 * To use ECC (elliptic curve cryptography), SECC as well as EVCC must agree on all the elements 
 	 * defining the elliptic curve, that is, the "domain parameters" of the scheme. Such domain 
-	 * parameters are predefined by standardisation bodies and are commonly known as "standard curves" 
+	 * parameters are predefined by standardization bodies and are commonly known as "standard curves" 
 	 * or "named curves"; a named curve can be referenced either by name or by the unique object 
 	 * identifier defined in the standard documents. For the ISO/IEC 15118-2 document, the named curve 
 	 * "secp256r1" (SECG notation, see http://www.secg.org/sec2-v2.pdf) is used.
 	 * See [V2G2-818] in ISO/IEC 15118-2 for further information.
 	 * 
-	 * @return The Diffie-Hellman keypair for the elliptic curve 'secp256r1'
+	 * @return An elliptic curve key pair according to the named curve 'secp256r1'
 	 */
-	public static KeyPair getECDHKeyPair() {
+	public static KeyPair getECKeyPair() {
 		KeyPair keyPair = null;
 		
 		try {
@@ -1097,13 +1126,32 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * The shared secret which is to be generated with this function is used as input to a key derivation
-	 * function. A key derivation function (KDF) is a deterministic algorithm to derive a key of a given
+	 * The shared secret is computed using the domain parameters of the named curve "secp256r1", the private key 
+	 * part of the ephemeral key pair, and the OEM provisioning certiicate’s public key (in case of certificate
+	 * installation) or the contract certificate's public key (in case of certificate update).
+	 * The shared secret is used as input to a key derivation function. 
+	 * A key derivation function (KDF) is a deterministic algorithm to derive a key of a given
 	 * size from some secret value. If two parties use the same shared secret value and the same KDF, 
 	 * they should always derive exactly the same key.
 	 * 
-	 * @param privateKey The elliptic curve private key of a given certificate
-	 * @param publicKey The elliptic curve Diffie-Hellman public key
+	 * @param privateKey The private key of an EC key pair generated from the named curve "secp256r1".
+	 * 					
+	 * 					The mobility operator (MO) provides his ephemeral private key when using this function for  
+	 * 					generating the shared secret to encrypt the private key of the contract certificate.
+	 * 					
+	 * 					The EVCC provides the private key belonging to his OEM provisioning certificate's public key
+	 *					when using this function for generating the shared secret to decrypt the encrypted private key 
+	 *					of the newly to be installed contract certificate. 
+	 * @param publicKey The public key of an EC key pair generated from the named curve "secp256r1"
+	 * 
+	 * 					The mobility operator (MO) provides the static OEM provisioning certificate's (in case of 
+	 * 					CertificateInstallation) or old contract certificate's (in case of CertificateUpdate)
+	 * 					public key when using this function for generating the shared secret to encrypt the private 
+	 * 					key of the contract certificate.
+	 * 					
+	 * 					The EVCC provides the ephemeral public key of the MO (coming with the CertificateInstallationRes
+	 * 					or CertificateUpdateRes, respectively) when using this function for generating the shared secret
+	 * 					to decrypt the encrypted private key of the newly to be installed contract certificate. 
 	 * @return The computed shared secret of the elliptic curve Diffie-Hellman key exchange protocol
 	 */
 	public static byte[] generateSharedSecret(ECPrivateKey privateKey, ECPublicKey publicKey) {
@@ -1170,7 +1218,7 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Implementation of Concatenation Key Derivation Function <br/>
+	 * Implementation of Concatenation Key Derivation Function 
 	 * http://csrc.nist.gov/publications/nistpubs/800-56A/SP800-56A_Revision1_Mar08-2007.pdf
 	 *
 	 * Author: NimbusDS  Lai Xin Chu and Vladimir Dzhuvinov
@@ -1192,7 +1240,7 @@ public final class SecurityUtils {
         }
         
         int counter = 1;
-        byte[] counterInBytes = intToFourBytes(counter);
+        byte[] counterInBytes = ByteUtils.intToFourBytes(counter);
         
         if ((counterInBytes.length + z.length + otherInfo.length) * 8 > MAX_HASH_INPUTLEN) {
         	getLogger().error("Key derivation failed");
@@ -1201,7 +1249,7 @@ public final class SecurityUtils {
         
         for (int i = 0; i <= reps; i++) {
             md.reset();
-            md.update(intToFourBytes(i+1));
+            md.update(ByteUtils.intToFourBytes(i+1));
             md.update(z);
             md.update(otherInfo);
             
@@ -1221,16 +1269,6 @@ public final class SecurityUtils {
     }
 
 	
-    private static byte[] intToFourBytes(int i) {
-        byte[] res = new byte[4];
-        res[0] = (byte) (i >>> 24);
-        res[1] = (byte) ((i >>> 16) & 0xFF);
-        res[2] = (byte) ((i >>> 8) & 0xFF);
-        res[3] = (byte) (i & 0xFF);
-        return res;
-    }
-	
-
     private static ContractSignatureEncryptedPrivateKeyType getContractSignatureEncryptedPrivateKey(
     		SecretKey sessionKey, ECPrivateKey contractCertPrivateKey) {
     	ContractSignatureEncryptedPrivateKeyType encryptedPrivateKey = new ContractSignatureEncryptedPrivateKeyType();
@@ -1242,22 +1280,22 @@ public final class SecurityUtils {
     
     /**
      * Encrypts the private key of the contract certificate which is to be sent to the EVCC. First, the
-     * shared secret based on the ECDH paramters is calculated, then the symmetric session key with which
+     * shared secret based on the ECDH parameters is calculated, then the symmetric session key with which
      * the private key of the contract certificate is to be encrypted.
      * 
      * @param certificateECPublicKey The public key of either the OEM provisioning certificate (in case of 
      * 								 CertificateInstallation) or the to be updated contract certificate
      * 								 (in case of CertificateUpdate)
-     * @param ecdhKeyPair The ECDH keypair
+     * @param ecKeyPair The EC keypair
      * @param contractCertPrivateKey The private key of the contract certificate
      * @return The encrypted private key of the to be installed contract certificate
      */
 	public static ContractSignatureEncryptedPrivateKeyType encryptContractCertPrivateKey(
 			ECPublicKey certificateECPublicKey, 
-			KeyPair ecdhKeyPair,
+			KeyPair ecKeyPair,
 			ECPrivateKey contractCertPrivateKey) {
 		// Generate the shared secret by using the public key of either OEMProvCert or ContractCert
-		byte[] sharedSecret = generateSharedSecret((ECPrivateKey) ecdhKeyPair.getPrivate(), certificateECPublicKey);
+		byte[] sharedSecret = generateSharedSecret((ECPrivateKey) ecKeyPair.getPrivate(), certificateECPublicKey);
 		
 		if (sharedSecret == null) {
 			getLogger().error("Shared secret could not be generated");
@@ -1348,13 +1386,6 @@ public final class SecurityUtils {
 			byte[] dhPublicKey,
 			byte[] contractSignatureEncryptedPrivateKey,
 			ECPrivateKey certificateECPrivateKey) {
-		// Generate ECDH key pair
-		KeyPair ecdhKeyPair = getECDHKeyPair();
-		if (ecdhKeyPair == null) {
-			getLogger().error("ECDH keypair could not be generated");
-			return null;
-		}
-		
 		// Generate shared secret
 		ECPublicKey publicKey = (ECPublicKey) getPublicKey(dhPublicKey);
 		byte[] sharedSecret = generateSharedSecret(certificateECPrivateKey, publicKey);
@@ -1430,6 +1461,17 @@ public final class SecurityUtils {
 		
 		return null;
 	}
+	
+	
+	/**
+	 * Useful for debugging purposes when verifying a signature and trying to figure out where it went wrong if
+	 * a signature verification failed.
+	 * 
+	 * @return
+	 */
+//	public static byte[] decryptSignature(byte[] signature, ECPublicKey publicKey) {
+//		
+//	}
 	
 	
 	/**
@@ -1568,7 +1610,7 @@ public final class SecurityUtils {
 	 * @param digestForSignedInfoElement True if a digest for the SignedInfoElement of the header's signature is to be generated, false otherwise
 	 * @return The SHA-256 digest for message or field
 	 */
-	public static byte[] generateDigest(Object messageOrField, boolean digestForSignedInfoElement) {
+	public static byte[] generateDigest(Object messageOrField) {
 		JAXBElement jaxbElement = MiscUtils.getJaxbElement(messageOrField);
 		byte[] encoded; 
 		
@@ -1579,17 +1621,35 @@ public final class SecurityUtils {
 		 * When creating the signature value for the SignedInfoElement, we need to use the XMLdsig schema,
 		 * whereas for creating the reference elements of the signature, we need to use the V2G_CI_MsgDef schema.
 		 */
-		if (digestForSignedInfoElement) encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
+		if (messageOrField instanceof SignedInfoType) encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
 		else encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
 		
 		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
 		getExiCodec().setFragment(false);
 		
+		if (encoded == null) {
+			getLogger().error("Digest could not be generated because of EXI encoding problem");
+			return null;
+		}
+		
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
 			md.update(encoded);
+			byte[] digest = md.digest();
 			
-			return md.digest();
+			if (showSignatureVerificationLog) {
+				/*
+				 * Show Base64 encoding of digests only for reference elements, not for the SignedInfo element.
+				 * The hashed SignedInfo element is input for ECDSA before the final signature value gets Base64 encoded.
+				 */
+				if ( !(messageOrField instanceof SignedInfoType) ) {
+					getLogger().debug("\n"
+									+ "\tDigest generated for reference element " + messageOrField.getClass().getSimpleName() + ": " + ByteUtils.toHexString(digest) + "\n"
+									+ "\tBase64 encoding of digest: " + Base64.getEncoder().encodeToString(digest));
+				}
+			}
+				
+			return digest;
 		} catch (NoSuchAlgorithmException e) {
 			getLogger().error("NoSuchAlgorithmException occurred while trying to create digest", e);
 			return null;
@@ -1598,26 +1658,30 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Signs the SignatureInfo element of the V2GMessage header.
+	 * Signs the SignedInfo element of the V2GMessage header.
 	 * 
-	 * @param signatureInfo The SignatureInfo given as a byte array
-	 * @param ecPrivateKey The private key which is used to sign the SignatureInfo element
-	 * @return The signed SignatureInfo element given as a byte array
+	 * @param signedInfoElementExi The EXI-encoded SignedInfo element given as a byte array
+	 * @param ecPrivateKey The private key which is used to sign the SignedInfo element
+	 * @return The signature value for the SignedInfo element given as a byte array
 	 */
-	public static byte[] signSignatureInfo(byte[] signatureInfo, ECPrivateKey ecPrivateKey) {
+	public static byte[] signSignedInfoElement(byte[] signedInfoElementExi, ECPrivateKey ecPrivateKey) {
 		try {
-			Signature ecdsa = Signature.getInstance("SHA256withECDSA");
+			Signature ecdsa = Signature.getInstance("SHA256withECDSA", "SunEC");
+		
 			ecdsa.initSign(ecPrivateKey);
-			ecdsa.update(signatureInfo);
+			ecdsa.update(signedInfoElementExi);
+			
 			byte[] signature = ecdsa.sign();
 			
-			return signature;
-		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+			// Java operates on DER encoded signatures, but we must send the raw r and s values as signature 
+			byte[] rawSignature = getRawSignatureFromDEREncoding(signature);
+			
+			return rawSignature;
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchProviderException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to create signature", e);
 			return null;
 		}
 	}
-	
 	
 	/**
 	 * Verifies the signature given in the received header of an EVCC or SECC message
@@ -1626,16 +1690,37 @@ public final class SecurityUtils {
 	 * @param verifyXMLSigRefElements The HashMap of signature IDs and digest values of the message body 
 	 * 		  or fields respectively of the received message (to cross-check against the XML reference
 	 * 		  elements contained in the received message header)
-	 * @param ecPublicKey The public key corresponding to the private key which was used for the signature
+	 * @param verifyCert The certificate holding the public key corresponding to the private key which was used 
+	 * 			for the signature. Given as a byte array, this function will call verifySignature() with an X509Certificate
+	 * 			as last parameter.
+	 * @return True, if digest validation of all XML reference elements and signature validation was 
+	 * 		   successful, false otherwise
+	 */
+	public static boolean verifySignature(
+			SignatureType signature, 
+			HashMap<String, byte[]> verifyXMLSigRefElements, 
+			byte[] verifyCert) {
+		X509Certificate x509VerifyCert = getCertificate(verifyCert);
+		return verifySignature(signature, verifyXMLSigRefElements, x509VerifyCert);
+	}
+	
+	/**
+	 * Verifies the signature given in the received header of an EVCC or SECC message
+	 * 
+	 * @param signature The received header's signature
+	 * @param verifyXMLSigRefElements The HashMap of signature IDs and digest values of the message body 
+	 * 		  or fields respectively of the received message (to cross-check against the XML reference
+	 * 		  elements contained in the received message header)
+	 * @param verifyCert The certificate holding the public key corresponding to the private key which was used for the signature
 	 * @return True, if digest validation of all XML reference elements and signature validation was 
 	 * 		   successful, false otherwise
 	 */
 	public static boolean verifySignature(
 				SignatureType signature, 
 				HashMap<String, byte[]> verifyXMLSigRefElements, 
-				ECPublicKey ecPublicKey) {
+				X509Certificate verifyCert) {
 		byte[] calculatedReferenceDigest; 
-		boolean match;
+		boolean messageDigestsEqual;
 		
 		/*
 		 * 1. step: 
@@ -1644,27 +1729,35 @@ public final class SecurityUtils {
 		 */
 		for (String id : verifyXMLSigRefElements.keySet()) {
 			getLogger().debug("Verifying digest for element '" + id + "'");
-			match = false;
+			messageDigestsEqual = false;
 			calculatedReferenceDigest = verifyXMLSigRefElements.get(id);
 			
-			// A bit inefficient, but there are max. 4 elements to iterate over (what would be more efficient?)
 			for (ReferenceType reference : signature.getSignedInfo().getReference()) {
 				if (reference == null) {
 					getLogger().warn("Reference element to check is null");
 					continue;
 				}
 				
-				// We need to check the URI attribute, the Id attribute is likely to be null
+				// We need to check the URI attribute, not the Id attribute. But the Id must be set to sth. different than the IDs used in the body!
 				if (reference.getURI() == null) {
 					getLogger().warn("Reference ID element is null");
 					continue;
 				}
 				
-				if (reference.getURI().equals('#' + id) && Arrays.equals(reference.getDigestValue(), calculatedReferenceDigest))
-					match = true;
+				if (reference.getURI().equals('#' + id)) {
+					messageDigestsEqual = MessageDigest.isEqual(reference.getDigestValue(), calculatedReferenceDigest);
+					
+					if (showSignatureVerificationLog) {
+						getLogger().debug("\n" 
+										+ "\tReceived digest of reference with ID '" + id + "':   " + ByteUtils.toHexString(reference.getDigestValue()) + "\n"
+										+ "\tCalculated digest of reference with ID '" + id + "': " + ByteUtils.toHexString(calculatedReferenceDigest) + "\n"
+										+ "\t==> Match: " + messageDigestsEqual);
+					}
+					
+				}
 			}
 			
-			if (!match) {
+			if (!messageDigestsEqual) {
 				getLogger().error("No matching signature found for ID '" + id + "' and digest value " + 
 								  ByteUtils.toHexString(calculatedReferenceDigest));
 				return false;
@@ -1674,24 +1767,223 @@ public final class SecurityUtils {
 		
 		/*
 		 * 2. step:
-		 * Check the signature value from the header with the computed signature value
+		 * Check the signature itself
 		 */
-		byte[] computedSignedInfoDigest = generateDigest(signature.getSignedInfo(), true);
+		ECPublicKey ecPublicKey = (ECPublicKey) verifyCert.getPublicKey();
 		Signature ecdsa;
 		boolean verified; 
 		
 		try {
-			getLogger().debug("Verifying signature of signed info element");
+			getLogger().debug("Verifying signature of SignedInfo element ...");
+			
+			// Check if signature verification logging is to be shown (for debug purposes)
+			
+			if (showSignatureVerificationLog) showSignatureVerificationLog(verifyCert, signature, ecPublicKey);
+			
 			ecdsa = Signature.getInstance("SHA256withECDSA");
+			// The Signature object needs to be initialized by setting it into the VERIFY state with the public key
 			ecdsa.initVerify(ecPublicKey);
-			ecdsa.update(computedSignedInfoDigest);
-			verified = ecdsa.verify(signature.getSignatureValue().getValue());
+			
+			// The data to be signed needs to be supplied to the Signature object
+			byte[] exiEncodedSignedInfo = getExiCodec().getExiEncodedSignedInfo(signature.getSignedInfo());
+			ecdsa.update(exiEncodedSignedInfo);
+			
+			// Java operates on DER encoded signature values, but the sent signature consists of the raw r and s value 
+			byte[] signatureValue = signature.getSignatureValue().getValue();
+			byte[] derEncodedSignatureValue = getDEREncodedSignature(signatureValue);
+			
+			// The verify() method will do both, the decryption and SHA256 validation. So don't hash separately before verifying
+			verified = ecdsa.verify(derEncodedSignatureValue);
+			
+			return verified;
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to verify signature value", e);
 			return false;
+		} 
+	}
+	
+	
+	/**
+	 * Shows some extended logging while verifying a signature for debugging purposes.
+	 * @param verifyCert The X509Certificate whose public key is used to verify the signature, used for printing the 
+	 * 					 certificate's subject value
+	 * @param signature The signature contained in the header of the V2GMessage
+	 * @param ecPublicKey The public key used to verify the signature
+	 */
+	private static void showSignatureVerificationLog(X509Certificate verifyCert, SignatureType signature, ECPublicKey ecPublicKey) {
+		byte[] computedSignedInfoDigest = generateDigest(signature.getSignedInfo());
+		byte[] receivedSignatureValue = signature.getSignatureValue().getValue();
+		
+		getLogger().debug("\n" 
+				 + "\tCertificate used to verify signature: " + verifyCert.getSubjectX500Principal().getName() + "\n"
+				 + "\tPublic key used to verify signature: " + ByteUtils.toHexString(getUncompressedSubjectPublicKey(ecPublicKey)) + "\n"
+				 + "\tReceived signature value: " + ByteUtils.toHexString(receivedSignatureValue) + " (Base64: " + Base64.getEncoder().encodeToString(receivedSignatureValue) + ")\n"
+				 + "\tCalculated digest of SignedInfo element: " + ByteUtils.toHexString(computedSignedInfoDigest));
+	}
+	
+
+	/**
+	 * Java puts some encoding information into the ECPublicKey.getEncoded(). 
+	 * This method returns the raw ECPoint (the x and y coordinate of the public key) in uncompressed form 
+	 * (with the 0x04 as first octet), aka the Subject Public Key according to RFC 5480
+	 *
+	 * @param ecPublicKey The ECPublicKey provided by Java
+	 * @return The uncompressed Subject Public Key (with the first octet set to 0x04)
+	 */
+	public static byte[] getUncompressedSubjectPublicKey(ECPublicKey ecPublicKey) {
+		byte[] uncompressedPubKey = new byte[65];
+		uncompressedPubKey[0] = 0x04;
+		
+		byte[] affineX = ecPublicKey.getW().getAffineX().toByteArray();
+		byte[] affineY = ecPublicKey.getW().getAffineY().toByteArray();
+		
+		// If the length is 33 bytes, then the first byte is a 0x00 which is to be omitted
+		if (affineX.length == 33)
+			System.arraycopy(affineX, 1, uncompressedPubKey, 1, 32);
+		else
+			System.arraycopy(affineX, 0, uncompressedPubKey, 1, 32);
+		
+		if (affineY.length == 33)
+			System.arraycopy(affineY, 1, uncompressedPubKey, 33, 32);
+		else
+			System.arraycopy(affineY, 0, uncompressedPubKey, 33, 32);
+		
+		return uncompressedPubKey;
+	}
+	
+	
+	/**
+	 * An ECDSA signature consists of two integers s and r, each of the bit length equal to the curve size.
+	 * When Java is creating an ECDSA signature, it is encoding it in the DER (Distinguished Encoding Rules) format.
+	 * But in ISO 15118, we do not expect DER encoded signatures. Thus, this function takes the DER encoded signature
+	 * as input and returns the raw r and s integer values of the signature. 
+	 * 
+	 * @param derEncodedSignature The DER encoded signature as a result from java.security.Signature.sign()
+	 * @return A byte array containing only the r and s value of the signature
+	 */
+	public static byte[] getRawSignatureFromDEREncoding(byte[] derEncodedSignature) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] r = new byte[32];
+		byte[] s = new byte[32];
+		
+		// Length of r is encoded in the fourth byte (either 32 (hex: 0x20) or 33 (hex: 0x21))
+		int lengthOfR = (int) derEncodedSignature[3];
+		// Length of r is encoded in the second byte AFTER r (either 32 (hex: 0x20) or 33 (hex: 0x21))
+		int lengthOfS = (int) derEncodedSignature[lengthOfR + 5];
+		
+		// If r is made up of 33 bytes, then we need to skip the first fill byte (0x00) of r
+		if (lengthOfR == 33) System.arraycopy(derEncodedSignature, 5, r, 0, 32);
+		else System.arraycopy(derEncodedSignature, 4, r, 0, 32);
+		
+		// If r is made up of 33 bytes (hex value 0x21), then we need to skip the first fill byte (0x00) or r
+		if (lengthOfS == 33) System.arraycopy(derEncodedSignature, lengthOfR + 7, s, 0, 32);
+		else System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 0, 32);
+		
+	    try {
+			baos.write(r);
+			baos.write(s);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    
+	    byte[] rawRAndS = baos.toByteArray();
+	    
+	    return rawRAndS;
+	}
+	
+	
+	/**
+	 * When encoded in DER, the signature - holding the 
+	 * x-coordinate of the elliptic curve point in the value "r"
+	 * and the 
+	 * y-coordinate of the elliptic curve point in the value "s" 
+	 * - becomes the following sequence of bytes (in total 70 bytes instead of 64 bytes):
+	 *
+	 * 0x30 b1 0x02 b2 (vr) 0x02 b3 (vs)
+	 *	
+	 * where:
+	 *	
+	 * - 0x30 is always the first byte of the DER encoded signature format (ASN.1 tag for sequence)
+	 * - b1 is a single byte value, encoding the length in bytes of the remaining list of bytes 
+	 *   (from the first 0x02 to the end of the encoding); is a value between 0x44 and 0x46
+	 * - 0x02 is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
+	 * - b2 is a single byte value, encoding the length in bytes of (vr);
+	 *   (either 0x20 (32 bytes) or 0x21 (33 bytes), depending on whether an optional fill byte 0x00 is used as most significant byte)
+	 * - (vr) is the signed big-endian encoding of the value "r", of minimal length;
+	 * - 0x02 is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
+	 * - b3 is a single byte value, encoding the length in bytes of (vs);
+	 *   (either 0x20 (32 bytes) or 0x21 (33 bytes), depending on whether an optional fill byte 0x00 is used as most significant byte)
+	 * - (vs) is the signed big-endian encoding of the value "s", of minimal length.
+	 */
+	private static byte[] getDEREncodedSignature (byte[] signatureValue) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		// First we separate x and y of coordinates into separate variables
+	    byte[] r = new byte[32];
+	    byte[] s = new byte[32];
+	    System.arraycopy(signatureValue, 0, r, 0, 32);
+	    System.arraycopy(signatureValue, 32, s, 0, 32);
+	    
+	    int neededByteLength = signatureValue.length + 6; // 6 bytes for the header
+	    boolean isFillByteForR = false;
+	    boolean isFillByteForS = false;
+	    
+	    if (r[0] < 0) { // checks if the value is negative which is equivalent to r[0] is bigger than 0x7f
+	    	isFillByteForR = true;
+	    	neededByteLength += 1;
+	    }
+	    
+	    if (s[0] < 0)  {
+	    	isFillByteForS = true;
+	    	neededByteLength += 1;
+	    }
+	    
+		baos.write(0x30);
+		baos.write(neededByteLength - 2);
+		
+		baos.write(0x02);
+		
+		try {
+			if (isFillByteForR) {
+				baos.write(0x21);
+				baos.write(0x00);
+				baos.write(r);
+			} else {
+				baos.write(0x20);
+				baos.write(r);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		return verified;
+		baos.write(0x02);
+		
+		try {
+			if (isFillByteForS) {
+				baos.write(0x21);
+				baos.write(0x00);
+				baos.write(s);
+			} else {
+				baos.write(0x20);
+				baos.write(s);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		byte[] derEncodedSignature = baos.toByteArray();
+		
+		try {
+			baos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return derEncodedSignature;
 	}
 	
 	

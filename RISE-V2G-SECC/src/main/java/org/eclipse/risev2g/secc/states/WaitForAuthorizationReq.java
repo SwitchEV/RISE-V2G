@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.risev2g.secc.states;
 
-import java.security.interfaces.ECPublicKey;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -21,6 +20,7 @@ import org.eclipse.risev2g.shared.utils.SecurityUtils;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.AuthorizationResType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -58,30 +58,45 @@ public class WaitForAuthorizationReq extends ServerState {
 				}
 			} else {
 				getLogger().error("Response code '" + authorizationRes.getResponseCode() + "' will be sent");
+				setMandatoryFieldsForFailedRes();
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(authorizationRes, V2GMessages.NONE);
 	}
 	
 	
 	public boolean isResponseCodeOK(AuthorizationReqType authorizationReq, SignatureType signature) {
+		if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.EXTERNAL_PAYMENT)) {
+			if (authorizationReq.getGenChallenge() != null) 
+				getLogger().warn("EVCC sent a challenge parameter but " + PaymentOptionType.EXTERNAL_PAYMENT + 
+					 " has been chosen. The challenge parameter should not be present and will be ignored.");
+	
+			return true;
+		}
+		
 		if (!Arrays.equals(authorizationReq.getGenChallenge(), getCommSessionContext().getGenChallenge())) {
 			authorizationRes.setResponseCode(ResponseCodeType.FAILED_CHALLENGE_INVALID);
 			return false;
 		}
 		
-		// Only try to verify the signature in case we use a TLS connection
-		if (getCommSessionContext().isTlsConnection()) {
+		/*
+		 * Only try to verify the signature in case we use a TLS connection and 'Contract' has been chosen as payment 
+		 * method. If EIM has been chosen, then no contract certificate chain and not challenge will be sent by the EV, 
+		 * but TLS is possible with both EIM and PnC.
+		 */
+		if (getCommSessionContext().isTlsConnection() && 
+			getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT)) {
 			// Verify signature
 			HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-			verifyXMLSigRefElements.put(authorizationReq.getId(), SecurityUtils.generateDigest(authorizationReq, false));
+			verifyXMLSigRefElements.put(authorizationReq.getId(), SecurityUtils.generateDigest(authorizationReq));
 			
-			ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
-					getCommSessionContext().getContractSignatureCertChain().getCertificate())
-					.getPublicKey();
-			
-			if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+			if (!SecurityUtils.verifySignature(
+					signature, 
+					verifyXMLSigRefElements, 
+					getCommSessionContext().getContractSignatureCertChain().getCertificate())) {
 				authorizationRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
 				return false;
 			}
@@ -96,6 +111,12 @@ public class WaitForAuthorizationReq extends ServerState {
 
 	public void setAuthorizationFinished(boolean authorizationFinished) {
 		this.authorizationFinished = authorizationFinished;
+	}
+	
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		authorizationRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
 	}
 
 }

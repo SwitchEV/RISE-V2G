@@ -218,4 +218,14 @@ public final class ByteUtils {
 			return null;
 		}
 	}
+	
+	
+	public static byte[] intToFourBytes(int i) {
+        byte[] res = new byte[4];
+        res[0] = (byte) (i >>> 24);
+        res[1] = (byte) ((i >>> 16) & 0xFF);
+        res[2] = (byte) ((i >>> 8) & 0xFF);
+        res[3] = (byte) (i & 0xFF);
+        return res;
+    }
 }

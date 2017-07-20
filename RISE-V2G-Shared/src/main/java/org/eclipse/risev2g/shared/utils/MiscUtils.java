@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.enumerations.V2GMessages;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
@@ -216,6 +217,10 @@ public final class MiscUtils {
 			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
 			else returnValue = false;
 			break;
+		case "SignatureVerificationLog": // EV + EVSE property
+			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
+			else returnValue = false;
+			break;
 		default:
 			getLogger().error("No property with name '" + propertyName + "' found");
 		}
@@ -273,7 +278,7 @@ public final class MiscUtils {
 		
 		if (messageOrField instanceof SignedInfoType) namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
 		else namespace = GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.toString();
-		
+
 		return new JAXBElement(new QName(namespace, messageName), 
 				messageOrField.getClass(), 
 				messageOrField);

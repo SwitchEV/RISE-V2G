@@ -52,6 +52,7 @@ public class V2GTPMessage {
 		if (byteArray != null && byteArray.length >= 8) {
 			setProtocolVersion(Arrays.copyOfRange(byteArray, 0, 1)[0]);
 			setPayloadType(Arrays.copyOfRange(byteArray, 2, 4));
+			// TODO make sure the byteArray is not too long to not generate a Java heap space OutOfMemoryError
 			setPayload(Arrays.copyOfRange(byteArray, 8, byteArray.length));
 		} else {
 			getLogger().error("Received byte array does not match a V2GTPMessage");

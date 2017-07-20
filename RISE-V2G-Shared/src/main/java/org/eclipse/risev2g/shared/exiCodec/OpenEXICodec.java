@@ -46,9 +46,14 @@ public final class OpenEXICodec extends ExiCodec {
 	private GrammarCache grammarCache;
 	private EXISchemaFactory exiSchemaFactory;
 	private InputStream schemaMsgDefIS;
+	private InputStream schemaMsgBodyIS;
+	private InputStream schemaMsgDataTypesIS;
+	private InputStream schemaXMLDSigIS;
 	private InputStream schemaAppProtocolIS;
 	private EXISchema exiSchemaAppProtocol;
 	private EXISchema exiSchemaMsgDef;
+	private EXISchema exiSchemaMsgBody;
+	private EXISchema exiSchemaMsgDataTypes;
 	private EXISchema exiSchemaXMLDSig;
 	private short options;
 	private SAXTransformerFactory saxTransformerFactory;
@@ -89,6 +94,9 @@ public final class OpenEXICodec extends ExiCodec {
         
         setSchemaAppProtocolIS(getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString()));
         setSchemaMsgDefIS(getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_MSG_DEF.toString()));
+        setSchemaMsgBodyIS(getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_MSG_BODY.toString()));
+        setSchemaMsgDataTypesIS(getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_MSG_DATA_TYPES.toString()));
+        setSchemaXMLDSigIS(getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_XMLDSIG.toString()));
 	
         /*
          * It is currently a problem with OpenExi to resolve the XSDs which are imported in V2G_CI_MsgDef.xsd.
@@ -99,6 +107,7 @@ public final class OpenEXICodec extends ExiCodec {
         try {
 			setExiSchemaAppProtocol(getExiSchemaFactory().compile(new InputSource(getSchemaAppProtocolIS())));
 			setExiSchemaMsgDef(new EXISchemaReader().parse(getClass().getResourceAsStream("/schemas/V2G_CI_MsgDef.exig")));
+			setExiSchemaXMLDSig(getExiSchemaFactory().compile(new InputSource(getSchemaXMLDSigIS())));
         } catch (IOException | EXISchemaFactoryException | EXIOptionsException e) {
         	getLogger().error(e.getClass().getSimpleName() + " occurred while trying to set EXI schema", e);
 		}
@@ -296,5 +305,45 @@ public final class OpenEXICodec extends ExiCodec {
 	@Override
 	public void setFragment(boolean useFragmentGrammar) {
 		getTransmogrifier().setFragment(useFragmentGrammar);
+	}
+
+	public EXISchema getExiSchemaMsgBody() {
+		return exiSchemaMsgBody;
+	}
+
+	public void setExiSchemaMsgBody(EXISchema exiSchemaMsgBody) {
+		this.exiSchemaMsgBody = exiSchemaMsgBody;
+	}
+
+	public EXISchema getExiSchemaMsgDataTypes() {
+		return exiSchemaMsgDataTypes;
+	}
+
+	public void setExiSchemaMsgDataTypes(EXISchema exiSchemaMsgDataTypes) {
+		this.exiSchemaMsgDataTypes = exiSchemaMsgDataTypes;
+	}
+
+	public InputStream getSchemaMsgBodyIS() {
+		return schemaMsgBodyIS;
+	}
+
+	public void setSchemaMsgBodyIS(InputStream schemaMsgBodyIS) {
+		this.schemaMsgBodyIS = schemaMsgBodyIS;
+	}
+
+	public InputStream getSchemaMsgDataTypesIS() {
+		return schemaMsgDataTypesIS;
+	}
+
+	public void setSchemaMsgDataTypesIS(InputStream schemaMsgDataTypesIS) {
+		this.schemaMsgDataTypesIS = schemaMsgDataTypesIS;
+	}
+
+	public InputStream getSchemaXMLDSigIS() {
+		return schemaXMLDSigIS;
+	}
+
+	public void setSchemaXMLDSigIS(InputStream schemaXMLDSigIS) {
+		this.schemaXMLDSigIS = schemaXMLDSigIS;
 	}
 }

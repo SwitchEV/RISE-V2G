@@ -100,7 +100,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 				
 				ConnectionHandler connectionHandler = new ConnectionHandler(tlsClientSocket);
 				
-				// Notify the V2GCommunicationSessionHandlerSECC about a newly connected TCP client Socket
+				// Notify the V2GCommunicationSessionHandlerSECC about a newly connected TLS client socket
 				setChanged();
 				notifyObservers(connectionHandler);
 			}
@@ -122,7 +122,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			getLogger().error("Error occurred while trying to close TLSServerSocket (IOException)", e);
 		}
         
-        getLogger().debug("TCP server stopped");
+        getLogger().debug("TLS server stopped");
     }
 
 	public SSLSocket getTlsClientSocket() {

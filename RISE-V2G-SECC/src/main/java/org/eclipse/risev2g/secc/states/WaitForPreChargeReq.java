@@ -49,11 +49,22 @@ public class WaitForPreChargeReq extends ServerState {
 			.getAllowedRequests().add(V2GMessages.PRE_CHARGE_REQ);
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 			.getAllowedRequests().add(V2GMessages.POWER_DELIVERY_REQ);
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(preChargeRes, 
 							  (preChargeRes.getResponseCode().toString().startsWith("OK") ? 
 							  V2GMessages.FORK : V2GMessages.NONE)
 						 	 );
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
+		
+		preChargeRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
+		preChargeRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
 	}
 }

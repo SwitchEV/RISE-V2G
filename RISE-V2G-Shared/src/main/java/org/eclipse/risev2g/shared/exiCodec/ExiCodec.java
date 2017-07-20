@@ -15,17 +15,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.risev2g.shared.enumerations.GlobalValues;
 import org.eclipse.risev2g.shared.utils.MiscUtils;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import org.eclipse.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
+import org.eclipse.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
 import org.eclipse.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public abstract class ExiCodec {
@@ -74,29 +79,11 @@ public abstract class ExiCodec {
 		try {
 			if (getInStream() != null) getInStream().reset();
 			getMarshaller().marshal(jaxbObject, baos);
+			
 			setInStream(new ByteArrayInputStream(baos.toByteArray()));
 			baos.close();
 			
-			if (isXMLRepresentation()) {
-				// For debugging purposes, you can view the XML representation of marshalled messages
-				StringWriter sw = new StringWriter();
-				String className = "";
-	
-				if (jaxbObject instanceof V2GMessage) {
-					className = ((V2GMessage) jaxbObject).getBody().getBodyElement().getName().getLocalPart();
-				} else if (jaxbObject instanceof SupportedAppProtocolReq) {
-					className = "SupportedAppProtocolReq"; 
-				} else if (jaxbObject instanceof SupportedAppProtocolRes) {
-					className = "SupportedAppProtocolRes";
-				} else {
-					className = "marshalled JAXBElement";
-				}
-				
-				getMarshaller().marshal(jaxbObject, sw);
-				getLogger().debug("XML representation of " + className + ":\n" + sw.toString());
-				sw.close();
-			}
-			
+			if (isXMLRepresentation()) showXMLRepresentationOfMessage(jaxbObject);
 			return getInStream();
 		} catch (JAXBException | IOException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to marshal to InputStream from JAXBElement", e);
@@ -109,11 +96,70 @@ public abstract class ExiCodec {
 		try {
 			if (getInStream() != null) getInStream().reset();
 			setInStream(new ByteArrayInputStream(decodedExiString.getBytes()));
-			return getUnmarshaller().unmarshal(getInStream());
+			Object unmarhalledObject = getUnmarshaller().unmarshal(getInStream());
+			
+			if (isXMLRepresentation()) showXMLRepresentationOfMessage(unmarhalledObject);
+			return unmarhalledObject;
 		} catch (IOException | JAXBException | RuntimeException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to unmarshall decoded message", e);
 			return null;
 		}
+	}
+	
+	
+	/**
+	 * Shows the XML representation of a marshalled or unmarshalled message object. This is useful for debugging
+	 * purposes.
+	 * 
+	 * @param message The (un)marshalled message object
+	 */
+	@SuppressWarnings("rawtypes")
+	public void showXMLRepresentationOfMessage(Object message) {
+		StringWriter sw = new StringWriter();
+		String className = "";
+		
+		if (message instanceof V2GMessage) {
+			className = ((V2GMessage) message).getBody().getBodyElement().getName().getLocalPart();
+		} else if (message instanceof JAXBElement) {
+			className = ((JAXBElement) message).getName().getLocalPart();
+		} else if (message instanceof SupportedAppProtocolReq) {
+			className = "SupportedAppProtocolReq"; 
+		} else if (message instanceof SupportedAppProtocolRes) {
+			className = "SupportedAppProtocolRes";
+		} else {
+			className = "marshalled JAXBElement";
+		}
+		
+		try {
+			getMarshaller().marshal(message, sw);
+			getLogger().debug("XML representation of " + className + ":\n" + sw.toString());
+		} catch (JAXBException e) {
+			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to show XML representation of " + className, e);
+		}
+	}
+	
+	
+	/**
+	 * Provides the EXI encoding of the header's SignedInfo element. The resulting byte array can then be used to
+	 * verify a signature.
+	 * 
+	 * @param signedInfo The SignedInfo element of the V2GMessage header
+	 * @return The EXI encoding of the SignedInfo element given as a byte array
+	 */
+	public byte[] getExiEncodedSignedInfo(SignedInfoType signedInfo) {
+		// The schema-informed fragment grammar option needs to be used for EXI encodings in the header's signature
+		setFragment(true);
+		
+		// The SignedInfo element must be encoded
+		byte[] encodedSignedInfo = encodeEXI(
+										MiscUtils.getJaxbElement(signedInfo), 
+										GlobalValues.SCHEMA_PATH_XMLDSIG.toString()
+								   );
+		
+		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
+		setFragment(false);
+		
+		return encodedSignedInfo;
 	}
 	
 	

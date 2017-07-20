@@ -27,14 +27,11 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.eclipse.risev2g.shared.enumerations.GlobalValues;
-import org.eclipse.risev2g.shared.utils.ByteUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-
 import com.siemens.ct.exi.EXIFactory;
-import com.siemens.ct.exi.EncodingOptions;
 import com.siemens.ct.exi.GrammarFactory;
 import com.siemens.ct.exi.api.sax.EXIResult;
 import com.siemens.ct.exi.api.sax.EXISource;
@@ -62,8 +59,6 @@ public final class EXIficientCodec extends ExiCodec {
 		super();
 		
 		setExiFactory(DefaultEXIFactory.newInstance());
-		getExiFactory().setValuePartitionCapacity(0);
-		setFragment(false);  // needs to be set to true when encoding signatures
 		setGrammarFactory(GrammarFactory.newInstance());
 		
 		/*
@@ -82,6 +77,11 @@ public final class EXIficientCodec extends ExiCodec {
 		} catch (EXIException e) {
 			getLogger().error("Error occurred while trying to initialize EXIficientCodec (EXIException)!", e);
 		}
+		
+		// Non-default settings to fulfill requirements [V2G2-099] and [V2G2-600]
+		getExiFactory().setValuePartitionCapacity(0);
+		getExiFactory().setMaximumNumberOfBuiltInElementGrammars(0);
+		getExiFactory().setMaximumNumberOfBuiltInProductions(0);
 	}
 	
 	public static EXIficientCodec getInstance() {
@@ -107,11 +107,9 @@ public final class EXIficientCodec extends ExiCodec {
 		}
 			
 		InputStream inStream = marshalToInputStream(jaxbObject);
+		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		baos = ((ByteArrayOutputStream) encode(inStream, grammar));
-		
-		// If needed for debugging
-//		getLogger().debug("Encoded EXI byte stream to be sent: " + ByteUtils.toHexString(baos.toByteArray()));
 		
 		return baos.toByteArray();
 	}
@@ -141,9 +139,6 @@ public final class EXIficientCodec extends ExiCodec {
 	
 	@Override
 	public synchronized Object decodeEXI(byte[] exiEncodedMessage, boolean supportedAppProtocolHandshake) {
-		// If needed for debugging
-//		getLogger().debug("Decoded incoming EXI stream: " + ByteUtils.toHexString(exiEncodedMessage));
-		
 		ByteArrayInputStream bais = new ByteArrayInputStream(exiEncodedMessage);
 		setDecodedExi(decode(bais, supportedAppProtocolHandshake));
 		

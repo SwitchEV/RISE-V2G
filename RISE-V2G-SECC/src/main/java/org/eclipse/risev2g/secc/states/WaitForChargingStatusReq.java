@@ -42,7 +42,7 @@ public class WaitForChargingStatusReq extends ServerState {
 			 */
 			chargingStatusRes.setACEVSEStatus(
 					((IACEVSEController) getCommSessionContext().getACEvseController())
-					.getACEVSEStatus(EVSENotificationType.STOP_CHARGING)  
+					.getACEVSEStatus(EVSENotificationType.NONE)  
 					);
 			
 			// Optionally indicate that the EVCC is required to send a MeteringReceiptReq message 
@@ -70,9 +70,21 @@ public class WaitForChargingStatusReq extends ServerState {
 				
 				return getSendMessage(chargingStatusRes, V2GMessages.FORK);
 			}
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 		
 		return getSendMessage(chargingStatusRes, V2GMessages.NONE);
+	}
+
+	
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		chargingStatusRes.setEVSEID(getCommSessionContext().getACEvseController().getEvseID());
+		chargingStatusRes.setSAScheduleTupleID((short) 1);
+		chargingStatusRes.setACEVSEStatus(((IACEVSEController) getCommSessionContext().getACEvseController())
+					.getACEVSEStatus(EVSENotificationType.NONE)  
+					);
 	}
 
 }

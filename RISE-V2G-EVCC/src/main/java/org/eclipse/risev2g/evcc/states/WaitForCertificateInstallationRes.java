@@ -11,7 +11,6 @@
 package org.eclipse.risev2g.evcc.states;
 
 import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 
 import org.eclipse.risev2g.evcc.session.V2GCommunicationSessionEVCC;
@@ -78,21 +77,21 @@ public class WaitForCertificateInstallationRes extends ClientState {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				certificateInstallationRes.getContractSignatureCertChain().getId(),
-				SecurityUtils.generateDigest(certificateInstallationRes.getContractSignatureCertChain(), false));
+				SecurityUtils.generateDigest(certificateInstallationRes.getContractSignatureCertChain()));
 		verifyXMLSigRefElements.put(
 				certificateInstallationRes.getContractSignatureEncryptedPrivateKey().getId(),
-				SecurityUtils.generateDigest(certificateInstallationRes.getContractSignatureEncryptedPrivateKey(), false));
+				SecurityUtils.generateDigest(certificateInstallationRes.getContractSignatureEncryptedPrivateKey()));
 		verifyXMLSigRefElements.put(
 				certificateInstallationRes.getDHpublickey().getId(),
-				SecurityUtils.generateDigest(certificateInstallationRes.getDHpublickey(), false));
+				SecurityUtils.generateDigest(certificateInstallationRes.getDHpublickey()));
 		verifyXMLSigRefElements.put(
 				certificateInstallationRes.getEMAID().getId(),
-				SecurityUtils.generateDigest(certificateInstallationRes.getEMAID(), false));
+				SecurityUtils.generateDigest(certificateInstallationRes.getEMAID()));
 				
-		ECPublicKey ecPublicKey = (ECPublicKey) SecurityUtils.getCertificate(
-				certificateInstallationRes.getSAProvisioningCertificateChain().getCertificate())
-				.getPublicKey();
-		if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, ecPublicKey)) {
+		if (!SecurityUtils.verifySignature(
+				signature, 
+				verifyXMLSigRefElements, 
+				certificateInstallationRes.getSAProvisioningCertificateChain().getCertificate())) {
 			return false;
 		}
 		

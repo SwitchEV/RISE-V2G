@@ -29,9 +29,17 @@ public class WaitForSessionStopReq extends ServerState {
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		if (isIncomingMessageValid(message, SessionStopReqType.class, sessionStopRes)) {
 			getCommSessionContext().setStopV2GCommunicationSession(true);
-		} 
+		} else {
+			setMandatoryFieldsForFailedRes();
+		}
 			
 		return getSendMessage(sessionStopRes, V2GMessages.NONE);
+	}
+	
+
+	@Override
+	protected void setMandatoryFieldsForFailedRes() {
+		// No other fields need to be set besides response code
 	}
 
 }
