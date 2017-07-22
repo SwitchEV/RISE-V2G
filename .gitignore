@@ -6,6 +6,7 @@
 *.key
 *.pfx
 *.bin
+*.der
 *.class
 **/bin
 */bin
