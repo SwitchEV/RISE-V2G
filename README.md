@@ -26,7 +26,7 @@ Your assistance would therefore be very appreciated, be it by testing this refer
 A thorough documentation for RISE V2G will follow soon.
 
 - Have a look at the ISO 15118 Manual at [www.v2g-clarity.com/iso15118-masterclass](https://www.v2g-clarity.com/iso15118-masterclass) to fully understand how ISO 15118 works
-- View the [getting started guide and further documentation](https://wiki.eclipse.org/RISE_V2G) and the [introductory video on RISE V2G](https://www.youtube.com/watch?v=TarCZqbQ-Ko) to get you up and running.
+- View the [getting started guide and further documentation](https://wiki.eclipse.org/RISE_V2G) and the [introductory video on RISE V2G](https://www.youtube.com/watch?v=TarCZqbQ-Ko) to get you up and running. Be sure to exchange org.eclipse.risev2g with org.v2gclarity.risev2g in the getting started guide. The instructions in the Eclipse guide will be obsolete as soon as a new documentation will be available.
 - Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@tu-dortmund.de)
 
 
