@@ -214,8 +214,9 @@ keytool -import -keystore keystores/seccTruststore.jks -alias v2g_root_ca -file 
 keytool -import -keystore keystores/seccTruststore.jks -alias mo_root_ca -file certs/moRootCA.der -storepass:file passphrase.txt -noprompt
 # XX.3) keystore for the SECC which needs to hold the CPOSubCA1, CPOSubCA2, and SECCCert certificates
 keytool -importkeystore -srckeystore certs/cpoCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias secc_cert -destalias secc_cert -destkeystore keystores/seccKeystore.jks -storepass:file passphrase.txt -noprompt
-# XX.4) keystore for the EVCC which needs to hold the OEMSubCA1, OEMSubCA2, and OEMProvCert certificates
+# XX.4) keystore for the EVCC which needs to hold the OEMSubCA1, OEMSubCA2, and OEMProvCert certificates, and the contract certificate with chain
 keytool -importkeystore -srckeystore certs/oemCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias oem_prov_cert -destalias oem_prov_cert -destkeystore keystores/evccKeystore.jks -storepass:file passphrase.txt -noprompt
+keytool -importkeystore -srckeystore certs/moCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias contract_cert -destalias contract_cert -destkeystore keystores/evccKeystore.jks -storepass:file passphrase.txt -noprompt
 
 
 # Side notes for OCSP stapling in Java: see http://openjdk.java.net/jeps/8046321
