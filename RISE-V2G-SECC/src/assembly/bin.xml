@@ -25,6 +25,7 @@
 			<includes>
 				<include>*.p12</include>
 				<include>*.jks</include>
+				<include>*.pkcs8.der</include>
 			</includes>
 		</fileSet>
 		<fileSet>
