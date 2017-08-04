@@ -10,6 +10,6 @@ domainComponent			= CPO
 
 [ext]
 basicConstraints		= critical,CA:false
-keyUsage				= critical,digitalSignature
+keyUsage				= critical,digitalSignature,keyAgreement
 subjectKeyIdentifier	= hash
 
