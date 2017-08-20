@@ -10,6 +10,14 @@
 *.class
 **/bin
 */bin
+*/target
+.classpath
 .settings
 .project
+RISE-V2G-Certificates/certs
+RISE-V2G-Certificates/csrs
+RISE-V2G-Certificates/keystores
+RISE-V2G-Certificates/privateKeys
 RISE-V2G-Certificates/testing-symposia
+/.metadata/
+/.recommenders/

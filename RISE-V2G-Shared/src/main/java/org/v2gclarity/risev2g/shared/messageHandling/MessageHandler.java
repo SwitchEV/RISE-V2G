@@ -27,19 +27,24 @@ import java.security.interfaces.ECPrivateKey;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.ValidationEvent;
+import javax.xml.bind.ValidationEventHandler;
+import javax.xml.namespace.QName;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.exiCodec.EXIficientCodec;
 import org.v2gclarity.risev2g.shared.exiCodec.ExiCodec;
-import org.v2gclarity.risev2g.shared.exiCodec.OpenEXICodec;
 import org.v2gclarity.risev2g.shared.misc.V2GCommunicationSession;
 import org.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import org.v2gclarity.risev2g.shared.utils.ByteUtils;
-import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
+import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
+import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MessageHeaderType;
@@ -55,6 +60,14 @@ public class MessageHandler {
 	private Logger logger = LogManager.getLogger(this.getClass().getSimpleName()); 
 	private ExiCodec exiCodec;
 	private V2GCommunicationSession commSessionContext;
+	private JAXBContext jaxbContext;
+	private enum jaxbContextEnum {
+		SUPPORTED_APP_PROTOCOL_REQ,
+		SUPPORTED_APP_PROTOCOL_RES,
+		V2G_MESSAGE,
+		OTHER // includes the jaxbContext needed for the parameters of CertificateInstallationRes/CertificateUpdateRes
+	}
+	private jaxbContextEnum currentJaxbContext;
 	
 	/**
 	 * This constructor is used by V2GCommunicationSessionEVCC and -SECC
@@ -64,6 +77,7 @@ public class MessageHandler {
 	public MessageHandler(V2GCommunicationSession commSessionContext) {
 		this();
 		setCommSessionContext(commSessionContext);
+		setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
 	}
 	
 	/**
@@ -73,28 +87,33 @@ public class MessageHandler {
 		// Choose which implementation of an EXI codec to use
 		setExiCodec(EXIficientCodec.getInstance());
 //		setExiCodec(OpenEXICodec.getInstance());
+		
+		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
+		setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
 	} 
 	
 	public boolean isV2GTPMessageValid(V2GTPMessage v2gTpMessage) {
 		if (isVersionAndInversionFieldCorrect(v2gTpMessage) && 
 			isPayloadTypeCorrect(v2gTpMessage) && 
-			checkPayloadLength(v2gTpMessage)) 
+			isPayloadLengthCorrect(v2gTpMessage)) 
 			return true;
 		return false;
 	}
 	
 	public boolean isVersionAndInversionFieldCorrect(V2GTPMessage v2gTpMessage) {
-		/* 
-		 * The inversion field is set by a private method in V2GTPMessage.java and cannot be set from the outside
-		 * Therefore an additional check for the inversion field is not necessary.
-		 */
-		if (v2gTpMessage.getProtocolVersion() == GlobalValues.V2GTP_VERSION_1_IS.getByteValue()) return true;
+		if (v2gTpMessage.getProtocolVersion() != GlobalValues.V2GTP_VERSION_1_IS.getByteValue()) {
+			getLogger().error("Protocol version (" + ByteUtils.toStringFromByte(v2gTpMessage.getProtocolVersion()) + 
+							  ") is not supported!");
+			return false;
+		}
 		
-		getLogger().error("Protocol version or inverse protocol version of '" + 
-						  ByteUtils.toStringFromByte(v2gTpMessage.getProtocolVersion()) + 
-						  "' is not supported!");
+		if (v2gTpMessage.getInverseProtocolVersion() != (byte) (v2gTpMessage.getProtocolVersion() ^ 0xFF)) {
+			getLogger().error("Inverse protocol version (" + ByteUtils.toStringFromByte(v2gTpMessage.getInverseProtocolVersion()) + 
+							  ") does not match the inverse value of the protocol version (" + v2gTpMessage.getProtocolVersion() + ")!");
+			return false;
+		}
 		
-		return false;
+		return true;
 	}
 	
 	public boolean isPayloadTypeCorrect(V2GTPMessage v2gTpMessage) {
@@ -109,14 +128,23 @@ public class MessageHandler {
 		return false;
 	}
 	
-	public boolean checkPayloadLength(V2GTPMessage v2gTpMessage) {
-		if (ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) <= 
-			GlobalValues.V2GTP_HEADER_MAX_PAYLOAD_LENGTH.getLongValue()) return true;
-
-		getLogger().error("Payload length not supported! Payload length: " + 
-				ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) + " bytes");
+	public boolean isPayloadLengthCorrect(V2GTPMessage v2gTpMessage) {
+		if (ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) > GlobalValues.V2GTP_HEADER_MAX_PAYLOAD_LENGTH.getLongValue() ||
+			ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) < 0L) {
+			getLogger().error("Payload length (" + ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) + 
+							  " bytes) not supported! Must be between 0 and " + 
+							  GlobalValues.V2GTP_HEADER_MAX_PAYLOAD_LENGTH.getLongValue() + " bytes");
+			return false;
+		}
 		
-		return false;
+		int payLoadLengthField = ByteUtils.toIntFromByteArray(v2gTpMessage.getPayloadLength());
+		if (v2gTpMessage.getPayload().length != payLoadLengthField) {
+			getLogger().error("Length of payload (" + v2gTpMessage.getPayload().length + " bytes) does not match value of " +
+							  "field payloadLength (" + payLoadLengthField + " bytes)");
+			return false;
+		}
+		
+		return true;
 	}
 	
 	
@@ -185,7 +213,7 @@ public class MessageHandler {
 			SignedInfoType signedInfo = SecurityUtils.getSignedInfo(xmlSignatureRefElements);
 			
 			byte[] signature = SecurityUtils.signSignedInfoElement(
-									getExiCodec().getExiEncodedSignedInfo(signedInfo), 
+									getExiCodec().getExiEncodedSignedInfo(getJaxbElement(signedInfo)), 
 									signaturePrivateKey
 							   );
 			
@@ -200,6 +228,97 @@ public class MessageHandler {
 		}
 		
 		return header;
+	}
+	
+	
+	/**
+	 * Creates an XML element from the given object which may be a complete message or just a field of a
+	 * message. In case of XML signature generation, for some messages certain fields need to be signed
+	 * instead of the complete message. 
+	 * 
+	 * Setting the JAXBContext is a little time consuming. Thus, this method checks which JAXBContext is currently set and does
+	 * only set it anew if needed. For example, if the JAXBContext is already set for V2GMessage.class, then it will not be set anew
+	 * if the JAXBElement for a message derived from V2GMessage is to be returned.
+	 * The JAXBContext for the XML reference elements of CertificateInstallationRes/CertificateUpdateRes should be minimal and not
+	 * comprise the complete V2GMessage.class.
+	 * 
+	 * Suppressed unchecked warning, previously used a type-safe version such as new 
+	 * JAXBElement<SessionStopReqType>(new QName ... ) but this seems to work as well 
+	 * (I don't know how to infer the type correctly)
+	 * 
+	 * @param messageOrField The message or field for which a digest is to be generated
+	 * @return The JAXBElement of the provided message or field
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public JAXBElement getJaxbElement(Object messageOrField) {
+		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
+		String namespace = "";
+		JAXBElement jaxbElement = null;
+		
+		if (messageName.equals("EMAID") || 
+			messageName.equals("CertificateChain") ||
+			messageName.equals("DiffieHellmanPublickey") ||
+			messageName.equals("ContractSignatureEncryptedPrivateKey")) {
+			
+			/*
+			 * If this branch is entered, we always need to set the JAXBContext anew because those elements don't repeat 
+			 * (like the jaxbContext for V2GMessage.class)
+			 */
+			setJaxbContext(messageOrField.getClass());
+			setCurrentJaxbContext(jaxbContextEnum.OTHER);
+		} else if (messageOrField instanceof SupportedAppProtocolReq && 
+				  !getCurrentJaxbContext().equals(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ)) {
+			setJaxbContext(SupportedAppProtocolReq.class);
+			setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
+		} else if (messageOrField instanceof SupportedAppProtocolRes && 
+				  !getCurrentJaxbContext().equals(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_RES)) {
+			setJaxbContext(SupportedAppProtocolRes.class);
+			setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_RES);
+		} else if (!getCurrentJaxbContext().equals(jaxbContextEnum.V2G_MESSAGE)) {
+			setJaxbContext(V2GMessage.class);
+			setCurrentJaxbContext(jaxbContextEnum.V2G_MESSAGE);
+		} else {
+			// nothing to do here
+		}
+		
+		if (messageOrField instanceof SignedInfoType) {
+			namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
+		} else {
+			namespace = GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.toString();
+			
+			/* 
+			 * We need to set the localPart of the QName object for the CertificateInstallationRes/CertificateUpdateRes parameters
+			 * correctly. The messageOrField object's class name cannot be taken directly as it differs from what should be the 
+			 * XML element name.
+			 */
+			switch (messageName) {
+			case "CertificateChain":
+				messageName = "ContractSignatureCertChain";
+				namespace = "";
+				break;
+			case "DiffieHellmanPublickey":
+				messageName = "DHpublickey";
+				namespace = "";
+				break;
+			case "EMAID":
+				messageName = "eMAID";
+				namespace = "";
+				break;
+			case "ContractSignatureEncryptedPrivateKey":
+				messageName = "ContractSignatureEncryptedPrivateKey";
+				namespace = "";
+				break;
+			default:
+				break;
+			}
+			
+		}
+		
+		jaxbElement = new JAXBElement(new QName(namespace, messageName), 
+				messageOrField.getClass(), 
+				messageOrField);
+		
+		return jaxbElement; 
 	}
 	
 	
@@ -222,5 +341,46 @@ public class MessageHandler {
 
 	public void setCommSessionContext(V2GCommunicationSession commSessionContext) {
 		this.commSessionContext = commSessionContext;
+	}
+	
+	public JAXBContext getJaxbContext() {
+		return jaxbContext;
+	}
+
+	private void setJaxbContext(JAXBContext jaxbContext) {
+		this.jaxbContext = jaxbContext;
+	}
+	
+	public void setJaxbContext(Class... classesToBeBound) {
+		try {
+			setJaxbContext(JAXBContext.newInstance(classesToBeBound));
+			
+			// Every time we set the JAXBContext, we need to also set the marshaller and unmarshaller for EXICodec
+			getExiCodec().setUnmarshaller(getJaxbContext().createUnmarshaller());
+			getExiCodec().setMarshaller(getJaxbContext().createMarshaller());
+			
+			/*
+			 * JAXB by default silently ignores errors. Adding this code to throw an exception if 
+			 * something goes wrong.
+			 */
+			getExiCodec().getUnmarshaller().setEventHandler(
+				    new ValidationEventHandler() {
+				        @Override
+						public boolean handleEvent(ValidationEvent event ) {
+				            throw new RuntimeException(event.getMessage(),
+				                                       event.getLinkedException());
+				        }
+				});
+		} catch (JAXBException e) {
+			getLogger().error("A JAXBException occurred while trying to set JAXB context", e);
+		}
+	}
+
+	public jaxbContextEnum getCurrentJaxbContext() {
+		return currentJaxbContext;
+	}
+
+	public void setCurrentJaxbContext(jaxbContextEnum currentJaxbContext) {
+		this.currentJaxbContext = currentJaxbContext;
 	}
 }

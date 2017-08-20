@@ -32,6 +32,8 @@ import org.v2gclarity.risev2g.shared.messageHandling.ChangeProcessingState;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import org.v2gclarity.risev2g.shared.misc.State;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class ForkState extends ServerState {
@@ -61,21 +63,29 @@ public class ForkState extends ServerState {
 			return new TerminateSession("No valid V2GMessage received");
 		}
 		
+		State newState = getCommSessionContext().getStates().get(incomingMessage);
+		
+		if (newState == null) {
+			getLogger().error("Error occurred while switching from ForkState to a new state: new state is null");
+			
+			return new TerminateSession("Invalid message (" + v2gMessageReq.getBody().getBodyElement().getValue().getClass().getSimpleName() + 
+					  ") at this state (" + this.getClass().getSimpleName() + "). " +
+					  "Allowed messages are: " + this.getAllowedRequests().toString());
+		}
+		
 		if (allowedRequests.contains(incomingMessage)) {
-			State newState = getCommSessionContext().getStates().get(incomingMessage);
-			
-			if (newState == null) {
-				getLogger().error("Error occurred while switching from ForkState to a new state: new state is null");
-			}
-			
 			// delete all allowedRequests so that they won't be valid anymore
 			allowedRequests.clear();
-			
 			return new ChangeProcessingState(message, newState);
 		} else {
-			return new TerminateSession("Invalid message (" + v2gMessageReq.getBody().getBodyElement().getValue().getClass().getSimpleName() + 
-			  		  					") at this state (" + this.getClass().getSimpleName() + "). " +
-										"Allowed messages are: " + this.getAllowedRequests().toString());
+			getLogger().error("Invalid message (" + v2gMessageReq.getBody().getBodyElement().getValue().getClass().getSimpleName() + 
+	  						  ") at this state (" + this.getClass().getSimpleName() + "). " +
+	  						  "Allowed messages are: " + this.getAllowedRequests().toString());
+			
+			BodyBaseType responseMessage = getSequenceErrorResMessage(v2gMessageReq);
+			ServerState newServerState = (ServerState) newState;
+
+			return newServerState.getSendMessage(responseMessage, V2GMessages.NONE, ResponseCodeType.FAILED_SEQUENCE_ERROR);
 		}
 	}
 
@@ -97,9 +107,10 @@ public class ForkState extends ServerState {
 		return allowedRequests;
 	}
 
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		// Nothing to do here
+	public BodyBaseType getResponseMessage() {
+		return null;
 	}
 
 }

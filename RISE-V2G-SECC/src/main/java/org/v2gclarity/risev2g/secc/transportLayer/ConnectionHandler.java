@@ -169,6 +169,7 @@ public class ConnectionHandler extends Observable implements Runnable {
 	
 	public void stop() {
 		if (!isStopAlreadyInitiated()) {
+			getLogger().debug("Closing connection to client ...");
 			setStopAlreadyInitiated(true);
 			
 			try {

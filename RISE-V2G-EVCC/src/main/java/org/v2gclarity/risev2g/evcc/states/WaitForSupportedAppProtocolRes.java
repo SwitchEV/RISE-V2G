@@ -23,6 +23,8 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.evcc.states;
 
+import java.util.concurrent.TimeUnit;
+
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
@@ -89,9 +91,12 @@ public class WaitForSupportedAppProtocolRes extends ClientState {
 											supportedAppProtocolRes.getSchemaID());
 			}
 			
+			long elapsedTime = System.nanoTime() - getCommSessionContext().getV2gEVCCCommunicationSetupTimer();
+			long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+			
 			return getSendMessage(sessionSetupReq, V2GMessages.SESSION_SETUP_RES, (int) Math.min(
 					TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.SESSION_SETUP_RES), 
-					TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT - (System.currentTimeMillis() - getCommSessionContext().getV2gEVCCCommunicationSetupTimer())
+					TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT - elapsedTimeInMs
 					));
 		} else {
 			return new TerminateSession("Invalid message (" + message.getClass().getSimpleName() + 

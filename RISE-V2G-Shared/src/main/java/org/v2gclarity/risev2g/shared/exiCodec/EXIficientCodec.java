@@ -102,10 +102,9 @@ public final class EXIficientCodec extends ExiCodec {
 		return instance;
 	}
 	// -- END: SINGLETON DEFINITION --
-	
-
 
 	
+	@Override
 	public synchronized byte[] encodeEXI(Object jaxbObject, String xsdSchemaPath) {
 		Grammars grammar = null;
 		
@@ -121,7 +120,6 @@ public final class EXIficientCodec extends ExiCodec {
 		}
 			
 		InputStream inStream = marshalToInputStream(jaxbObject);
-		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		baos = ((ByteArrayOutputStream) encode(inStream, grammar));
 		

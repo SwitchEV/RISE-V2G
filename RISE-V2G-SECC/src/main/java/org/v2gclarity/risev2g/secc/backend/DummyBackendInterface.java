@@ -46,11 +46,6 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SalesTariffEntryType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SalesTariffType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 public class DummyBackendInterface implements IBackendInterface {
 
 	private V2GCommunicationSessionSECC commSessionContext;
@@ -140,7 +135,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		if (saScheduleTuple.getSalesTariff() != null) {
 			xmlSignatureRefElements.put(
 					salesTariff.getId(), 
-					SecurityUtils.generateDigest(salesTariff));
+					SecurityUtils.generateDigest(getCommSessionContext().getMessageHandler().getJaxbElement(salesTariff)));
 		}
 	
 		return saScheduleList;

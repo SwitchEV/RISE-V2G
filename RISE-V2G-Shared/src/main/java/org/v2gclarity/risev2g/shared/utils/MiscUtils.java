@@ -34,17 +34,12 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SupportedEnergyTransferModeType;
 
 
@@ -269,31 +264,5 @@ public final class MiscUtils {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to set config properties file");
 			return false;
 		}
-	}
-	
-	
-	/**
-	 * Creates an XML element from the given object which may be a complete message or just a field of a
-	 * message. In case of XML signature generation, for some messages certain fields need to be signed
-	 * instead of the complete message. 
-	 * 
-	 * Suppressed unchecked warning, previously used a type-safe version such as new 
-	 * JAXBElement<SessionStopReqType>(new QName ... ) but this seems to work as well 
-	 * (I don't know how to infer the type correctly)
-	 * 
-	 * @param messageOrField The message or field for which a digest is to be generated
-	 * @return The JAXBElement of the provided message or field
-	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static JAXBElement getJaxbElement(Object messageOrField) {
-		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
-		String namespace = "";
-		
-		if (messageOrField instanceof SignedInfoType) namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
-		else namespace = GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.toString();
-
-		return new JAXBElement(new QName(namespace, messageName), 
-				messageOrField.getClass(), 
-				messageOrField);
 	}
 }

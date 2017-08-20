@@ -159,7 +159,7 @@ public class DummyEVController implements IACEVController, IDCEVController {
 			ProfileEntryType chargingProfileEntry = new ProfileEntryType();
 			
 			PhysicalValueType maxPower = new PhysicalValueType();
-			maxPower.setMultiplier(new Byte("0"));
+			maxPower.setMultiplier(pMaxScheduleEntry.getPMax().getMultiplier());
 			maxPower.setUnit(UnitSymbolType.W);
 			maxPower.setValue(pMaxScheduleEntry.getPMax().getValue());
 

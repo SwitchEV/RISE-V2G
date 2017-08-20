@@ -23,14 +23,13 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.secc.states;
 
-import java.security.cert.X509Certificate;
-
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.enumerations.PKI;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
-import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentDetailsReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentDetailsResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
@@ -56,21 +55,27 @@ public class WaitForPaymentDetailsReq extends ServerState {
 				// Save contract certificate chain for certificate and signature verification/validation
 				getCommSessionContext().setContractSignatureCertChain(paymentDetailsReq.getContractSignatureCertChain());
 				
-				paymentDetailsRes.setEVSETimeStamp(System.currentTimeMillis());
+				paymentDetailsRes.setEVSETimeStamp(System.currentTimeMillis() / 1000L);
 				byte[] genChallenge = SecurityUtils.generateRandomNumber(16);
 				getCommSessionContext().setGenChallenge(genChallenge);
 				paymentDetailsRes.setGenChallenge(genChallenge);
 			} else {
-				getLogger().error("Response code '" + paymentDetailsRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(paymentDetailsRes, paymentDetailsRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (paymentDetailsRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new PaymentDetailsResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, paymentDetailsRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(paymentDetailsRes, paymentDetailsRes.getResponseCode());
+			}
 		}
 		
 		return getSendMessage(paymentDetailsRes, 
 				  			  (paymentDetailsRes.getResponseCode().toString().startsWith("OK") ? 
-				  			  V2GMessages.AUTHORIZATION_REQ : V2GMessages.NONE)
+				  			  V2GMessages.AUTHORIZATION_REQ : V2GMessages.NONE),
+				  			  paymentDetailsRes.getResponseCode()
 				 			 );
 	}
 	
@@ -84,17 +89,13 @@ public class WaitForPaymentDetailsReq extends ServerState {
 			return false;
 		}
 		
-		if (!SecurityUtils.isCertificateChainValid(paymentDetailsReq.getContractSignatureCertChain())) {
-			getLogger().error("Contract certificate chain is not valid");
-			paymentDetailsRes.setResponseCode(ResponseCodeType.FAILED_CERTIFICATE_EXPIRED);
-			return false;
-		}
-		
-		if (!SecurityUtils.isCertificateChainVerified(
-				GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(),
-				paymentDetailsReq.getContractSignatureCertChain())) {
-			getLogger().error("Contract certificate chain could not be verified");
-			paymentDetailsRes.setResponseCode(ResponseCodeType.FAILED_CERT_CHAIN_ERROR);
+		// Check complete contract certificate chain
+		ResponseCodeType certChainResponseCode = SecurityUtils.verifyCertificateChain(
+													paymentDetailsReq.getContractSignatureCertChain(),
+													GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(),
+													PKI.MO);
+		if (!certChainResponseCode.equals(ResponseCodeType.OK)) {
+			paymentDetailsRes.setResponseCode(certChainResponseCode);
 			return false;
 		}
 		
@@ -106,13 +107,19 @@ public class WaitForPaymentDetailsReq extends ServerState {
 			paymentDetailsRes.setResponseCode(ResponseCodeType.OK_CERTIFICATE_EXPIRES_SOON);
 		}
 		
+		// Check for FAILED_ContractCancelled
+		// TODO how to check if the EMAID provided by EVCC is not accepted by secondary actor?
+		if (!SecurityUtils.isEMAIDSynstaxValid(paymentDetailsReq.getContractSignatureCertChain())) {
+			// There is no good FAILED response code for this situation, but ContractCanceled is still better than FAILED
+			paymentDetailsRes.setResponseCode(ResponseCodeType.FAILED_CONTRACT_CANCELED);
+			return false;
+		}
+		
 		return true;
 	}
 	
-
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		paymentDetailsRes.setEVSETimeStamp(0L);
-		paymentDetailsRes.setGenChallenge(new byte[1]);
+	public BodyBaseType getResponseMessage() {
+		return paymentDetailsRes;
 	}
 }

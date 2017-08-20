@@ -71,7 +71,7 @@ public class WaitForChargingStatusRes extends ClientState {
 				// Set xml reference element
 				getXMLSignatureRefElements().put(
 						meteringReceiptReq.getId(), 
-						SecurityUtils.generateDigest(meteringReceiptReq));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(meteringReceiptReq)));
 				
 				// Set signing private key
 				setSignaturePrivateKey(SecurityUtils.getPrivateKey(

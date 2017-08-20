@@ -36,6 +36,7 @@ import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVChargeParameterType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVChargeParameterType;
@@ -137,14 +138,19 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 						return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.CABLE_CHECK_REQ);
 				}
 			} else {
-				getLogger().error("Response code '" + chargeParameterDiscoveryRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(chargeParameterDiscoveryRes, chargeParameterDiscoveryRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (chargeParameterDiscoveryRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new ChargeParameterDiscoveryResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, chargeParameterDiscoveryRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(chargeParameterDiscoveryRes, chargeParameterDiscoveryRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.NONE);
+		return getSendMessage(chargeParameterDiscoveryRes, V2GMessages.NONE, chargeParameterDiscoveryRes.getResponseCode());
 	}
 	
 	
@@ -169,23 +175,96 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 			return false;
 		}
 		
-		if (chargeParameterDiscoveryReq.getEVChargeParameter() == null ||
-				(chargeParameterDiscoveryReq.getEVChargeParameter().getValue() instanceof ACEVChargeParameterType && 
-					(((ACEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEAmount() == null ||
-					 ((ACEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEVMaxVoltage() == null ||
-					 ((ACEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEVMaxCurrent() == null ||
-					 ((ACEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEVMinCurrent() == null
-					)
-				) ||
-				(chargeParameterDiscoveryReq.getEVChargeParameter().getValue() instanceof DCEVChargeParameterType && 
-					(((DCEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getDCEVStatus() == null || 
-					 ((DCEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEVMaximumCurrentLimit() == null ||
-					 ((DCEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue()).getEVMaximumVoltageLimit() == null
-					) 
-				)
-			) {
+		if (!verifyChargeParameter(chargeParameterDiscoveryReq)) {
 			chargeParameterDiscoveryRes.setResponseCode(ResponseCodeType.FAILED_WRONG_CHARGE_PARAMETER);
 			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	private boolean verifyChargeParameter(ChargeParameterDiscoveryReqType chargeParameterDiscoveryReq) {
+		if (chargeParameterDiscoveryReq.getEVChargeParameter() == null) {
+			getLogger().error("EVChargeParameter is empty (null)");
+			return false;
+		}
+		
+		if (chargeParameterDiscoveryReq.getEVChargeParameter().getValue() instanceof ACEVChargeParameterType) {
+			ACEVChargeParameterType acEVChargeParameter = (ACEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue();
+			
+			if ( // Check if mandatory charge parameters are null
+				(acEVChargeParameter.getEAmount() == null || 
+				 acEVChargeParameter.getEVMaxVoltage() == null ||
+				 acEVChargeParameter.getEVMaxCurrent() == null ||
+				 acEVChargeParameter.getEVMinCurrent() == null
+				) ||
+				// Check if charge parameters are out of range
+				( acEVChargeParameter.getEAmount().getValue() < 0 ||
+				  acEVChargeParameter.getEAmount().getValue() * Math.pow(10, acEVChargeParameter.getEAmount().getMultiplier()) > 200000 ||
+				  acEVChargeParameter.getEVMaxVoltage().getValue() < 0 ||
+				  acEVChargeParameter.getEVMaxVoltage().getValue() * Math.pow(10, acEVChargeParameter.getEVMaxVoltage().getMultiplier()) > 1000 ||
+				  acEVChargeParameter.getEVMaxCurrent().getValue() < 0 ||
+				  acEVChargeParameter.getEVMaxCurrent().getValue() * Math.pow(10, acEVChargeParameter.getEVMaxCurrent().getMultiplier()) > 400 ||
+				  acEVChargeParameter.getEVMinCurrent().getValue() < 0 ||
+				  acEVChargeParameter.getEVMinCurrent().getValue() * Math.pow(10, acEVChargeParameter.getEVMinCurrent().getMultiplier()) > 400
+				)
+			) {
+				getLogger().error("One of the AC_EVChargeParameter elements is either null or out of range");
+				return false;
+			}
+		}
+		
+		if (chargeParameterDiscoveryReq.getEVChargeParameter().getValue() instanceof DCEVChargeParameterType) {
+			DCEVChargeParameterType dcEVChargeParameter = (DCEVChargeParameterType) chargeParameterDiscoveryReq.getEVChargeParameter().getValue();
+		
+			if ( // Check if mandatory charge parameters are null
+				(dcEVChargeParameter.getDCEVStatus() == null || 
+				  dcEVChargeParameter.getEVMaximumCurrentLimit() == null ||
+				  dcEVChargeParameter.getEVMaximumVoltageLimit() == null
+				) ||
+				// Check if charge parameters are out of range
+				( dcEVChargeParameter.getDCEVStatus().getEVRESSSOC() < 0 ||
+				  dcEVChargeParameter.getDCEVStatus().getEVRESSSOC() > 100 ||
+				  dcEVChargeParameter.getEVMaximumCurrentLimit().getValue() < 0 ||
+				  dcEVChargeParameter.getEVMaximumCurrentLimit().getValue() * Math.pow(10, dcEVChargeParameter.getEVMaximumCurrentLimit().getMultiplier()) > 400 ||
+				  dcEVChargeParameter.getEVMaximumVoltageLimit().getValue() < 0 ||
+				  dcEVChargeParameter.getEVMaximumVoltageLimit().getValue() * Math.pow(10, dcEVChargeParameter.getEVMaximumVoltageLimit().getMultiplier()) > 1000 ||
+				  ( // EVMaximumPowerLimit is optional
+				    dcEVChargeParameter.getEVMaximumPowerLimit() != null && (
+				      dcEVChargeParameter.getEVMaximumPowerLimit().getValue() < 0 ||
+				      dcEVChargeParameter.getEVMaximumPowerLimit().getValue() * Math.pow(10, dcEVChargeParameter.getEVMaximumPowerLimit().getMultiplier()) > 200000
+				    )
+				  ) ||
+				  ( // EVEnergyCapacity is optional
+				    dcEVChargeParameter.getEVEnergyCapacity() != null && (
+				      dcEVChargeParameter.getEVEnergyCapacity().getValue() < 0 ||
+				      dcEVChargeParameter.getEVEnergyCapacity().getValue() * Math.pow(10, dcEVChargeParameter.getEVEnergyCapacity().getMultiplier()) > 200000
+				    )
+				  ) ||
+				  ( // EVEnergyRequest is optional
+				    dcEVChargeParameter.getEVEnergyRequest() != null && (
+				      dcEVChargeParameter.getEVEnergyRequest().getValue() < 0 ||
+				      dcEVChargeParameter.getEVEnergyRequest().getValue() * Math.pow(10, dcEVChargeParameter.getEVEnergyRequest().getMultiplier()) > 200000
+				    )
+				  ) ||
+				  ( // FullSOC is optional
+				    dcEVChargeParameter.getFullSOC() != null && (
+				      dcEVChargeParameter.getFullSOC() < 0 ||
+				      dcEVChargeParameter.getFullSOC() > 100
+				    )
+				  ) ||
+				  ( // BulkSOC is optional
+				    dcEVChargeParameter.getBulkSOC() != null && (
+				      dcEVChargeParameter.getBulkSOC() < 0 ||
+				      dcEVChargeParameter.getBulkSOC() > 100
+				    )
+				  )
+				)
+			) {
+				getLogger().error("One of the DC_EVChargeParameter elements is either null or out of range");
+				return false;
+			}
 		}
 		
 		return true;
@@ -207,12 +286,9 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 		this.waitingForSchedule = waitingForSchedule;
 	}
 
-	
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		chargeParameterDiscoveryRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
-		chargeParameterDiscoveryRes.setEVSEChargeParameter(
-					((IACEVSEController) getCommSessionContext().getACEvseController()).getACEVSEChargeParameter());
+	public BodyBaseType getResponseMessage() {
+		return chargeParameterDiscoveryRes;
 	}
 
 }

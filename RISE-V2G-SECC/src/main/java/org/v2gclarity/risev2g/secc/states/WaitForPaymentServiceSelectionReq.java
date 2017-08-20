@@ -26,6 +26,7 @@ package org.v2gclarity.risev2g.secc.states;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentServiceSelectionReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentServiceSelectionResType;
@@ -69,14 +70,19 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 					return getSendMessage(paymentServiceSelectionRes, V2GMessages.AUTHORIZATION_REQ);
 				}
 			} else {
-				getLogger().error("Response code '" + paymentServiceSelectionRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(paymentServiceSelectionRes, paymentServiceSelectionRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (paymentServiceSelectionRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new PaymentServiceSelectionResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, paymentServiceSelectionRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(paymentServiceSelectionRes, paymentServiceSelectionRes.getResponseCode());
+			}
 		}
 
-		return getSendMessage(paymentServiceSelectionRes, V2GMessages.NONE);
+		return getSendMessage(paymentServiceSelectionRes, V2GMessages.NONE, paymentServiceSelectionRes.getResponseCode());
 	}
 	
 	
@@ -125,10 +131,10 @@ public class WaitForPaymentServiceSelectionReq extends ServerState {
 		return true;
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		// No other mandatory fields to be set besides response code
+	public BodyBaseType getResponseMessage() {
+		return paymentServiceSelectionRes;
 	}
 
 }

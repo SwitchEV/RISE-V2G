@@ -89,6 +89,7 @@ public class XSDResolver implements XMLEntityResolver {
 	}
 
 
+	@Override
 	public XMLInputSource resolveEntity(XMLResourceIdentifier resourceIdentifier) 
 			throws XNIException, IOException {
 		String literalSystemId = resourceIdentifier.getLiteralSystemId(); 

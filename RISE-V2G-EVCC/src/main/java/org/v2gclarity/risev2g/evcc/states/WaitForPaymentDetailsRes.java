@@ -23,8 +23,6 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.evcc.states;
 
-import java.util.Base64;
-
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
@@ -61,7 +59,7 @@ public class WaitForPaymentDetailsRes extends ClientState {
 				// Set xml reference element
 				getXMLSignatureRefElements().put(
 						authorizationReq.getId(), 
-						SecurityUtils.generateDigest(authorizationReq));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
 				
 				// Set signing private key
 				setSignaturePrivateKey(SecurityUtils.getPrivateKey(

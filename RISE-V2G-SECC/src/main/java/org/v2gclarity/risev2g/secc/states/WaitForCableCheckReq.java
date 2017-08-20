@@ -27,10 +27,12 @@ import org.v2gclarity.risev2g.secc.evseController.IDCEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CableCheckReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CableCheckResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForCableCheckReq extends ServerState {
@@ -71,10 +73,16 @@ public class WaitForCableCheckReq extends ServerState {
 				return getSendMessage(cableCheckRes, V2GMessages.CABLE_CHECK_REQ);
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (cableCheckRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new CableCheckResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, cableCheckRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(cableCheckRes, cableCheckRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(cableCheckRes, V2GMessages.NONE);
+		return getSendMessage(cableCheckRes, V2GMessages.NONE, cableCheckRes.getResponseCode());
 	}
 	
 
@@ -86,13 +94,9 @@ public class WaitForCableCheckReq extends ServerState {
 		this.evseProcessingFinished = evseProcessingFinished;
 	}
 
-	
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		cableCheckRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
-		cableCheckRes.setDCEVSEStatus(
-				((IDCEVSEController) getCommSessionContext().getDCEvseController()).getDCEVSEStatus(EVSENotificationType.NONE)
-				);
+	public BodyBaseType getResponseMessage() {
+		return cableCheckRes;
 	}
 
 }

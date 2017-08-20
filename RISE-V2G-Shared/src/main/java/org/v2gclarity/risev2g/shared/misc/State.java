@@ -32,7 +32,6 @@ import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.MessageHandler;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.SendMessage;
-import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
@@ -53,8 +52,7 @@ public abstract class State {
 	
 	public abstract ReactionToIncomingMessage processIncomingMessage(Object message);
 	
-	
-	protected SendMessage getSendMessage(
+	public SendMessage getSendMessage(
 			BodyBaseType message, 
 			V2GMessages nextExpectedMessage) {
 		int timeout = getTimeout(message, nextExpectedMessage);
@@ -62,7 +60,7 @@ public abstract class State {
 	}
 	
 	
-	protected SendMessage getSendMessage(
+	public SendMessage getSendMessage(
 			BodyBaseType message, 
 			V2GMessages nextExpectedMessage,
 			String optionalLoggerInfo) {
@@ -71,7 +69,7 @@ public abstract class State {
 	}
 	
 	
-	private int getTimeout(BodyBaseType message, V2GMessages nextExpectedMessage) {
+	public int getTimeout(BodyBaseType message, V2GMessages nextExpectedMessage) {
 		String messageName = message.getClass().getSimpleName().replace("Type", "");
 		
 		// If the sent message is a response message, 60s sequence timeout is used
@@ -97,7 +95,10 @@ public abstract class State {
 		
 		@SuppressWarnings({"unchecked"})
 		V2GMessage v2gMessage = getMessageHandler().getV2GMessage(
-				getXMLSignatureRefElements(), getSignaturePrivateKey(), MiscUtils.getJaxbElement(message));
+				getXMLSignatureRefElements(), 
+				getSignaturePrivateKey(),
+				getCommSessionContext().getMessageHandler().getJaxbElement(message)
+		);
 		
 		getLogger().debug("Preparing to send " + messageName + " " + optionalLoggerInfo);
 		

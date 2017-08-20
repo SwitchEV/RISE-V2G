@@ -102,6 +102,7 @@ import javax.xml.bind.JAXBElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.enumerations.PKI;
 import org.v2gclarity.risev2g.shared.exiCodec.ExiCodec;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CanonicalizationMethodType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
@@ -111,6 +112,7 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DigestMethodType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ListOfRootCertificateIDsType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ReferenceType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignatureMethodType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
@@ -229,67 +231,60 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Checks whether the given certificate is currently valid. 
+	 * Checks whether the given certificate is currently valid with regards to date and time.
 	 * 
 	 * @param certificate The X509Certificiate to be checked for validity
-	 * @return True, if the current date lies within the notBefore and notAfter attribute of the 
-	 * 		   certificate, false otherwise
+	 * @return ResponseCode FAILED_CertificateExpired, if the certificate is expired. FAILED, if the certificate is
+	 * 			not yet valid, since there is no other proper response code available. OK, otherwise.
 	 */
-	public static boolean isCertificateValid(X509Certificate certificate) {
+	public static ResponseCodeType verifyValidityPeriod(X509Certificate certificate) {
 		try {
 			certificate.checkValidity();		
-			return true;
+			return ResponseCodeType.OK;
 		} catch (CertificateExpiredException e) {
 			X500Principal subject = certificate.getSubjectX500Principal();
 			
-			getLogger().warn("Certificate with distinguished name '" + subject.getName().toString() + 
-							 "' already expired (not after " + certificate.getNotAfter().toString() + ")");
+			getLogger().warn("Certificate with distinguished name '" + subject.getName() + 
+							 "' already expired (not after " + certificate.getNotAfter() + ")");
+			return ResponseCodeType.FAILED_CERTIFICATE_EXPIRED;
 		} catch (CertificateNotYetValidException e) {
 			X500Principal subject = certificate.getSubjectX500Principal();
-			getLogger().warn("Certificate with distinguished name '" + subject.getName().toString() + 
-							 "' not yet valid (not before " + certificate.getNotBefore().toString() + ")");
+			getLogger().warn("Certificate with distinguished name '" + subject.getName() + 
+							 "' not yet valid (not before " + certificate.getNotBefore() + ")");
+			return ResponseCodeType.FAILED;
 		} 
-		
-		return false;
 	}
 	
 	
 	/**
-	 * 
-	 * [V2G2-925] states:
-	 * A leaf certificate shall be treated as invalid, if the trust anchor at the end of the chain does not
-	 * match the specific root certificate required for a certain use, or if the required Domain
-	 * Component value is not present.
-	 * 
-	 * Domain Component restrictions:
-	 * - SECC certificate: "CPO" (verification by EVCC) 
-	 * - provisioning certificate (signer certificate of a contract certificate: "CPS" (verification by EVCC)
-	 * - OEM Provisioning Certificate: "OEM" (verification by provisioning service (not EVCC or SECC))
+	 * Domain Component restrictions: <br/>
+	 * - SECC certificate: "CPO" (verification by EVCC) <br/>
+	 * - CPS leaf certificate: "CPS" (verification by EVCC) <br/>
+	 * - OEM Provisioning Certificate: "OEM" (verification by provisioning service (neither EVCC nor SECC))
 	 * 
 	 * @param certificate The X509Certificiate to be checked for validity
 	 * @param domainComponent The domain component to be checked for in the distinguished name of the certificate
-	 * @return True, if the current date lies within the notBefore and notAfter attribute of the 
-	 * 		   certificate and the given domain component is present in the distinguished name, false otherwise
+	 * @return True, if the given domain component is present in the distinguished name, false otherwise
 	 */
-	public static boolean isCertificateValid(X509Certificate certificate, String domainComponent) {
-		if (isCertificateValid(certificate)) {
-			String dn = certificate.getSubjectX500Principal().getName();
-			LdapName ln;
+	public static boolean verifyDomainComponent(X509Certificate certificate, String domainComponent) {
+		String dn = certificate.getSubjectX500Principal().getName();
+		LdapName ln;
+		
+		try {
+			ln = new LdapName(dn);
 			
-			try {
-				ln = new LdapName(dn);
-				
-				for (Rdn rdn : ln.getRdns()) {
-				    if (rdn.getType().equalsIgnoreCase("DC") && rdn.getValue().equals(domainComponent)) {
-				        return true;
-				    }
-				}
-			} catch (InvalidNameException e) {
-				getLogger().warn("InvalidNameException occurred while trying to check domain component of certificate", e);
+			for (Rdn rdn : ln.getRdns()) {
+			    if (rdn.getType().equalsIgnoreCase("DC") && rdn.getValue().equals(domainComponent)) {
+			        return true;
+			    }
 			}
-
-			return false;
-		} else return false;
+		} catch (InvalidNameException e) {
+			getLogger().error("InvalidNameException occurred while trying to check domain component of certificate", e);
+		}
+		
+		getLogger().error("Expected domain component (DC) '" + domainComponent + "' not found in certificate "
+						+ "with distinguished name '" + dn + "'");
+		return false;
 	}
 	
 	
@@ -308,47 +303,163 @@ public final class SecurityUtils {
 		
 		return (short) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 	}
-	
 
-	/**
-	 * Checks whether each certificate in the given certificate chain is currently valid. 
-
-	 * @param certChain The certificate chain to iterate over to check for validity
-	 * @return True, if the current date lies within the notBefore and notAfter attribute of each 
-	 * 		   certificate contained in the provided certificate chain, false otherwise
-	 */
-	public static boolean isCertificateChainValid(CertificateChainType certChain) {
-		if (certChain == null) {
-			getLogger().error("Certificate chain is NULL");
-			return false;
-		}
-		
-		if (!isCertificateValid(getCertificate(certChain.getCertificate()))) 
-			return false;
-		
-		SubCertificatesType subCertificates = certChain.getSubCertificates();
-		for (byte[] cert : subCertificates.getCertificate()) {
-			if (!isCertificateValid(getCertificate(cert))) return false;
-		}
-		
-		return true;
-	}
 	
 	/**
-	 * Checks whether each certificate in the given certificate chain is currently valid and if a given
-	 * domain component (DC) in the distinguished name is set.
-	 *
+	 * Executes the following validity checks:
+	 * <br/><br/>
+	 * 1. Verifies the signature for each certificate in the given certificate chain all the way up to the trust
+	 *    anchor. Certificates in certificate chain must be in the right order (leaf -> Sub-CA2 -> Sub-CA1) <br/>
+	 * 2. Verifies whether the given certificate is currently valid with regards to date and time.<br/>
+	 * 3. Verifies that certificate attributes are set correctly, depending on the PKI the certificate chain belongs to
+	 * 
 	 * @param certChain The certificate chain to iterate over to check for validity
-	 * @param domainComponent The domain component 
-	 * @return True, if the domain component is correctly set and if the current date lies within the notBefore 
-	 * 		   and notAfter attribute of each certificate contained in the provided certificate chain, 
-	 * 		   false otherwise
+	 * @param trustStoreFileName The relative path and file name of the truststore 
+	 * @param pki The Public Key Infrastructure to which the certChain belongs (a PKI enumeration value)
+	 * @return ResponseCode applicable to the verification steps 
 	 */
-	public static boolean isCertificateChainValid(CertificateChainType certChain, String domainComponent) {
-		if (isCertificateChainValid(certChain)) {
-			if (isCertificateValid(getCertificate(certChain.getCertificate()), domainComponent)) return true;
-			else return false;
-		} else return false;
+	public static ResponseCodeType verifyCertificateChain(
+			CertificateChainType certChain, 
+			String trustStoreFileName,
+			PKI pki) {
+		X509Certificate leafCertificate = null;
+		X509Certificate subCA1Certificate = null;
+		X509Certificate subCA2Certificate = null;
+		
+		// Get leaf certificate
+		if (certChain != null) {
+			leafCertificate = getCertificate(certChain.getCertificate());
+		} else {
+			getLogger().error("Signature verification failed because provided certificate chain is empty (null)");
+			return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+		}
+		
+		// Get Sub-CA certificates
+		if (leafCertificate != null) {
+			SubCertificatesType subCertificates = certChain.getSubCertificates();
+			
+			if (subCertificates != null && subCertificates.getCertificate().size() != 0) {
+				subCA2Certificate = getCertificate(subCertificates.getCertificate().get(0));
+				
+				if (subCertificates.getCertificate().size() == 2)
+					subCA1Certificate = getCertificate(subCertificates.getCertificate().get(1));
+			} else {
+				getLogger().error("Signature verification failed because no Sub-CA certificates available in provided "
+								+ "certificate chain");
+				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			}
+		} else {
+			getLogger().error("Signature verification failed because no leaf certificate available in provided "
+							+ "certificate chain");
+			return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+		}
+		
+		
+		/*
+		 * ****************
+		 * SIGNATURE CHECKS
+		 * ****************
+		 */
+		
+		// Check signature of leaf certificate
+		if (!verifySignature(leafCertificate, subCA2Certificate)) return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+				 
+		// Check signature of Sub-CA 2 and optionally, if present, Sub-CA 2 certificate
+		if (subCA1Certificate != null) {
+			if (!verifySignature(subCA2Certificate, subCA1Certificate)) return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			if (!verifySignature(subCA1Certificate, trustStoreFileName)) return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+		} else {
+			// In case there is only one intermediate certificate (profile of Sub-CA 2)
+			if (!verifySignature(subCA2Certificate, trustStoreFileName)) return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+		}
+		
+		
+		/*
+		 * **********************
+		 * VALIDITY PERIOD CHECKS
+		 * **********************
+		 */
+		ResponseCodeType validityResponseCode = null;
+		
+		// Check validity of leaf certificate
+		validityResponseCode = verifyValidityPeriod(leafCertificate); 
+		if (!validityResponseCode.equals(ResponseCodeType.OK)) return validityResponseCode;
+		
+		// Check validity of Sub-CA2 certificate
+		validityResponseCode = verifyValidityPeriod(subCA2Certificate);
+		if (!validityResponseCode.equals(ResponseCodeType.OK)) return validityResponseCode;
+		
+		// Check validity of Sub-CA1 certificate, if present
+		if (subCA1Certificate != null) {
+			validityResponseCode = verifyValidityPeriod(subCA1Certificate);
+			if (!validityResponseCode.equals(ResponseCodeType.OK)) return validityResponseCode;
+		}
+		
+		
+		/*
+		 * ***********************************
+		 * COMMON CERTIFICATE ATTRIBUTES CHECK
+		 * ***********************************
+		 */
+		
+		// Check pathLenContraint (maximum number of non-self-issued intermediate certificates that may follow this certificate)
+		if (subCA2Certificate.getBasicConstraints() != 0) {
+			getLogger().error("Sub-CA 2 certificate with distinguished name '" + 
+							  subCA2Certificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+							  "pathLenConstraint. Should be 0 instead of " + subCA2Certificate.getBasicConstraints());
+			return ResponseCodeType.FAILED_CERTIFICATE_EXPIRED;
+		}
+		
+		if (subCA1Certificate != null && subCA1Certificate.getBasicConstraints() != 1) {
+			getLogger().error("Sub-CA 1 certificate with distinguished name '" + 
+							  subCA1Certificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+							  "pathLenConstraint. Should be 1 instead of " + subCA2Certificate.getBasicConstraints());
+			return ResponseCodeType.FAILED_CERTIFICATE_EXPIRED;
+		}
+		
+		
+		/*
+		 * *****************************************
+		 * PKI SPECIFIC CERTIFICATE ATTRIBUTES CHECK
+		 * *****************************************
+		 */
+		
+		switch (pki) {
+		case CPO:
+			if (!verifyDomainComponent(leafCertificate, "CPO")) {
+				getLogger().error("SECC leaf certificate with distinguished name '" + 
+						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						  "domain component. Should be 'CPO'");
+				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			}
+			break;
+		case CPS:
+			if (!verifyDomainComponent(leafCertificate, "CPS")) {
+				getLogger().error("CPS leaf certificate with distinguished name '" + 
+						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						  "domain component. Should be 'CPS'");
+				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			}
+			break;
+		case MO:
+			if (!isEMAIDSynstaxValid(certChain)) {
+				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			}
+			break;
+		case OEM:
+			if (!verifyDomainComponent(leafCertificate, "OEM")) {
+				getLogger().error("OEM provisioning certificate with distinguished name '" + 
+						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						  "domain component. Should be 'OEM'");
+				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
+			}
+			break;
+		default:
+			break;
+		}
+
+		
+		return ResponseCodeType.OK;
 	}
 	
 	
@@ -361,7 +472,7 @@ public final class SecurityUtils {
 	 * 		  key with which the given certificate should have been signed
 	 * @return True, if the verification was successful, false otherwise
 	 */
-	public static boolean isCertificateVerified(X509Certificate certificate, X509Certificate issuingCertificate) {
+	public static boolean verifySignature(X509Certificate certificate, X509Certificate issuingCertificate) {
 		X500Principal subject = certificate.getSubjectX500Principal();
 		X500Principal expectedIssuerSubject = certificate.getIssuerX500Principal();
 		X500Principal issuerSubject = issuingCertificate.getSubjectX500Principal();
@@ -386,68 +497,14 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Verifies for each certificate in the given certificate chain that it was signed using the private key 
-	 * that corresponds to the public key of a certificate contained in the certificate chain or the truststore.
-	 * 
-	 * @param trustStoreFileName The relative path and file name of the truststore 
-	 * @param certChain The certificate chain holding the leaf certificate and zero or more intermediate 
-	 * 		  certificates (sub CAs) 
-	 * @return True, if the verification was successful, false otherwise
-	 */
-	public static boolean isCertificateChainVerified(String trustStoreFileName, CertificateChainType certChain) {
-		X509Certificate issuingCertificate = null; 
-		
-		if (certChain != null) {
-			X509Certificate leafCertificate = getCertificate(certChain.getCertificate());
-			if (leafCertificate != null) {
-				SubCertificatesType subCertificates = certChain.getSubCertificates();
-				if (subCertificates != null) {
-					// Sub certificates must be in the right order (leaf -> SubCA2 -> SubCA1 -> RootCA)
-					issuingCertificate = getCertificate(subCertificates.getCertificate().get(0));
-					if (!isCertificateVerified(leafCertificate, issuingCertificate)) return false;
-					
-					for (int i=0; i < subCertificates.getCertificate().size(); i++) {
-						if ((i+1) < subCertificates.getCertificate().size()) {
-							issuingCertificate = getCertificate(subCertificates.getCertificate().get(i+1));
-							if (!isCertificateVerified(getCertificate(subCertificates.getCertificate().get(i)), issuingCertificate)) 
-								return false;
-						} else {
-							if (isCertificateTrusted(trustStoreFileName, getCertificate(subCertificates.getCertificate().get(i)))) return true;
-							else return false;
-						}
-					}
-				} else {
-					if (!isCertificateTrusted(trustStoreFileName, leafCertificate)) return false;
-				}
-			} else {
-				getLogger().error("No leaf certificate available in provided certificate chain, " + 
-								  "therefore no verification possible");
-				return false;
-			}
-		} else {
-			getLogger().error("Provided certificate chain is null, could therefore not be verified");
-			return false;
-		}
-		
-		return false;
-	}
-	
-	
-	/**
-	 * Iterates over the certificates stored in the truststore to check if one of the respective public
-	 * keys of the certificates is the corresponding key to the private key with which the provided 
-	 * certificate has been signed.
+	 * Iterates over the certificates stored in the truststore to verify the signature of the provided certificate
 	 * 
 	 * @param trustStoreFilename The relative path and file name of the truststore
 	 * @param certificate The certificate whose signature needs to be signed
 	 * @return True, if the provided certificate has been signed by one of the certificates in the 
 	 * 		   truststore, false otherwise
 	 */
-	public static boolean isCertificateTrusted(String trustStoreFilename, X509Certificate certificate) {
-		/*
-		 * Use one of the root certificates in the truststore to verify the signature of the
-		 * last certificate in the chain
-		 */
+	public static boolean verifySignature(X509Certificate certificate, String trustStoreFilename) {
 		KeyStore trustStore = SecurityUtils.getTrustStore(trustStoreFilename, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString());
 		X500Principal expectedIssuer = certificate.getIssuerX500Principal();
 		
@@ -456,7 +513,7 @@ public final class SecurityUtils {
 			while (aliases.hasMoreElements()) {
 				X509Certificate rootCA = (X509Certificate) trustStore.getCertificate(aliases.nextElement());
 				if (rootCA.getSubjectX500Principal().getName().equals(expectedIssuer.getName()) &&
-					isCertificateVerified(certificate, rootCA)) return true;
+					verifySignature(certificate, rootCA)) return true;
 			}
 		} catch (KeyStoreException | NullPointerException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to verify trust " +
@@ -1012,9 +1069,7 @@ public final class SecurityUtils {
 		if (contractCert == null) {
 			getLogger().info("No contract certificate stored");
 			return true;
-		} else if (contractCert != null && !isCertificateValid(contractCert)) {
-			getLogger().info("Stored contract certificate with distinguished name '" + 
-							 contractCert.getSubjectX500Principal().getName() + "' is not valid");
+		} else if (!verifyValidityPeriod(contractCert).equals(ResponseCodeType.OK)) { 
 			return true;
 		} else return false;
 	}
@@ -1064,9 +1119,7 @@ public final class SecurityUtils {
 		if (contractCert == null) {
 			getLogger().info("No contract certificate stored");
 			return ContractCertificateStatus.INSTALLATION_NEEDED;
-		} else if (contractCert != null && !isCertificateValid(contractCert)) {
-			getLogger().info("Stored contract certificate with distinguished name '" + 
-							 contractCert.getSubjectX500Principal().getName() + "' is not valid");
+		} else if (contractCert != null && !verifyValidityPeriod(contractCert).equals(ResponseCodeType.OK)) {
 			return ContractCertificateStatus.INSTALLATION_NEEDED;
 		} else {
 			short validityOfContractCert = getValidityPeriod(contractCert);
@@ -1400,7 +1453,7 @@ public final class SecurityUtils {
 			byte[] contractSignatureEncryptedPrivateKey,
 			ECPrivateKey certificateECPrivateKey) {
 		// Generate shared secret
-		ECPublicKey publicKey = (ECPublicKey) getPublicKey(dhPublicKey);
+		ECPublicKey publicKey = getPublicKey(dhPublicKey);
 		byte[] sharedSecret = generateSharedSecret(certificateECPrivateKey, publicKey);
 		if (sharedSecret == null) {
 			getLogger().error("Shared secret could not be generated");
@@ -1619,12 +1672,11 @@ public final class SecurityUtils {
 	 * the second parameter is to be set to true, for all other messages or fields the second parameter 
 	 * needs to be set to false.
 	 * 
-	 * @param messageOrField The message or field for which a digest is to be generated
+	 * @param jaxbMessageOrField The message or field for which a digest is to be generated, given as a JAXB element
 	 * @param digestForSignedInfoElement True if a digest for the SignedInfoElement of the header's signature is to be generated, false otherwise
 	 * @return The SHA-256 digest for message or field
 	 */
-	public static byte[] generateDigest(Object messageOrField) {
-		JAXBElement jaxbElement = MiscUtils.getJaxbElement(messageOrField);
+	public static byte[] generateDigest(JAXBElement jaxbMessageOrField) {
 		byte[] encoded; 
 		
 		// The schema-informed fragment grammar option needs to be used for EXI encodings in the header's signature
@@ -1634,8 +1686,9 @@ public final class SecurityUtils {
 		 * When creating the signature value for the SignedInfoElement, we need to use the XMLdsig schema,
 		 * whereas for creating the reference elements of the signature, we need to use the V2G_CI_MsgDef schema.
 		 */
-		if (messageOrField instanceof SignedInfoType) encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
-		else encoded = getExiCodec().encodeEXI(jaxbElement, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
+		if (jaxbMessageOrField.getValue() instanceof SignedInfoType) {
+			encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
+		} else encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
 		
 		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
 		getExiCodec().setFragment(false);
@@ -1655,9 +1708,9 @@ public final class SecurityUtils {
 				 * Show Base64 encoding of digests only for reference elements, not for the SignedInfo element.
 				 * The hashed SignedInfo element is input for ECDSA before the final signature value gets Base64 encoded.
 				 */
-				if ( !(messageOrField instanceof SignedInfoType) ) {
+				if ( !(jaxbMessageOrField.getValue() instanceof SignedInfoType) ) {
 					getLogger().debug("\n"
-									+ "\tDigest generated for reference element " + messageOrField.getClass().getSimpleName() + ": " + ByteUtils.toHexString(digest) + "\n"
+									+ "\tDigest generated for reference element " + jaxbMessageOrField.getClass().getSimpleName() + ": " + ByteUtils.toHexString(digest) + "\n"
 									+ "\tBase64 encoding of digest: " + Base64.getEncoder().encodeToString(digest));
 				}
 			}
@@ -1700,6 +1753,7 @@ public final class SecurityUtils {
 	 * Verifies the signature given in the received header of an EVCC or SECC message
 	 * 
 	 * @param signature The received header's signature
+	 * @param jaxbSignature The received header's signature, given as a JAXB element (needed for EXI operations)
 	 * @param verifyXMLSigRefElements The HashMap of signature IDs and digest values of the message body 
 	 * 		  or fields respectively of the received message (to cross-check against the XML reference
 	 * 		  elements contained in the received message header)
@@ -1711,16 +1765,18 @@ public final class SecurityUtils {
 	 */
 	public static boolean verifySignature(
 			SignatureType signature, 
+			JAXBElement jaxbSignature,
 			HashMap<String, byte[]> verifyXMLSigRefElements, 
 			byte[] verifyCert) {
 		X509Certificate x509VerifyCert = getCertificate(verifyCert);
-		return verifySignature(signature, verifyXMLSigRefElements, x509VerifyCert);
+		return verifySignature(signature, jaxbSignature, verifyXMLSigRefElements, x509VerifyCert);
 	}
 	
 	/**
 	 * Verifies the signature given in the received header of an EVCC or SECC message
 	 * 
 	 * @param signature The received header's signature
+	 * @param jaxbSignature The received header's signature, given as a JAXB element (needed for EXI operations)
 	 * @param verifyXMLSigRefElements The HashMap of signature IDs and digest values of the message body 
 	 * 		  or fields respectively of the received message (to cross-check against the XML reference
 	 * 		  elements contained in the received message header)
@@ -1729,7 +1785,8 @@ public final class SecurityUtils {
 	 * 		   successful, false otherwise
 	 */
 	public static boolean verifySignature(
-				SignatureType signature, 
+				SignatureType signature,
+				JAXBElement jaxbSignedInfo,
 				HashMap<String, byte[]> verifyXMLSigRefElements, 
 				X509Certificate verifyCert) {
 		byte[] calculatedReferenceDigest; 
@@ -1791,14 +1848,14 @@ public final class SecurityUtils {
 			
 			// Check if signature verification logging is to be shown (for debug purposes)
 			
-			if (showSignatureVerificationLog) showSignatureVerificationLog(verifyCert, signature, ecPublicKey);
+			if (showSignatureVerificationLog) showSignatureVerificationLog(verifyCert, signature, jaxbSignedInfo, ecPublicKey);
 			
 			ecdsa = Signature.getInstance("SHA256withECDSA");
 			// The Signature object needs to be initialized by setting it into the VERIFY state with the public key
 			ecdsa.initVerify(ecPublicKey);
 			
 			// The data to be signed needs to be supplied to the Signature object
-			byte[] exiEncodedSignedInfo = getExiCodec().getExiEncodedSignedInfo(signature.getSignedInfo());
+			byte[] exiEncodedSignedInfo = getExiCodec().getExiEncodedSignedInfo(jaxbSignedInfo);
 			ecdsa.update(exiEncodedSignedInfo);
 			
 			// Java operates on DER encoded signature values, but the sent signature consists of the raw r and s value 
@@ -1823,8 +1880,12 @@ public final class SecurityUtils {
 	 * @param signature The signature contained in the header of the V2GMessage
 	 * @param ecPublicKey The public key used to verify the signature
 	 */
-	private static void showSignatureVerificationLog(X509Certificate verifyCert, SignatureType signature, ECPublicKey ecPublicKey) {
-		byte[] computedSignedInfoDigest = generateDigest(signature.getSignedInfo());
+	private static void showSignatureVerificationLog(
+			X509Certificate verifyCert, 
+			SignatureType signature, 
+			JAXBElement jaxbSignedInfo, 
+			ECPublicKey ecPublicKey) {
+		byte[] computedSignedInfoDigest = generateDigest(jaxbSignedInfo);
 		byte[] receivedSignatureValue = signature.getSignatureValue().getValue();
 		
 		getLogger().debug("\n" 
@@ -1866,7 +1927,7 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * An ECDSA signature consists of two integers s and r, each of the bit length equal to the curve size.
+	 * An ECDSA signature consists of two integers r and s, each of the bit length equal to the curve size.
 	 * When Java is creating an ECDSA signature, it is encoding it in the DER (Distinguished Encoding Rules) format.
 	 * But in ISO 15118, we do not expect DER encoded signatures. Thus, this function takes the DER encoded signature
 	 * as input and returns the raw r and s integer values of the signature. 
@@ -1880,17 +1941,21 @@ public final class SecurityUtils {
 		byte[] s = new byte[32];
 		
 		// Length of r is encoded in the fourth byte (either 32 (hex: 0x20) or 33 (hex: 0x21))
-		int lengthOfR = (int) derEncodedSignature[3];
+		int lengthOfR = derEncodedSignature[3];
 		// Length of r is encoded in the second byte AFTER r (either 32 (hex: 0x20) or 33 (hex: 0x21))
-		int lengthOfS = (int) derEncodedSignature[lengthOfR + 5];
+		int lengthOfS = derEncodedSignature[lengthOfR + 5];
 		
-		// If r is made up of 33 bytes, then we need to skip the first fill byte (0x00) of r
-		if (lengthOfR == 33) System.arraycopy(derEncodedSignature, 5, r, 0, 32);
-		else System.arraycopy(derEncodedSignature, 4, r, 0, 32);
-		
-		// If r is made up of 33 bytes (hex value 0x21), then we need to skip the first fill byte (0x00) or r
-		if (lengthOfS == 33) System.arraycopy(derEncodedSignature, lengthOfR + 7, s, 0, 32);
-		else System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 0, 32);
+		try {
+			// If r is made up of 33 bytes, then we need to skip the first fill byte (0x00) of r
+			if (lengthOfR == 33) System.arraycopy(derEncodedSignature, 5, r, 0, 32);
+			else System.arraycopy(derEncodedSignature, 4, r, 0, 32);
+			
+			// If r is made up of 33 bytes (hex value 0x21), then we need to skip the first fill byte (0x00) or r
+			if (lengthOfS == 33) System.arraycopy(derEncodedSignature, lengthOfR + 7, s, 0, 32);
+			else System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 0, 32);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			getLogger().warn("ArrayIndexOutOfBoundsException occurred while trying to get raw signature from DER encoded signature", e);
+		}
 		
 	    try {
 			baos.write(r);
@@ -2034,6 +2099,54 @@ public final class SecurityUtils {
 				KeyManagementException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to initialize SSL context");
 		}    
+	}
+	
+	/**
+	 * Checks the syntax of the EMAID according to Annex H.1 of ISO 15118-2
+	 * 
+	 * @param certChain The contract certificate chain. The EMAID is read from the contract certificate's common name
+	 * @return True, if the syntax is valid, false otherwise
+	 */
+	public static boolean isEMAIDSynstaxValid(CertificateChainType certChain) {
+		String emaid = getEMAID(certChain).getValue().toUpperCase();
+		
+		if (emaid.length() < 14 || emaid.length() > 18) {
+			getLogger().error("EMAID is invalid. Its length (" + emaid.length() + ") mus be between "
+							+ "14 (min, excluding separators) and 18 (max, including separators)");
+			return false;
+		}
+		
+		String emaidWithoutSeparator = emaid.replace("-", "");
+		
+		// Check country code
+		if (Character.isDigit(emaidWithoutSeparator.charAt(0)) || Character.isDigit(emaidWithoutSeparator.charAt(1))) {
+			getLogger().error("EMAID (" + emaid + ") is invalid, the first two characters must not be a digit");
+			return false;
+		}
+		
+		// Check provider ID
+		if (! (Character.isLetterOrDigit(emaidWithoutSeparator.charAt(2)) && 
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(3)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(4))) )  {
+			getLogger().error("EMAID (" + emaid + ") is invalid, the provider ID must be alpha-numerical");
+			return false;
+		}
+		
+		// Check emaInstance
+		if (! (Character.isLetterOrDigit(emaidWithoutSeparator.charAt(5)) && 
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(6)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(7)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(8)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(9)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(10)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(11)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(12)) &&
+			   Character.isLetterOrDigit(emaidWithoutSeparator.charAt(13))) )  {
+			getLogger().error("EMAID (" + emaid + ") is invalid, the eMA instance must be alpha-numerical");
+			return false;
+		}
+		
+		return true;
 	}
 	
 	public static void setExiCodec(ExiCodec exiCodecChoice) {

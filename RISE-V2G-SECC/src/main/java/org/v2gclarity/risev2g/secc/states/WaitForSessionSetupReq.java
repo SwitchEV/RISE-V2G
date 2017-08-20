@@ -26,6 +26,8 @@ package org.v2gclarity.risev2g.secc.states;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionSetupReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionSetupResType;
 
@@ -46,19 +48,26 @@ public class WaitForSessionSetupReq extends ServerState {
 			// Unix time stamp is needed (seconds instead of milliseconds)
 			sessionSetupRes.setEVSETimeStamp(System.currentTimeMillis() / 1000L);
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (sessionSetupRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new SessionSetupResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, sessionSetupRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(sessionSetupRes, sessionSetupRes.getResponseCode());
+			}
 		} 
 			
 		return getSendMessage(sessionSetupRes, 
 				  			  (sessionSetupRes.getResponseCode().toString().startsWith("OK") ? 
-				  			  V2GMessages.SERVICE_DISCOVERY_REQ : V2GMessages.NONE)
+				  			  V2GMessages.SERVICE_DISCOVERY_REQ : V2GMessages.NONE),
+				  			  sessionSetupRes.getResponseCode()
 				 			 );
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		sessionSetupRes.setEVSEID(getCommSessionContext().getEvseController().getEvseID());
+	public BodyBaseType getResponseMessage() {
+		return sessionSetupRes;
 	}
 
 }

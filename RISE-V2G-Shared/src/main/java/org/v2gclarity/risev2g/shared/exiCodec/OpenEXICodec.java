@@ -31,6 +31,7 @@ import java.io.StringWriter;
 
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
@@ -89,7 +90,7 @@ public final class OpenEXICodec extends ExiCodec {
 //      getTransmogrifier().setDivertBuiltinGrammarToAnyType(true); // enable V2G's built-in grammar usage
         
         // Standard SAX methods parse content and lexical values
-        setSaxTransformerFactory((SAXTransformerFactory) SAXTransformerFactory.newInstance());
+        setSaxTransformerFactory((SAXTransformerFactory) TransformerFactory.newInstance());
         setSaxParserFactory(SAXParserFactory.newInstance());
         getSaxParserFactory().setNamespaceAware(true);
 

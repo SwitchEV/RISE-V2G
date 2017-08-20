@@ -34,6 +34,7 @@ import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVSEStatusType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
@@ -72,14 +73,19 @@ public class WaitForMeteringReceiptReq extends ServerState {
 				
 				return getSendMessage(meteringReceiptRes, V2GMessages.FORK);
 			} else {
-				getLogger().error("Response code '" + meteringReceiptRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(meteringReceiptRes, meteringReceiptRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (meteringReceiptRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new MeteringReceiptResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, meteringReceiptRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(meteringReceiptRes, meteringReceiptRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(meteringReceiptRes, V2GMessages.NONE);
+		return getSendMessage(meteringReceiptRes, V2GMessages.NONE, meteringReceiptRes.getResponseCode());
 	}
 
 	
@@ -97,10 +103,13 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		
 		// Verify signature
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-		verifyXMLSigRefElements.put(meteringReceiptReq.getId(), SecurityUtils.generateDigest(meteringReceiptReq));
+		verifyXMLSigRefElements.put(
+				meteringReceiptReq.getId(), 
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(meteringReceiptReq)));
 
 		if (!SecurityUtils.verifySignature(
 				signature, 
+				getMessageHandler().getJaxbElement(signature.getSignedInfo()),
 				verifyXMLSigRefElements, 
 				getCommSessionContext().getContractSignatureCertChain().getCertificate())) {
 			meteringReceiptRes.setResponseCode(ResponseCodeType.FAILED_METERING_SIGNATURE_NOT_VALID);
@@ -131,10 +140,10 @@ public class WaitForMeteringReceiptReq extends ServerState {
 	}
 	
 	
-	private void setEVSEStatus(MeteringReceiptResType meteringReceiptRes) {
+	protected void setEVSEStatus(MeteringReceiptResType meteringReceiptRes) {
 		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
 			/*
-			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
 			 */
 			JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
@@ -143,7 +152,7 @@ public class WaitForMeteringReceiptReq extends ServerState {
 			meteringReceiptRes.setEVSEStatus(jaxbEVSEStatus);
 		} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
 			/*
-			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
+			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
 			 */
 			JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
@@ -156,9 +165,8 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		}
 	}
 
-	
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		setEVSEStatus(meteringReceiptRes); 		
+	public BodyBaseType getResponseMessage() {
+		return meteringReceiptRes;
 	}
 }

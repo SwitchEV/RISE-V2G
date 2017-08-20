@@ -27,11 +27,11 @@ import org.v2gclarity.risev2g.secc.evseController.IDCEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForCurrentDemandReq extends ServerState {
@@ -94,29 +94,21 @@ public class WaitForCurrentDemandReq extends ServerState {
 				return getSendMessage(currentDemandRes, V2GMessages.FORK);
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (currentDemandRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new CurrentDemandResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, currentDemandRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(currentDemandRes, currentDemandRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(currentDemandRes, V2GMessages.NONE);
+		return getSendMessage(currentDemandRes, V2GMessages.NONE, currentDemandRes.getResponseCode());
 	}
 
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
-		
-		PhysicalValueType physicalValueType = new PhysicalValueType();
-		physicalValueType.setMultiplier(new Byte("0"));
-		physicalValueType.setUnit(UnitSymbolType.V);  // does not matter which unit symbol if FAILED response is sent
-		physicalValueType.setValue((short) 1);
-		
-		currentDemandRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
-		currentDemandRes.setEVSEPresentVoltage(physicalValueType);
-		currentDemandRes.setEVSEPresentCurrent(physicalValueType);
-		currentDemandRes.setEVSECurrentLimitAchieved(false);
-		currentDemandRes.setEVSEVoltageLimitAchieved(false);
-		currentDemandRes.setEVSEPowerLimitAchieved(false);
-		currentDemandRes.setEVSEID(evseController.getEvseID());
-		currentDemandRes.setSAScheduleTupleID((short) 1); 
+	public BodyBaseType getResponseMessage() {
+		return currentDemandRes;
 	}
 
 }

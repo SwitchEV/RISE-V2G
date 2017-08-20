@@ -101,6 +101,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	private PaymentOptionType selectedPaymentOption;
 	private CertificateChainType contractSignatureCertChain;
 	private MeterInfoType sentMeterInfo;
+	private boolean chargeProgressStarted; // for checking [V2G2-812]
 	
 	public V2GCommunicationSessionSECC(ConnectionHandler connectionHandler) {
 		setConnectionHandler(connectionHandler);
@@ -192,7 +193,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		if (reactionToIncomingMessage instanceof SendMessage) {
 			send((SendMessage) reactionToIncomingMessage);
 			if (isStopV2GCommunicationSession()) {
-				terminateSession("EVCC indicated request to stop the session", true);
+				terminateSession("EVCC indicated request to stop the session or a FAILED response code was sent", true);
 			}
 		} else if (reactionToIncomingMessage instanceof ChangeProcessingState) {
 			setCurrentState(((ChangeProcessingState) reactionToIncomingMessage).getNewState());
@@ -471,5 +472,15 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 
 	public void setSelectedPaymentOption(PaymentOptionType selectedPaymentOption) {
 		this.selectedPaymentOption = selectedPaymentOption;
+	}
+
+
+	public boolean isChargeProgressStarted() {
+		return chargeProgressStarted;
+	}
+
+
+	public void setChargeProgressStarted(boolean chargeProgressStarted) {
+		this.chargeProgressStarted = chargeProgressStarted;
 	}
 }

@@ -27,10 +27,12 @@ import org.v2gclarity.risev2g.secc.evseController.IACEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 
 public class WaitForChargingStatusReq extends ServerState {
 
@@ -84,20 +86,22 @@ public class WaitForChargingStatusReq extends ServerState {
 				return getSendMessage(chargingStatusRes, V2GMessages.FORK);
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (chargingStatusRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new ChargingStatusResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, chargingStatusRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(chargingStatusRes, chargingStatusRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(chargingStatusRes, V2GMessages.NONE);
+		return getSendMessage(chargingStatusRes, V2GMessages.NONE, chargingStatusRes.getResponseCode());
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		chargingStatusRes.setEVSEID(getCommSessionContext().getACEvseController().getEvseID());
-		chargingStatusRes.setSAScheduleTupleID((short) 1);
-		chargingStatusRes.setACEVSEStatus(((IACEVSEController) getCommSessionContext().getACEvseController())
-					.getACEVSEStatus(EVSENotificationType.NONE)  
-					);
+	public BodyBaseType getResponseMessage() {
+		return chargingStatusRes;
 	}
 
 }

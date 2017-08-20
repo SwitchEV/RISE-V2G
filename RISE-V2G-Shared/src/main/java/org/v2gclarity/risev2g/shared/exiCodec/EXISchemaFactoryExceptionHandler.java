@@ -36,17 +36,20 @@ public class EXISchemaFactoryExceptionHandler implements EXISchemaFactoryErrorHa
         super();
     }
 	
-    public void warning(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
+    @Override
+	public void warning(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
         logger.warn("WARN:");
     	eXISchemaFactoryException.printStackTrace();
     }
 
-    public void error(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
+    @Override
+	public void error(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
     	logger.warn("ERROR:");
     	eXISchemaFactoryException.printStackTrace();
     }
 
-    public void fatalError(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
+    @Override
+	public void fatalError(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
     	logger.warn("FATAL:");
     	eXISchemaFactoryException.getStackTrace();
     }

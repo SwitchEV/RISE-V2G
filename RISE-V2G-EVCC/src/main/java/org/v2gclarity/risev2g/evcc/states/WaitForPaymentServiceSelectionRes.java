@@ -102,7 +102,9 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 						evccKeyStore, GlobalValues.ALIAS_OEM_PROV_CERTIFICATE.toString()).getCertificate());
 		
 		// Set xml reference element
-		getXMLSignatureRefElements().put(certInstallationReq.getId(), SecurityUtils.generateDigest(certInstallationReq));
+		getXMLSignatureRefElements().put(
+				certInstallationReq.getId(), 
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certInstallationReq)));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(
@@ -140,7 +142,7 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		// Set xml reference element
 		getXMLSignatureRefElements().put(
 				certificateUpdateReq.getId(), 
-				SecurityUtils.generateDigest(certificateUpdateReq));
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateReq)));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(

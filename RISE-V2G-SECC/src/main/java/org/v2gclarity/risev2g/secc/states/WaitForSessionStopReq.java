@@ -26,6 +26,8 @@ package org.v2gclarity.risev2g.secc.states;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopResType;
 
@@ -43,16 +45,22 @@ public class WaitForSessionStopReq extends ServerState {
 		if (isIncomingMessageValid(message, SessionStopReqType.class, sessionStopRes)) {
 			getCommSessionContext().setStopV2GCommunicationSession(true);
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (sessionStopRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new SessionStopResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, sessionStopRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(sessionStopRes, sessionStopRes.getResponseCode());
+			}
 		}
 			
-		return getSendMessage(sessionStopRes, V2GMessages.NONE);
+		return getSendMessage(sessionStopRes, V2GMessages.NONE, sessionStopRes.getResponseCode());
 	}
-	
+
 
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		// No other fields need to be set besides response code
+	public BodyBaseType getResponseMessage() {
+		return sessionStopRes;
 	}
 
 }

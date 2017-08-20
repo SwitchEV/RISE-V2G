@@ -32,6 +32,7 @@ import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationResType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
@@ -70,14 +71,19 @@ public class WaitForAuthorizationReq extends ServerState {
 					return getSendMessage(authorizationRes, V2GMessages.AUTHORIZATION_REQ);
 				}
 			} else {
-				getLogger().error("Response code '" + authorizationRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(authorizationRes, authorizationRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (authorizationRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new AuthorizationReqType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, authorizationRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(authorizationRes, authorizationRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(authorizationRes, V2GMessages.NONE);
+		return getSendMessage(authorizationRes, V2GMessages.NONE, authorizationRes.getResponseCode());
 	}
 	
 	
@@ -104,10 +110,13 @@ public class WaitForAuthorizationReq extends ServerState {
 			getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT)) {
 			// Verify signature
 			HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-			verifyXMLSigRefElements.put(authorizationReq.getId(), SecurityUtils.generateDigest(authorizationReq));
+			verifyXMLSigRefElements.put(
+					authorizationReq.getId(), 
+					SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
 			
 			if (!SecurityUtils.verifySignature(
 					signature, 
+					getMessageHandler().getJaxbElement(signature.getSignedInfo()),
 					verifyXMLSigRefElements, 
 					getCommSessionContext().getContractSignatureCertChain().getCertificate())) {
 				authorizationRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
@@ -128,8 +137,8 @@ public class WaitForAuthorizationReq extends ServerState {
 	
 
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		authorizationRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
+	public BodyBaseType getResponseMessage() {
+		return authorizationRes;
 	}
 
 }

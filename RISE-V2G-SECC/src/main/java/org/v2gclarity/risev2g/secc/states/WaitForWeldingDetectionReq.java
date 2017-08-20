@@ -27,7 +27,9 @@ import org.v2gclarity.risev2g.secc.evseController.IDCEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.WeldingDetectionReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.WeldingDetectionResType;
@@ -60,7 +62,13 @@ public class WaitForWeldingDetectionReq extends ServerState {
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 			.getAllowedRequests().add(V2GMessages.SESSION_STOP_REQ);
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (weldingDetectionRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new WeldingDetectionResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, weldingDetectionRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(weldingDetectionRes, weldingDetectionRes.getResponseCode());
+			}
 		}
 		
 		return getSendMessage(weldingDetectionRes, 
@@ -69,12 +77,9 @@ public class WaitForWeldingDetectionReq extends ServerState {
 			 			 	 );
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
-		
-		weldingDetectionRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
-		weldingDetectionRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
+	public BodyBaseType getResponseMessage() {
+		return weldingDetectionRes;
 	}
 }

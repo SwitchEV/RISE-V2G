@@ -26,6 +26,7 @@ package org.v2gclarity.risev2g.secc.states;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ParameterSetType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
@@ -81,14 +82,19 @@ public class WaitForServiceDetailReq extends ServerState {
 				
 				return getSendMessage(serviceDetailRes, V2GMessages.FORK);
 			} else {
-				getLogger().error("Response code '" + serviceDetailRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(serviceDetailRes, serviceDetailRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (serviceDetailRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new ServiceDetailResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, serviceDetailRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(serviceDetailRes, serviceDetailRes.getResponseCode());
+			}
 		}
 		
-		return getSendMessage(serviceDetailRes, V2GMessages.NONE);
+		return getSendMessage(serviceDetailRes, V2GMessages.NONE, serviceDetailRes.getResponseCode());
 	}
 		
 		
@@ -190,10 +196,9 @@ public class WaitForServiceDetailReq extends ServerState {
 		return parameterSet;
 	}
 
-	
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		serviceDetailRes.setServiceID(1);
+	public BodyBaseType getResponseMessage() {
+		return serviceDetailRes;
 	}
 
 }

@@ -177,7 +177,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			
 			verifyXMLSigRefElements.put(
 					saScheduleTuple.getSalesTariff().getId(),
-					SecurityUtils.generateDigest(saScheduleTuple.getSalesTariff()));
+					SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(saScheduleTuple.getSalesTariff())));
 		}
 		
 		if (salesTariffCounter > 0) {
@@ -187,7 +187,11 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 				getLogger().error("No MOSubCA2 certificate found, signature of SalesTariff could therefore not be verified");
 				return false;
 			} else {
-				if (!SecurityUtils.verifySignature(signature, verifyXMLSigRefElements, moSubCA2Certificate)) {
+				if (!SecurityUtils.verifySignature(
+						signature, 
+						getMessageHandler().getJaxbElement(signature.getSignedInfo()),
+						verifyXMLSigRefElements, 
+						moSubCA2Certificate)) {
 					getLogger().warn("Verification of SalesTariff failed using certificate with distinguished name '" + 
 									 moSubCA2Certificate.getSubjectX500Principal().getName() + "'"); 
 					return false;

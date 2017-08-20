@@ -63,7 +63,7 @@ public class WaitForAuthorizationRes extends ClientState {
 				AuthorizationReqType authorizationReq = getAuthorizationReq(null);
 				getXMLSignatureRefElements().put(
 						authorizationReq.getId(), 
-						SecurityUtils.generateDigest(authorizationReq));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
 				
 				// Set signing private key
 				setSignaturePrivateKey(SecurityUtils.getPrivateKey(

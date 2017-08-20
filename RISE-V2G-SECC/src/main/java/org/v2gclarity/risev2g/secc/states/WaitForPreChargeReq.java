@@ -27,9 +27,11 @@ import org.v2gclarity.risev2g.secc.evseController.IDCEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeResType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForPreChargeReq extends ServerState {
@@ -63,21 +65,25 @@ public class WaitForPreChargeReq extends ServerState {
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 			.getAllowedRequests().add(V2GMessages.POWER_DELIVERY_REQ);
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (preChargeRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new PreChargeResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, preChargeRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(preChargeRes, preChargeRes.getResponseCode());
+			}
 		}
 		
 		return getSendMessage(preChargeRes, 
 							  (preChargeRes.getResponseCode().toString().startsWith("OK") ? 
-							  V2GMessages.FORK : V2GMessages.NONE)
+							  V2GMessages.FORK : V2GMessages.NONE),
+							  preChargeRes.getResponseCode()
 						 	 );
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
-		
-		preChargeRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
-		preChargeRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
+	public BodyBaseType getResponseMessage() {
+		return preChargeRes;
 	}
 }

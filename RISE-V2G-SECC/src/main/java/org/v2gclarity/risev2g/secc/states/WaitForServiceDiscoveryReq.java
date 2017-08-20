@@ -26,7 +26,10 @@ package org.v2gclarity.risev2g.secc.states;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
+import org.v2gclarity.risev2g.shared.utils.MiscUtils;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeServiceType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ServiceCategoryType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ServiceDiscoveryReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ServiceDiscoveryResType;
@@ -74,17 +77,24 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 			((ForkState) getCommSessionContext().getStates().get(V2GMessages.FORK))
 				.getAllowedRequests().add(V2GMessages.PAYMENT_SERVICE_SELECTION_REQ);
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (serviceDiscoveryRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new ServiceDiscoveryResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, serviceDiscoveryRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(serviceDiscoveryRes, serviceDiscoveryRes.getResponseCode());
+			}
 		}
 		
 		return getSendMessage(serviceDiscoveryRes, 
 				  			  (serviceDiscoveryRes.getResponseCode().toString().startsWith("OK") ? 
-				  			  V2GMessages.FORK : V2GMessages.NONE)
+				  			  V2GMessages.FORK : V2GMessages.NONE),
+				  			  serviceDiscoveryRes.getResponseCode()
 	 			 			 );
 	}
 	
 	
-	private ChargeServiceType getChargeService() {
+	public ChargeServiceType getChargeService() {
 		SupportedEnergyTransferModeType supportedEnergyTransferModes = new SupportedEnergyTransferModeType();
 		supportedEnergyTransferModes.getEnergyTransferMode().addAll(
 				getCommSessionContext().getSupportedEnergyTransferModes());
@@ -106,7 +116,8 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 		 */
 		chargeService.setServiceScope("chargingServiceScope");
 		
-		chargeService.setFreeService(false); // it is supposed that charging is by default not for free
+		boolean isChargingForFree = ((boolean) MiscUtils.getPropertyValue("ChargingForFree"));
+		chargeService.setFreeService(isChargingForFree);
 		
 		return chargeService;
 	}
@@ -116,7 +127,7 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 		ServiceListType serviceList = new ServiceListType();
 		
 		if (serviceCategoryFilter != null)
-			getLogger().debug("EVCC filters offered services by category: " + serviceScopeFilter.toString());
+			getLogger().debug("EVCC filters offered services by category: " + serviceCategoryFilter.toString());
 		
 		// Currently no filter based on service scope is applied since its string value is not standardized somehow
 		if (getCommSessionContext().isTlsConnection() && (
@@ -150,10 +161,9 @@ public class WaitForServiceDiscoveryReq extends ServerState {
 		return certificateService;
 	}
 
-	
+
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		serviceDiscoveryRes.setChargeService(getChargeService());
-		serviceDiscoveryRes.setPaymentOptionList(getCommSessionContext().getPaymentOptions());
+	public BodyBaseType getResponseMessage() {
+		return serviceDiscoveryRes;
 	}
 }

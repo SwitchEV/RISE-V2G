@@ -141,7 +141,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		 * of a SessionSetupRes (see V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT in TimeRestrictions.java)
 		 * TODO check if this timing requirement is still up to date
 		 */
-		setV2gEVCCCommunicationSetupTimer(System.currentTimeMillis());
+		setV2gEVCCCommunicationSetupTimer(System.nanoTime());
 		
 		// Set default value for contract certificate status to UNKNOWN
 		setContractCertStatus(ContractCertificateStatus.UNKNOWN);
@@ -378,7 +378,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 
 	public void setSaSchedules(SAScheduleListType saSchedules) {
 		this.saSchedules = saSchedules;
-		this.saSchedulesReceived = System.currentTimeMillis();
+		this.saSchedulesReceived = System.nanoTime();
 	}
 
 

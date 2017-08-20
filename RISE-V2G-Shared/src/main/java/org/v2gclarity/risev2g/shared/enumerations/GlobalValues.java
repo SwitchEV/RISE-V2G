@@ -143,6 +143,7 @@ public enum GlobalValues {
 		return shortValue;
 	}
 	
+	@Override
 	public String toString() {
 		switch (this) {
 		case EVCC_CONFIG_PROPERTIES_PATH:

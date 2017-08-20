@@ -172,7 +172,7 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 				// The SECCDiscoveryRes must be sent via UDP before the requested TCP/TLS server can be used
 				UDPServer.getInstance().send(getV2gTpMessage(), (Inet6Address) udpClientPacket.getAddress(), udpClientPacket.getPort());
 			} else {
-				getLogger().warn("Incoming DatagramPacket could not be identified as a SECCDiscoveryReq");
+				getLogger().warn("Incoming DatagramPacket could not be identified as an SECCDiscoveryReq");
 			}
 		} catch (NullPointerException e) {
 			getLogger().error("NullPointerException occurred while processing SECCDiscoveryReq", e);

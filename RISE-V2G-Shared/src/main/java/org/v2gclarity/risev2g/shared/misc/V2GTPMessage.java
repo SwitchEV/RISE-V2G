@@ -25,8 +25,10 @@ package org.v2gclarity.risev2g.shared.misc;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 
 public class V2GTPMessage {
 
@@ -47,9 +49,26 @@ public class V2GTPMessage {
 	 * @param payloadType 	  The type of the payload (EXI encoded message, SDP request or response)
 	 * @param payload		  The payload of the message to be sent
 	 */
+	public V2GTPMessage(byte protocolVersion, byte[] payloadType, byte[] payloadLength, byte[] payload) {
+		setProtocolVersion(protocolVersion);
+		setInverseProtocolVersion((byte) (protocolVersion ^ 0xFF)); 
+		setPayloadType(payloadType);
+		setPayloadLength(payloadLength);
+		setPayload(payload);
+	}
+	
+	/**
+	 * 
+	 * 
+	 * @param protocolVersion
+	 * @param payloadType
+	 * @param payload
+	 */
 	public V2GTPMessage(byte protocolVersion, byte[] payloadType, byte[] payload) {
 		setProtocolVersion(protocolVersion);
+		setInverseProtocolVersion((byte) (protocolVersion ^ 0xFF)); 
 		setPayloadType(payloadType);
+		setPayloadLength(ByteUtils.toByteArrayFromInt(payload.length, false));
 		setPayload(payload);
 	}
 	
@@ -64,7 +83,9 @@ public class V2GTPMessage {
 		// Check if this could be a real V2GTPMessage which has 8 bytes of header
 		if (byteArray != null && byteArray.length >= 8) {
 			setProtocolVersion(Arrays.copyOfRange(byteArray, 0, 1)[0]);
+			setInverseProtocolVersion(Arrays.copyOfRange(byteArray, 1, 2)[0]);
 			setPayloadType(Arrays.copyOfRange(byteArray, 2, 4));
+			setPayloadLength(Arrays.copyOfRange(byteArray, 4, 8));
 			// TODO make sure the byteArray is not too long to not generate a Java heap space OutOfMemoryError
 			setPayload(Arrays.copyOfRange(byteArray, 8, byteArray.length));
 		} else {
@@ -86,8 +107,8 @@ public class V2GTPMessage {
 		return inverseProtocolVersion;
 	}
 	
-	private void setInverseProtocolVersion(byte protocolVersion) {
-		this.inverseProtocolVersion = (byte) (protocolVersion ^ 0xFF);
+	private void setInverseProtocolVersion(byte inverseProtocolVersion) {
+		this.inverseProtocolVersion = inverseProtocolVersion;
 	}
 
 
@@ -97,9 +118,6 @@ public class V2GTPMessage {
 
 	public void setPayload(byte[] payload) {
 		this.payload = payload;
-		
-		// Byte array reflecting the number of bytes of the payload
-		setPayloadLength(ByteBuffer.allocate(4).putInt(payload.length).array());
 	}
 	
 	public byte[] getPayloadType() {

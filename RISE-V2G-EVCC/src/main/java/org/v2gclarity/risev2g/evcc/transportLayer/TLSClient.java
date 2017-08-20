@@ -131,7 +131,7 @@ public class TLSClient extends StatefulTransportLayerClient {
 			X509Certificate seccLeafCertificate = (X509Certificate) seccCertificates[0];
 			
 			// Check domain component of SECC certificate
-			if (!SecurityUtils.isCertificateValid(seccLeafCertificate, "CPO")) {
+			if (!SecurityUtils.verifyDomainComponent(seccLeafCertificate, "CPO")) {
 				getLogger().error("TLS client connection failed. \n\t" + 
 								  "Reason: Domain component of SECC certificate not valid, expected 'DC=CPO'. \n\t" +
 								  "Distinuished name of SECC certificate: " + seccLeafCertificate.getSubjectX500Principal().getName());
@@ -162,7 +162,7 @@ public class TLSClient extends StatefulTransportLayerClient {
 	@Override
 	public void run() {
 		while (!Thread.interrupted()) { 
-			if (getTimeout() > 0) {
+			if (getTimeout() >= 0) {
 				try {
 					getTlsSocketToServer().setSoTimeout(getTimeout());
 					
@@ -175,6 +175,9 @@ public class TLSClient extends StatefulTransportLayerClient {
 					stopAndNotify("An IOException occurred while trying to read message", e2);
 					break;
 				}
+			} else {
+				stopAndNotify("Timeout value is negative: " + getTimeout(), null);
+				break;
 			}
 		}
 	}

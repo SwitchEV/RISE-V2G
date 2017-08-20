@@ -28,11 +28,13 @@ import java.util.HashMap;
 
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.enumerations.PKI;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateUpdateResType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
@@ -53,12 +55,12 @@ public class WaitForCertificateUpdateRes extends ClientState {
 				return new TerminateSession("Signature verification failed");
 			}
 			
-			/**
-			 * Check
-			 * - validity of each certificate in the chain
-			 * - that the signer certificate has a DC (Domain Component) field with the content "CPS" set
-			 */
-			if (!SecurityUtils.isCertificateChainValid(certificateUpdateRes.getSAProvisioningCertificateChain(), "CPS")) {
+			// Check complete CPS certificate chain
+			ResponseCodeType certChainResponseCode = SecurityUtils.verifyCertificateChain(
+														certificateUpdateRes.getSAProvisioningCertificateChain(),
+														GlobalValues.EVCC_TRUSTSTORE_FILEPATH.toString(),
+														PKI.CPS);
+			if (!certChainResponseCode.equals(ResponseCodeType.OK)) {
 				return new TerminateSession("Provisioning certificate chain is not valid");
 			}
 			
@@ -90,19 +92,20 @@ public class WaitForCertificateUpdateRes extends ClientState {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getContractSignatureCertChain().getId(),
-				SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureCertChain()));
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
-				SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureEncryptedPrivateKey()));
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getDHpublickey().getId(),
-				SecurityUtils.generateDigest(certificateUpdateRes.getDHpublickey()));
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getEMAID().getId(),
-				SecurityUtils.generateDigest(certificateUpdateRes.getEMAID()));
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
 				
 		if (!SecurityUtils.verifySignature(
 				signature, 
+				getMessageHandler().getJaxbElement(signature.getSignedInfo()),
 				verifyXMLSigRefElements, 
 				certificateUpdateRes.getSAProvisioningCertificateChain().getCertificate())) {
 			return false;

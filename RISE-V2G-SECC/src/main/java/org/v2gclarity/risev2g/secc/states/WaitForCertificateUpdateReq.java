@@ -26,18 +26,17 @@ package org.v2gclarity.risev2g.secc.states;
 import java.security.KeyPair;
 import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
-
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.enumerations.PKI;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateUpdateReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateUpdateResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ContractSignatureEncryptedPrivateKeyType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DiffieHellmanPublickeyType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignatureType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -89,7 +88,7 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				certificateUpdateRes.getContractSignatureEncryptedPrivateKey().setId("id2"); // contractSignatureEncryptedPrivateKey
 				certificateUpdateRes.setDHpublickey(SecurityUtils.getDHPublicKey(ecdhKeyPair));
 				certificateUpdateRes.getDHpublickey().setId("id3"); // dhPublicKey
-				certificateUpdateRes.setEMAID(SecurityUtils.getEMAID(contractCertificateChain));
+				certificateUpdateRes.setEMAID(SecurityUtils.getEMAID(certificateUpdateReq.getContractSignatureCertChain()));
 				certificateUpdateRes.getEMAID().setId("id4"); // emaid
 				certificateUpdateRes.setSAProvisioningCertificateChain(getCommSessionContext().getBackendInterface().getCPSCertificateChain());
 				
@@ -100,30 +99,36 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				// Set xml reference elements
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureCertChain().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureCertChain()));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
-						SecurityUtils.generateDigest(certificateUpdateRes.getContractSignatureEncryptedPrivateKey()));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getDHpublickey().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getDHpublickey()));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getEMAID().getId(), 
-						SecurityUtils.generateDigest(certificateUpdateRes.getEMAID()));
+						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
 				
 				// Set signing private key
 				setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getCPSLeafPrivateKey());
 			} else {
-				getLogger().error("Response code '" + certificateUpdateRes.getResponseCode() + "' will be sent");
-				setMandatoryFieldsForFailedRes();
+				setMandatoryFieldsForFailedRes(certificateUpdateRes, certificateUpdateRes.getResponseCode());
 			}
 		} else {
-			setMandatoryFieldsForFailedRes();
+			if (certificateUpdateRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
+				BodyBaseType responseMessage = getSequenceErrorResMessage(new CertificateUpdateResType(), message);
+				
+				return getSendMessage(responseMessage, V2GMessages.NONE, certificateUpdateRes.getResponseCode());
+			} else {
+				setMandatoryFieldsForFailedRes(certificateUpdateRes, certificateUpdateRes.getResponseCode());
+			}
 		}
 		
 		return getSendMessage(certificateUpdateRes, 
 	  			  			 (certificateUpdateRes.getResponseCode().toString().startsWith("OK") ? 
-	  			  			 V2GMessages.PAYMENT_DETAILS_REQ : V2GMessages.NONE)
+	  			  			 V2GMessages.PAYMENT_DETAILS_REQ : V2GMessages.NONE),
+	  			  			 certificateUpdateRes.getResponseCode()
 	 			 			 );
 	}
 	
@@ -138,21 +143,13 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 			return false;
 		}
 		
-		/*
-		 * Check for FAILED_CertificateExpired
-		 * There is no negative response code for a certificate which is neither yet valid nor expired.
-		 * It is thus implicitly expected that a secondary actor would only send already valid certificates.
-		 */
-		if (!SecurityUtils.isCertificateChainValid(certificateUpdateReq.getContractSignatureCertChain())) {
-			certificateUpdateRes.setResponseCode(ResponseCodeType.FAILED_CERTIFICATE_EXPIRED);
-			return false;
-		}
-		
-		// Check for FAILED_CertChainError
-		if (!SecurityUtils.isCertificateChainVerified(
-				GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(), 
-				certificateUpdateReq.getContractSignatureCertChain())) {
-			certificateUpdateRes.setResponseCode(ResponseCodeType.FAILED_CERT_CHAIN_ERROR);
+		// Check complete contract certificate chain
+		ResponseCodeType certChainResponseCode = SecurityUtils.verifyCertificateChain(
+													certificateUpdateReq.getContractSignatureCertChain(),
+													GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(),
+													PKI.MO);
+		if (!certChainResponseCode.equals(ResponseCodeType.OK)) {
+			certificateUpdateRes.setResponseCode(certChainResponseCode);
 			return false;
 		}
 		
@@ -164,10 +161,13 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 		
 		// Verify signature
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
-		verifyXMLSigRefElements.put(certificateUpdateReq.getId(), SecurityUtils.generateDigest(certificateUpdateReq));
+		verifyXMLSigRefElements.put(
+				certificateUpdateReq.getId(), 
+				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateReq)));
 
 		if (!SecurityUtils.verifySignature(
 				signature, 
+				getMessageHandler().getJaxbElement(signature.getSignedInfo()),
 				verifyXMLSigRefElements, 
 				certificateUpdateReq.getContractSignatureCertChain().getCertificate())) {
 			certificateUpdateRes.setResponseCode(ResponseCodeType.FAILED_SIGNATURE_ERROR);
@@ -177,31 +177,8 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 		return true;
 	}
 	
-	
 	@Override
-	protected void setMandatoryFieldsForFailedRes() {
-		CertificateChainType saProvisioningCertificateChain = new CertificateChainType();
-		saProvisioningCertificateChain.setCertificate(new byte[1]);
-		certificateUpdateRes.setSAProvisioningCertificateChain(saProvisioningCertificateChain);
-		
-		CertificateChainType contractSignatureCertChain = new CertificateChainType();
-		contractSignatureCertChain.setCertificate(new byte[1]);
-		contractSignatureCertChain.setId("ID1");
-		certificateUpdateRes.setContractSignatureCertChain(contractSignatureCertChain);
-		
-		ContractSignatureEncryptedPrivateKeyType contractSignatureEncryptedPrivateKey = new ContractSignatureEncryptedPrivateKeyType();
-		contractSignatureEncryptedPrivateKey.setValue(new byte[1]);
-		contractSignatureEncryptedPrivateKey.setId("ID2");
-		certificateUpdateRes.setContractSignatureEncryptedPrivateKey(contractSignatureEncryptedPrivateKey);
-		
-		DiffieHellmanPublickeyType dhPublicKeyType = new DiffieHellmanPublickeyType();
-		dhPublicKeyType.setValue(new byte[1]);
-		dhPublicKeyType.setId("ID3");
-		certificateUpdateRes.setDHpublickey(dhPublicKeyType);
-		
-		EMAIDType emaid = new EMAIDType();
-		emaid.setValue("DEV2G1234512345");
-		emaid.setId("ID4");
-		certificateUpdateRes.setEMAID(emaid);
+	public BodyBaseType getResponseMessage() {
+		return certificateUpdateRes;
 	}
 }
