@@ -109,7 +109,11 @@ public class WaitForPaymentDetailsReq extends ServerState {
 		
 		// Check for FAILED_ContractCancelled
 		// TODO how to check if the EMAID provided by EVCC is not accepted by secondary actor?
-		if (!SecurityUtils.isEMAIDSynstaxValid(paymentDetailsReq.getContractSignatureCertChain())) {
+		if (!SecurityUtils.isEMAIDSynstaxValid(
+				SecurityUtils.getCertificate(
+						paymentDetailsReq.getContractSignatureCertChain().getCertificate())
+						)
+				) {
 			// There is no good FAILED response code for this situation, but ContractCanceled is still better than FAILED
 			paymentDetailsRes.setResponseCode(ResponseCodeType.FAILED_CONTRACT_CANCELED);
 			return false;

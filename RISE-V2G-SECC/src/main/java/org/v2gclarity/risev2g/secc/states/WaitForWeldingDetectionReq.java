@@ -73,7 +73,8 @@ public class WaitForWeldingDetectionReq extends ServerState {
 		
 		return getSendMessage(weldingDetectionRes, 
 				 			  (weldingDetectionRes.getResponseCode().toString().startsWith("OK") ? 
-				 			  V2GMessages.FORK : V2GMessages.NONE)
+				 			  V2GMessages.FORK : V2GMessages.NONE),
+				 			  weldingDetectionRes.getResponseCode()
 			 			 	 );
 	}
 

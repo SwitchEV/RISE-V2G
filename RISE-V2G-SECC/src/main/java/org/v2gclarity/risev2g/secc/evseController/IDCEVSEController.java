@@ -28,6 +28,7 @@ import javax.xml.bind.JAXBElement;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEChargeParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.IsolationLevelType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
 
 public interface IDCEVSEController extends IEVSEController {
@@ -153,8 +154,22 @@ public interface IDCEVSEController extends IEVSEController {
 	
 	
 	/**
-	 * Returns the EVSE status for AC charging comprising notification, maxDelay and RCD
+	 * Returns the EVSE status for DC charging comprising notification, maxDelay and RCD
 	 * @return The EVSE specific status
 	 */
 	public DCEVSEStatusType getDCEVSEStatus(EVSENotificationType notification);
+	
+	
+	/**
+	 * Returns the peak-to-peak magnitude of the current ripple of the EVSE
+	 * @return Peak given as a PhyiscalValueType
+	 */
+	public IsolationLevelType getIsolationLevel();
+	
+	
+	/**
+	 * Sets the IsolationLevel DC charging 
+	 * @param isolationLevel The IsolationLevel status of the charge equipment
+	 */
+	public void setIsolationLevel(IsolationLevelType isolationLevel);
 }

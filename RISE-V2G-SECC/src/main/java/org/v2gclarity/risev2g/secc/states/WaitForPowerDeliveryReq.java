@@ -113,6 +113,14 @@ public class WaitForPowerDeliveryReq extends ServerState {
 	public boolean isResponseCodeOK(PowerDeliveryReqType powerDeliveryReq) {
 		SAScheduleTupleType chosenSASchedule = getChosenSASCheduleTuple(powerDeliveryReq.getSAScheduleTupleID());
 		
+		if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.RENEGOTIATE) && 
+				!getCommSessionContext().isChargeProgressStarted()) {
+				getLogger().error("EVCC wants to renegotiate, but charge progress has not started yet (no "
+								+ "PowerDeliveryReq with ChargeProgress=START has been received before)");
+				powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED);
+				return false;
+		}
+		
 		if (chosenSASchedule == null) {
 			getLogger().warn("Chosen SAScheduleTupleID in PowerDeliveryReq is null, but parameter is mandatory");
 			powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_TARIFF_SELECTION_INVALID);
@@ -120,8 +128,8 @@ public class WaitForPowerDeliveryReq extends ServerState {
 		}
 		
 		// Important to call this AFTER checking for valid tariff selection because of possible null-value!
-		// Check ChargingProfile only if EV does not want to stop the charging process
-		if (!powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.STOP) && 
+		// Check ChargingProfile only if EV wants to start (not stop or renegotiate) the charging process
+		if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.START) && 
 			!isChargingProfileValid(chosenSASchedule, powerDeliveryReq.getChargingProfile())) {
 			powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_CHARGING_PROFILE_INVALID);
 			return false;
@@ -154,14 +162,6 @@ public class WaitForPowerDeliveryReq extends ServerState {
 			(powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.STOP) &&
 			 !getCommSessionContext().getEvseController().openContactor())) {
 			powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_CONTACTOR_ERROR);
-			return false;
-		}
-		
-		if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.RENEGOTIATE) && 
-			!getCommSessionContext().isChargeProgressStarted()) {
-			getLogger().error("EVCC wants to renegotiate, but charge progress has not started yet (no "
-							+ "PowerDeliveryReq with ChargeProgress=START has been received before)");
-			powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED);
 			return false;
 		}
 		
@@ -219,7 +219,7 @@ public class WaitForPowerDeliveryReq extends ServerState {
 		}
 		
 		for (ProfileEntryType profileEntry : chargingProfile.getProfileEntry()) {
-			if (profileEntry.getChargingProfileEntryMaxNumberOfPhasesInUse() == 2) {
+			if (profileEntry.getChargingProfileEntryMaxNumberOfPhasesInUse() != null && profileEntry.getChargingProfileEntryMaxNumberOfPhasesInUse() == 2) {
 				getLogger().error("Parameter MaxNumberOfPhasesInUse of one ChargingProfile entry element is 2 which is not allowed. Only 1 or 3 are valid values.");
 				return false;
 			}

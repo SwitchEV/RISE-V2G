@@ -24,7 +24,9 @@
 package org.v2gclarity.risev2g.secc.backend;
 
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.xml.bind.JAXBElement;
@@ -36,6 +38,7 @@ import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PMaxScheduleEntryType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PMaxScheduleType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
@@ -56,7 +59,10 @@ public class DummyBackendInterface implements IBackendInterface {
 	}
 	
 	@Override
-	public SAScheduleListType getSAScheduleList(int maxEntriesSAScheduleTuple, HashMap<String, byte[]> xmlSignatureRefElements) {
+	public SAScheduleListType getSAScheduleList(
+			int maxEntriesSAScheduleTuple, 
+			long departureTime,
+			HashMap<String, byte[]> xmlSignatureRefElements) {
 		/*
 		 * Some important requirements:
 		 * 
@@ -99,7 +105,11 @@ public class DummyBackendInterface implements IBackendInterface {
 		// PMaxSchedule
 		// IMPORTANT: check that you do not add more pMax entries than parameter maxEntriesSAScheduleTuple
 		PMaxScheduleType pMaxSchedule = new PMaxScheduleType();
-		pMaxSchedule.getPMaxScheduleEntry().add(createPMaxScheduleEntry("3", (short) 11, 0, 86400L));
+		
+		if (departureTime != 0)
+			pMaxSchedule.getPMaxScheduleEntry().add(createPMaxScheduleEntry("3", (short) 11, 0, departureTime));
+		else
+			pMaxSchedule.getPMaxScheduleEntry().add(createPMaxScheduleEntry("3", (short) 11, 0, 86400L));
 		
 		/*
 		 * SalesTariff (add some meaningful things)
@@ -118,9 +128,9 @@ public class DummyBackendInterface implements IBackendInterface {
 		salesTariff.setId("ID1"); 
 		salesTariff.setSalesTariffID((short) 1);
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(0L, (short) 1));
-		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
-		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(3600L, (short) 2));
-		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(5400L, (short) 3));
+//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
+//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(3600L, (short) 2));
+//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(5400L, (short) 3));
 		
 		// Put 'em all together
 		SAScheduleTupleType saScheduleTuple = new SAScheduleTupleType();
@@ -131,7 +141,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		SAScheduleListType saScheduleList = new SAScheduleListType();
 		saScheduleList.getSAScheduleTuple().add(saScheduleTuple);
 		
-		// Set xml reference elements for SalesTariff elements (repeat this for every sales tariff) if they are sent
+		// Set XML reference elements for SalesTariff elements (repeat this for every sales tariff) if they are sent
 		if (saScheduleTuple.getSalesTariff() != null) {
 			xmlSignatureRefElements.put(
 					salesTariff.getId(), 
@@ -183,9 +193,58 @@ public class DummyBackendInterface implements IBackendInterface {
 
 
 	@Override
-	public CertificateChainType getContractCertificateChain() {
+	public CertificateChainType getContractCertificateChain(X509Certificate oemProvisioningCert) {
+		/*
+		 * Normally, a backend protocol such as OCPP would be used to retrieve the contract certificate chain
+		 * based on the OEM provisioning certificate
+		 */
 		return SecurityUtils.getCertificateChain("./moCertChain.p12");
 	}
+	
+	@Override
+	public CertificateChainType getContractCertificateChain(CertificateChainType oldContractCertChain) {
+		/*
+		 * Normally, a backend protocol such as OCPP would be used to retrieve the new contract certificate chain
+		 * based on the to-be-updated old contract certificate chain
+		 */
+		EMAIDType providedEMAID = SecurityUtils.getEMAID(oldContractCertChain);
+		
+		/*
+		 * NOTE 1: You need to agree with your test partner on valid, authorized EMAIDs that you put into this list.
+		 * 
+		 * NOTE 2: Not the EMAID given as a parameter of CertificateUpdateReq is checked (error prone), but the EMAID
+		 * provided in the common name field of the to-be-updated contract certificate
+		 */
+		ArrayList<EMAIDType> authorizedEMAIDs = new ArrayList<EMAIDType>();
+		
+		EMAIDType authorizedEMAID1 = new EMAIDType();
+		authorizedEMAID1.setId("id1");
+		authorizedEMAID1.setValue("DE1ABCD2EF357A");
+		
+		EMAIDType authorizedEMAID2 = new EMAIDType();
+		authorizedEMAID2.setId("id2");
+		authorizedEMAID2.setValue("DE1ABCD2EF357C");
+		
+		authorizedEMAIDs.add(authorizedEMAID1);
+		authorizedEMAIDs.add(authorizedEMAID2);
+		
+		boolean emaidFound = false;
+		
+		for (EMAIDType emaid : authorizedEMAIDs) {
+			if (emaid.getValue().equals(providedEMAID.getValue()))
+				emaidFound = true;
+		}
+		
+		if (emaidFound)
+			return SecurityUtils.getCertificateChain("./moCertChain.p12");
+		else {
+			getLogger().warn("EMAID '" + providedEMAID.getValue() + "' (read from common name field of contract "
+						   + "certificate) is not authorized");
+			return null;
+		}
+			
+	}
+	
 	
 	@Override
 	public ECPrivateKey getContractCertificatePrivateKey() {

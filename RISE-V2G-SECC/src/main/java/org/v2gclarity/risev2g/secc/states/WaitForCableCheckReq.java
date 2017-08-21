@@ -32,6 +32,7 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CableCheckReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CableCheckResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.IsolationLevelType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
@@ -63,6 +64,9 @@ public class WaitForCableCheckReq extends ServerState {
 			setEvseProcessingFinished(true);
 			
 			if (isEvseProcessingFinished()) {
+				// As soon as EVSEProcessing is set to Finished, the IsolationLevelType should be set to valid
+				getCommSessionContext().getDCEvseController().setIsolationLevel(IsolationLevelType.VALID);
+				
 				cableCheckRes.setEVSEProcessing(EVSEProcessingType.FINISHED);
 				cableCheckRes.setDCEVSEStatus(
 						((IDCEVSEController) getCommSessionContext().getDCEvseController()).getDCEVSEStatus(EVSENotificationType.NONE)

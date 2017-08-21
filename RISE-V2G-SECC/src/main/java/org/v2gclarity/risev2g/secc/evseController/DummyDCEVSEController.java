@@ -46,9 +46,11 @@ public class DummyDCEVSEController implements IDCEVSEController {
 	private PhysicalValueType maximumEVVoltageLimit;
 	private PhysicalValueType maximumEVCurrentLimit;
 	private PhysicalValueType maximumEVPowerLimit;
+	private IsolationLevelType isolationLevel;
 	
 	public DummyDCEVSEController(V2GCommunicationSessionSECC commSessionContext) {
 		setCommSessionContext(commSessionContext);
+		setIsolationLevel(IsolationLevelType.INVALID);
 	}
 	
 	@Override
@@ -101,7 +103,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 		dcEvseStatus.setNotificationMaxDelay(0);
 		dcEvseStatus.setEVSENotification((notification != null) ? notification : EVSENotificationType.NONE);
 		dcEvseStatus.setEVSEStatusCode(DCEVSEStatusCodeType.EVSE_READY);
-		dcEvseStatus.setEVSEIsolationStatus(IsolationLevelType.INVALID);
+		dcEvseStatus.setEVSEIsolationStatus(getIsolationLevel());
 		
 		return dcEvseStatus;
 	}
@@ -236,5 +238,15 @@ public class DummyDCEVSEController implements IDCEVSEController {
 		peakCurrentRipple.setValue((short) 0);  // what is a peak-to-peak current ripple??
 		
 		return peakCurrentRipple;
+	}
+
+	@Override
+	public IsolationLevelType getIsolationLevel() {
+		return isolationLevel;
+	}
+
+	@Override
+	public void setIsolationLevel(IsolationLevelType isolationLevel) {
+		this.isolationLevel = isolationLevel;
 	}
 }

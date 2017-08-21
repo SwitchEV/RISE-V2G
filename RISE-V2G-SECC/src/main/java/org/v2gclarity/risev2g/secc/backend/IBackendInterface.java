@@ -23,10 +23,12 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.secc.backend;
 
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.util.HashMap;
 
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 
 public interface IBackendInterface {
@@ -36,18 +38,34 @@ public interface IBackendInterface {
 	 * and optional tariff incentives which shall influence the charging behaviour of the EV.
 	 * 
 	 * @param maxEntriesSAScheduleTuple The maximum number of PMaxEntries and SalesTariff entries allowed by EVCC
+	 * @param departureTime The departure time provided by the EV
 	 * @param xmlSignatureRefElements Signature reference parameter provided to put sales tariff IDs and sales tariffs in
 	 * @return An SASchedulesType element with a list of secondary actor schedules 
 	 */
-	public SAScheduleListType getSAScheduleList(int maxEntriesSAScheduleTuple, HashMap<String, byte[]> xmlSignatureRefElements);
+	public SAScheduleListType getSAScheduleList(
+			int maxEntriesSAScheduleTuple, 
+			long departureTime,
+			HashMap<String, byte[]> xmlSignatureRefElements);
 	
 	
 	/**
 	 * Provides a certificate chain coming from a secondary actor with the leaf certificate being 
-	 * the contract certificate and possible intermediate certificates (sub CAs) included.
+	 * the contract certificate and possible intermediate certificates (Sub-CAs) included.
+	 * 
+	 * @param oldContractCertificateChain The to-be-updated contract certificate chain
 	 * @return Certificate chain for contract certificate
 	 */
-	public CertificateChainType getContractCertificateChain();
+	public CertificateChainType getContractCertificateChain(CertificateChainType oldContractCertChain);
+	
+	
+	/**
+	 * Provides a certificate chain coming from a secondary actor with the leaf certificate being 
+	 * the contract certificate and possible intermediate certificates (Sub-CAs) included.
+	 * 
+	 * @param oemProvisioningCert The OEM provisioning certificate
+	 * @return Certificate chain for contract certificate
+	 */
+	public CertificateChainType getContractCertificateChain(X509Certificate oemProvisioningCert);
 	
 	
 	/**

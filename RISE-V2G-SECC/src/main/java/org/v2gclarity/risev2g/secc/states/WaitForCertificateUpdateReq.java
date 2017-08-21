@@ -56,11 +56,9 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 			V2GMessage v2gMessageReq = (V2GMessage) message;
 			CertificateUpdateReqType certificateUpdateReq = 
 					(CertificateUpdateReqType) v2gMessageReq.getBody().getBodyElement().getValue();
-			CertificateChainType contractCertificateChain = getCommSessionContext().getBackendInterface().getContractCertificateChain();
 			
 			if (isResponseCodeOK(
 					certificateUpdateReq, 
-					contractCertificateChain, 
 					v2gMessageReq.getHeader().getSignature())) {
 				// The ECDH (elliptic curve Diffie Hellman) key pair is also needed for the generation of the shared secret
 				KeyPair ecdhKeyPair = SecurityUtils.getECKeyPair();
@@ -76,7 +74,6 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 								ecdhKeyPair,
 								getCommSessionContext().getBackendInterface().getContractCertificatePrivateKey());
 				
-				certificateUpdateRes.setContractSignatureCertChain(contractCertificateChain);
 				/*
 				 * Experience from the test symposium in San Diego (April 2016):
 				 * The Id element of the signature is not restricted in size by the standard itself. But on embedded 
@@ -135,12 +132,17 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 	
 	private boolean isResponseCodeOK(
 			CertificateUpdateReqType certificateUpdateReq, 
-			CertificateChainType saContractCertificateChain, 
 			SignatureType signature) {
 		// Check for FAILED_NoCertificateAvailable
+		CertificateChainType saContractCertificateChain = 
+				getCommSessionContext().getBackendInterface().getContractCertificateChain(
+						certificateUpdateReq.getContractSignatureCertChain()
+				);
 		if (saContractCertificateChain == null || saContractCertificateChain.getCertificate() == null) {
 			certificateUpdateRes.setResponseCode(ResponseCodeType.FAILED_NO_CERTIFICATE_AVAILABLE);
 			return false;
+		} else {
+			certificateUpdateRes.setContractSignatureCertChain(saContractCertificateChain);
 		}
 		
 		// Check complete contract certificate chain
@@ -152,9 +154,6 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 			certificateUpdateRes.setResponseCode(certChainResponseCode);
 			return false;
 		}
-		
-		// Check for FAILED_ContractCancelled
-		// TODO how to check if the EMAID provided by EVCC is not accepted by secondary actor?
 		
 		// Check for FAILED_CertificateRevoked
 		// TODO check for revocation with OCSP

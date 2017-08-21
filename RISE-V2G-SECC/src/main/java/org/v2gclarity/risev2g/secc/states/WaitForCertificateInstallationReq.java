@@ -24,10 +24,12 @@
 package org.v2gclarity.risev2g.secc.states;
 
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
+import org.v2gclarity.risev2g.shared.enumerations.PKI;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
@@ -54,7 +56,10 @@ public class WaitForCertificateInstallationReq extends ServerState  {
 		if (isIncomingMessageValid(message, CertificateInstallationReqType.class, certificateInstallationRes)) {
 			V2GMessage v2gMessageReq = (V2GMessage) message;
 			CertificateInstallationReqType certificateInstallationReq = (CertificateInstallationReqType) v2gMessageReq.getBody().getBodyElement().getValue();
-			CertificateChainType saContractCertificateChain = getCommSessionContext().getBackendInterface().getContractCertificateChain();
+			CertificateChainType saContractCertificateChain = 
+					getCommSessionContext().getBackendInterface().getContractCertificateChain(
+							SecurityUtils.getCertificate(certificateInstallationReq.getOEMProvisioningCert())
+					);
 			
 			if (isResponseCodeOK(
 					certificateInstallationReq,
@@ -128,6 +133,11 @@ public class WaitForCertificateInstallationReq extends ServerState  {
 			CertificateInstallationReqType certificateInstallationReq,
 			CertificateChainType saContractCertificateChain, 
 			SignatureType signature) {
+		ResponseCodeType responseCode = null;
+		X509Certificate oemProvCert = SecurityUtils.getCertificate(
+														certificateInstallationReq.getOEMProvisioningCert()
+													 );
+		
 		// Check for FAILED_NoCertificateAvailable
 		if (saContractCertificateChain == null || saContractCertificateChain.getCertificate() == null) {
 			certificateInstallationRes.setResponseCode(ResponseCodeType.FAILED_NO_CERTIFICATE_AVAILABLE);
@@ -135,13 +145,17 @@ public class WaitForCertificateInstallationReq extends ServerState  {
 		}
 		
 		// Check for FAILED_CertificateExpired
-		ResponseCodeType validityResponseCode = SecurityUtils.verifyValidityPeriod(
-													SecurityUtils.getCertificate(
-															certificateInstallationReq.getOEMProvisioningCert()
-													)
-												); 
-		if (!validityResponseCode.equals(ResponseCodeType.OK)) {
-			certificateInstallationRes.setResponseCode(validityResponseCode);
+		responseCode = SecurityUtils.verifyValidityPeriod(oemProvCert); 
+		if (!responseCode.equals(ResponseCodeType.OK)) {
+			certificateInstallationRes.setResponseCode(responseCode);
+			return false;
+		}
+		
+		// Check for correct attributes (e.g. correct domain component)
+		responseCode = SecurityUtils.verifyLeafCertificateAttributes(oemProvCert, PKI.OEM); 
+		if (!responseCode.equals(ResponseCodeType.OK)) {
+			// FAILED_CertChainError is not defined for CertificateInstallationRes, that's why I set it to FAILED 
+			certificateInstallationRes.setResponseCode(ResponseCodeType.FAILED);
 			return false;
 		}
 		

@@ -80,9 +80,12 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 					int maxEntriesSAScheduleTuple = (chargeParameterDiscoveryReq.getMaxEntriesSAScheduleTuple() != null) ? 
 													chargeParameterDiscoveryReq.getMaxEntriesSAScheduleTuple() : 1024;
 					
+					Long departureTime = chargeParameterDiscoveryReq.getEVChargeParameter().getValue().getDepartureTime();
+					
 					getCommSessionContext().setSaSchedules(
 							getCommSessionContext().getBackendInterface().getSAScheduleList(
 									maxEntriesSAScheduleTuple, 
+									(departureTime != null) ? departureTime.longValue() : 0,
 									getXMLSignatureRefElements())
 							);
 				}

@@ -185,7 +185,7 @@ public abstract class ServerState extends State {
 		}
 		
 		getLogger().debug("Preparing to send " + messageName);
-		return new SendMessage(message, getCommSessionContext().getStates().get(nextExpectedMessage), TimeRestrictions.V2G_SECC_SEQUENCE_TIMEOUT);
+		return new SendMessage(message, getCommSessionContext().getStates().get(nextExpectedMessage), TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT);
 	}
 
 	
@@ -302,10 +302,16 @@ public abstract class ServerState extends State {
 			break;
 		case "PreChargeResType": 
 			PreChargeResType preChargeRes = (PreChargeResType) responseMessage;
-			IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
+			IDCEVSEController evseController = getCommSessionContext().getDCEvseController();
 			
 			preChargeRes.setDCEVSEStatus(evseController.getDCEVSEStatus(EVSENotificationType.NONE));
-			preChargeRes.setEVSEPresentVoltage(evseController.getPresentVoltage());
+			
+			PhysicalValueType evsePresentVoltage = new PhysicalValueType();
+			evsePresentVoltage.setMultiplier(new Byte("0"));
+			evsePresentVoltage.setUnit(UnitSymbolType.V);
+			evsePresentVoltage.setValue((short) 0); 
+			
+			preChargeRes.setEVSEPresentVoltage(evsePresentVoltage);
 			preChargeRes.setResponseCode(responseCode);
 			break;
 		case "PowerDeliveryResType":
@@ -352,7 +358,13 @@ public abstract class ServerState extends State {
 			IDCEVSEController evseController3 = (IDCEVSEController) getCommSessionContext().getDCEvseController();
 			
 			weldingDetectionRes.setDCEVSEStatus(evseController3.getDCEVSEStatus(EVSENotificationType.NONE));
-			weldingDetectionRes.setEVSEPresentVoltage(evseController3.getPresentVoltage());
+			
+			PhysicalValueType evsePresentVoltage2 = new PhysicalValueType();
+			evsePresentVoltage2.setMultiplier(new Byte("0"));
+			evsePresentVoltage2.setUnit(UnitSymbolType.V);
+			evsePresentVoltage2.setValue((short) 0); 
+			
+			weldingDetectionRes.setEVSEPresentVoltage(evsePresentVoltage2);
 			weldingDetectionRes.setResponseCode(responseCode);
 			break;
 		case "SessionStopResType":

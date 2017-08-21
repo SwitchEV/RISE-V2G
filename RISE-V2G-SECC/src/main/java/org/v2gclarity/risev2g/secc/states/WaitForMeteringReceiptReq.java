@@ -97,6 +97,8 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		 * CurrentDemandRes (DC charging) is equal to the received MeterInfo
 		 */
 		if (!meterInfoEquals(getCommSessionContext().getSentMeterInfo(), meteringReceiptReq.getMeterInfo())) {
+			getLogger().error("The metering values sent by the EVCC do not match the ones sent previously by the SECC. "
+							+ "This is not a signature verification error.");
 			meteringReceiptRes.setResponseCode(ResponseCodeType.FAILED_METERING_SIGNATURE_NOT_VALID);
 			return false;
 		}

@@ -325,6 +325,7 @@ public final class SecurityUtils {
 		X509Certificate leafCertificate = null;
 		X509Certificate subCA1Certificate = null;
 		X509Certificate subCA2Certificate = null;
+		ResponseCodeType responseCode = null;
 		
 		// Get leaf certificate
 		if (certChain != null) {
@@ -418,17 +419,27 @@ public final class SecurityUtils {
 		}
 		
 		
-		/*
-		 * *****************************************
-		 * PKI SPECIFIC CERTIFICATE ATTRIBUTES CHECK
-		 * *****************************************
-		 */
+		responseCode = verifyLeafCertificateAttributes(leafCertificate, pki);
+		if (responseCode.equals(ResponseCodeType.OK))
+			return responseCode;
 		
+		return ResponseCodeType.OK;
+	}
+	
+	
+	/**
+	 * Checks certificate attributes for a given leaf certificate belonging to an ISO 15118 PKI.
+	 * 
+	 * @param certificate The X.509 certificate whose attributes need to be checked
+	 * @param pki The PKI to which the certificate belongs
+	 * @return
+	 */
+	public static ResponseCodeType verifyLeafCertificateAttributes(X509Certificate leafCertificate, PKI pki) {
 		switch (pki) {
 		case CPO:
 			if (!verifyDomainComponent(leafCertificate, "CPO")) {
 				getLogger().error("SECC leaf certificate with distinguished name '" + 
-						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
 						  "domain component. Should be 'CPO'");
 				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
 			}
@@ -436,20 +447,20 @@ public final class SecurityUtils {
 		case CPS:
 			if (!verifyDomainComponent(leafCertificate, "CPS")) {
 				getLogger().error("CPS leaf certificate with distinguished name '" + 
-						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
 						  "domain component. Should be 'CPS'");
 				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
 			}
 			break;
 		case MO:
-			if (!isEMAIDSynstaxValid(certChain)) {
+			if (!isEMAIDSynstaxValid(leafCertificate)) {
 				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
 			}
 			break;
 		case OEM:
 			if (!verifyDomainComponent(leafCertificate, "OEM")) {
 				getLogger().error("OEM provisioning certificate with distinguished name '" + 
-						  leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
+						leafCertificate.getSubjectX500Principal().getName() + "' has incorrect value for " +
 						  "domain component. Should be 'OEM'");
 				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
 			}
@@ -457,7 +468,6 @@ public final class SecurityUtils {
 		default:
 			break;
 		}
-
 		
 		return ResponseCodeType.OK;
 	}
@@ -1541,13 +1551,24 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * Returns the EMAID (e-mobility account identifier) from the contract certificate.
+	 * Returns the EMAID (e-mobility account identifier) from the contract certificate as part of the contract certificate chain.
 	 * 
 	 * @param contractCertificateChain The certificate chain holding the contract certificate
 	 * @return The EMAID
 	 */
 	public static EMAIDType getEMAID(CertificateChainType contractCertificateChain) {
 		X509Certificate contractCertificate = getCertificate(contractCertificateChain.getCertificate());
+		return getEMAIDFromDistinguishedName(contractCertificate.getSubjectX500Principal().getName());
+	}
+	
+	
+	/**
+	 * Returns the EMAID (e-mobility account identifier) from the contract certificate.
+	 * 
+	 * @param contractCertificate The contract certificate 
+	 * @return The EMAID
+	 */
+	public static EMAIDType getEMAID(X509Certificate contractCertificate) {
 		return getEMAIDFromDistinguishedName(contractCertificate.getSubjectX500Principal().getName());
 	}
 	
@@ -1598,7 +1619,7 @@ public final class SecurityUtils {
 		for(Rdn rdn : ln.getRdns()) {
 		    if (rdn.getType().equalsIgnoreCase("CN")) {
 		    	// Optional hyphens used for better human readability must be omitted here
-		    	emaid.setId(rdn.getValue().toString().replace("-", ""));
+		    	emaid.setId("id1");
 		    	emaid.setValue(rdn.getValue().toString().replace("-", ""));
 		        break;
 		    }
@@ -2107,8 +2128,8 @@ public final class SecurityUtils {
 	 * @param certChain The contract certificate chain. The EMAID is read from the contract certificate's common name
 	 * @return True, if the syntax is valid, false otherwise
 	 */
-	public static boolean isEMAIDSynstaxValid(CertificateChainType certChain) {
-		String emaid = getEMAID(certChain).getValue().toUpperCase();
+	public static boolean isEMAIDSynstaxValid(X509Certificate contractCertificate) {
+		String emaid = getEMAID(contractCertificate).getValue().toUpperCase();
 		
 		if (emaid.length() < 14 || emaid.length() > 18) {
 			getLogger().error("EMAID is invalid. Its length (" + emaid.length() + ") mus be between "

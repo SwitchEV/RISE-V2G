@@ -32,6 +32,7 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 
 public class WaitForChargingStatusReq extends ServerState {
@@ -56,13 +57,17 @@ public class WaitForChargingStatusReq extends ServerState {
 			 * but then make sure the EV is stopping the charge loop
 			 */
 			chargingStatusRes.setACEVSEStatus(
-					((IACEVSEController) getCommSessionContext().getACEvseController())
-					.getACEVSEStatus(EVSENotificationType.NONE)  
-					);
+					getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE)
+			);
 			
 			// Optionally indicate that the EVCC is required to send a MeteringReceiptReq message 
-			// (only in PnC mode according to [V2G2-691])
-			chargingStatusRes.setReceiptRequired(false);
+			if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.EXTERNAL_PAYMENT)) {
+				// In EIM, there is never a MeteringReceiptReq/-Res message pair, therefore it is set to false here
+				chargingStatusRes.setReceiptRequired(false);
+			} else {
+				// Only in PnC mode according to [V2G2-691]
+				chargingStatusRes.setReceiptRequired(true);
+			}
 			
 			// Optionally set EVSEMaxCurrent (if NOT in AC PnC mode) -> check with AC station
 			

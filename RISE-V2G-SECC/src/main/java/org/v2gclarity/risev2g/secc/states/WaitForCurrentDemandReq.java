@@ -31,6 +31,7 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
@@ -50,7 +51,7 @@ public class WaitForCurrentDemandReq extends ServerState {
 			CurrentDemandReqType currentDemandReq = 
 					(CurrentDemandReqType) v2gMessageReq.getBody().getBodyElement().getValue();
 			
-			IDCEVSEController evseController = (IDCEVSEController) getCommSessionContext().getDCEvseController();
+			IDCEVSEController evseController = getCommSessionContext().getDCEvseController();
 			
 			evseController.setEVMaximumCurrentLimit(currentDemandReq.getEVMaximumCurrentLimit());
 			evseController.setEVMaximumVoltageLimit(currentDemandReq.getEVMaximumVoltageLimit());
@@ -80,8 +81,14 @@ public class WaitForCurrentDemandReq extends ServerState {
 			getCommSessionContext().setSentMeterInfo(evseController.getMeterInfo());
 			currentDemandRes.setSAScheduleTupleID(getCommSessionContext().getChosenSAScheduleTuple());
 			
-			// TODO how to determine if a receipt is required or not?
-			currentDemandRes.setReceiptRequired(true);
+			// Optionally indicate that the EVCC is required to send a MeteringReceiptReq message 
+			if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.EXTERNAL_PAYMENT)) {
+				// In EIM, there is never a MeteringReceiptReq/-Res message pair, therefore it is set to false here
+				currentDemandRes.setReceiptRequired(false);
+			} else {
+				// Optionally set to true, but only in PnC mode according to [V2G2-691]
+				currentDemandRes.setReceiptRequired(true);
+			}
 			
 			if (currentDemandRes.isReceiptRequired()) {
 				return getSendMessage(currentDemandRes, V2GMessages.METERING_RECEIPT_REQ);
