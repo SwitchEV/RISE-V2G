@@ -96,12 +96,14 @@ public class WaitForCurrentDemandRes extends ClientState {
 				default:
 					// TODO regard [V2G2-305] (new SalesTariff if EAmount not yet met and tariff finished)
 					
-					// TODO check somehow if charging is stopped by EV, otherwise send new CurrentDemandReq
-					
-					getCommSessionContext().setStopChargingRequested(true);
-					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
-										  V2GMessages.POWER_DELIVERY_RES,
-										  " (ChargeProgress = STOP_CHARGING)");
+					if (getCommSessionContext().getEvController().isChargingLoopActive()) {
+						return getSendMessage(getCurrentDemandReq(), V2GMessages.CURRENT_DEMAND_RES);
+					} else {
+						getCommSessionContext().setStopChargingRequested(true);
+						return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
+											  V2GMessages.POWER_DELIVERY_RES,
+											  " (ChargeProgress = STOP_CHARGING)");
+					}
 			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");

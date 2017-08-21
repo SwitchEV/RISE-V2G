@@ -31,6 +31,7 @@ import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeteringReceiptReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -102,11 +103,15 @@ public class WaitForChargingStatusRes extends ClientState {
 				default:
 					// TODO regard [V2G2-305] (new SalesTariff if EAmount not yet met and tariff finished)
 					
-					// TODO check somehow if charging is stopped by EV, otherwise send new ChargingStatusReq
-					getCommSessionContext().setStopChargingRequested(true);
-					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
-										  V2GMessages.POWER_DELIVERY_RES,
-										  " (ChargeProgress = STOP_CHARGING)");
+					if (getCommSessionContext().getEvController().isChargingLoopActive()) {
+						ChargingStatusReqType chargingStatusReq = new ChargingStatusReqType();
+						return getSendMessage(chargingStatusReq, V2GMessages.CHARGING_STATUS_RES);
+					} else {
+						getCommSessionContext().setStopChargingRequested(true);
+						return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
+											  V2GMessages.POWER_DELIVERY_RES,
+											  " (ChargeProgress = STOP_CHARGING)");
+					}
 			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");

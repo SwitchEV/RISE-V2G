@@ -54,10 +54,12 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	private Logger logger = LogManager.getLogger(this.getClass().getSimpleName()); 
 	private V2GCommunicationSessionEVCC commSessionContext;
 	private CPStates cpState;
+	private int chargingLoopCounter;
 	
 	public DummyEVController(V2GCommunicationSessionEVCC commSessionContext) {
 		setCommSessionContext(commSessionContext);
 		setCPState(CPStates.STATE_B); // should be signaled before ISO/IEC 15118 stack initializes
+		setChargingLoopCounter((short) 0);
 	}
 	
 	@Override
@@ -298,5 +300,23 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	public void adjustMaxCurrent(PhysicalValueType evseMaxCurrent) {
 		short multiplier = (short) (evseMaxCurrent.getMultiplier() & 0xFF);
 		getLogger().info("Adjusting max current to " + evseMaxCurrent.getValue() * Math.pow(10, multiplier) + " A");
+	}
+
+	@Override
+	public boolean isChargingLoopActive() {
+		// Keep charging until 10 charging loops are finished
+		if (getChargingLoopCounter() < 10) {
+			setChargingLoopCounter(getChargingLoopCounter() + 1);
+			return true;
+		} else 
+			return false;
+	}
+
+	public int getChargingLoopCounter() {
+		return chargingLoopCounter;
+	}
+
+	public void setChargingLoopCounter(int chargingLoopCounter) {
+		this.chargingLoopCounter = chargingLoopCounter;
 	}
 }

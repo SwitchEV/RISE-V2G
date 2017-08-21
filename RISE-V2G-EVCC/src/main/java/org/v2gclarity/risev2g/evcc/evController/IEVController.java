@@ -76,4 +76,12 @@ public interface IEVController {
 	 * @return The respective CP state
 	 */
 	public CPStates getCPState();
+	
+	
+	/**
+	 * Provides information on whether the charging loop should be active to charge the EV's battery, or not
+	 * 
+	 * @return True, if charging process should be continued, false otherwise
+	 */
+	public boolean isChargingLoopActive();
 }
