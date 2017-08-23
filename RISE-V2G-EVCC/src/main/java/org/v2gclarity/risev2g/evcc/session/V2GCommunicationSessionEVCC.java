@@ -106,6 +106,9 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	private CPStates changeToState; // signals a needed state change (checked when sending the request message)
 	private StatefulTransportLayerClient transportLayerClient;
 	private ContractCertificateStatus contractCertStatus;
+	private long ongoingTimer; // used for V2G_EVCC_Ongoing_Timer, V2G_EVCC_PreCharge_Timer, V2G_EVCC_CableCheck_Timer
+	private boolean isOngoingTimerActive;
+	private byte[] sentGenChallenge;
 	
 	public V2GCommunicationSessionEVCC(StatefulTransportLayerClient transportLayerClient) {
 		setTransportLayerClient(transportLayerClient);
@@ -165,7 +168,11 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 				if (getCurrentState().equals(getStates().get(V2GMessages.SUPPORTED_APP_PROTOCOL_RES))) {
 					obj = (SupportedAppProtocolRes) getMessageHandler().exiToSuppAppProtocolMsg(getV2gTpMessage().getPayload());
 				} else {
-					obj = (V2GMessage) getMessageHandler().exiToV2gMsg(getV2gTpMessage().getPayload());
+					try {
+						obj = (V2GMessage) getMessageHandler().exiToV2gMsg(getV2gTpMessage().getPayload());
+					} catch (ClassCastException e) {
+						terminateSession("Received incoming message is not a valid V2GTPMessage\n" + e, false);
+					}
 				}
 				
 				processReaction(getCurrentState().processIncomingMessage(obj));
@@ -175,7 +182,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		} else if ((obs instanceof TCPClient || obs instanceof TLSClient) && obj == null) {
 			terminateSession("Transport layer has notified an error", false);
 		} else {
-			getLogger().warn("Notification received, but sending entity or received object not identifiable");
+			terminateSession("Notification received, but sending entity or received object not identifiable", false);
 		}
 	}
 	
@@ -472,4 +479,33 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		this.contractCertStatus = contractCertStatus;
 	}
 
+
+	public long getOngoingTimer() {
+		return ongoingTimer;
+	}
+
+
+	public void setOngoingTimer(long ongoingTimer) {
+		this.ongoingTimer = ongoingTimer;
+	}
+
+
+	public boolean isOngoingTimerActive() {
+		return isOngoingTimerActive;
+	}
+
+
+	public void setOngoingTimerActive(boolean isOngoingTimerActive) {
+		this.isOngoingTimerActive = isOngoingTimerActive;
+	}
+
+
+	public byte[] getSentGenChallenge() {
+		return sentGenChallenge;
+	}
+
+
+	public void setSentGenChallenge(byte[] sentGenChallenge) {
+		this.sentGenChallenge = sentGenChallenge;
+	}
 }
