@@ -99,8 +99,9 @@ public class WaitForSupportedAppProtocolRes extends ClientState {
 					TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT - elapsedTimeInMs
 					));
 		} else {
-			return new TerminateSession("Invalid message (" + message.getClass().getSimpleName() + 
-	  		  		  					") at this state (" + this.getClass().getSimpleName() + ")");
+			String className = (message != null) ? message.getClass().getSimpleName() : "<unkown message type>";
+			
+			return new TerminateSession("Invalid message (" + className + ") at this state (" + this.getClass().getSimpleName() + ")");
 		}
 	}
 }
