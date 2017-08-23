@@ -23,11 +23,14 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.evcc.states;
 
+import java.util.concurrent.TimeUnit;
+
 import org.v2gclarity.risev2g.evcc.evController.IDCEVController;
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CableCheckResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeReqType;
@@ -56,9 +59,23 @@ public class WaitForCableCheckRes extends ClientState {
 				preChargeReq.setEVTargetCurrent(dcEvController.getTargetCurrent());
 				preChargeReq.setEVTargetVoltage(dcEvController.getTargetVoltage());
 				
+				getCommSessionContext().setOngoingTimer(System.nanoTime());
+				getCommSessionContext().setOngoingTimerActive(true);
+				
 				return getSendMessage(preChargeReq, V2GMessages.PRE_CHARGE_RES);
 			} else {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
+				
+				if (getCommSessionContext().isOngoingTimerActive()) {
+					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
+					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					
+					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_CABLE_CHECK_TIMEOUT) 
+						return new TerminateSession("CableCheck timer timed out for CableCheckReq");
+				} else {
+					getCommSessionContext().setOngoingTimer(System.nanoTime());
+					getCommSessionContext().setOngoingTimerActive(true);
+				}
 				
 				return getSendMessage(getCableCheckReq(), V2GMessages.CABLE_CHECK_RES);
 			}

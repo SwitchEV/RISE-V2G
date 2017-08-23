@@ -58,6 +58,7 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 		setClientPort(MiscUtils.getRandomPortNumber());
 		setClientAddress(MiscUtils.getLinkLocalAddress());
 		setV2gTPHeader(new byte[8]);
+		setTimeout(2000); // Needed for the supportedAppProtocol timeout
 	}
 	
 	protected boolean processIncomingMessage() throws IOException {

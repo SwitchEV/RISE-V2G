@@ -54,6 +54,9 @@ public class WaitForPaymentDetailsRes extends ClientState {
 			if (paymentDetailsRes.getGenChallenge() == null) {
 				return new TerminateSession("GenChallenge not provided in PaymentDetailsRes");
 			} else {
+				// Save the sent genChallenge for the state WaitForAuthorizationRes if EVSEProcessing is set to ONGOING
+				getCommSessionContext().setSentGenChallenge(paymentDetailsRes.getGenChallenge());
+				
 				AuthorizationReqType authorizationReq = getAuthorizationReq(paymentDetailsRes.getGenChallenge());
 				
 				// Set xml reference element

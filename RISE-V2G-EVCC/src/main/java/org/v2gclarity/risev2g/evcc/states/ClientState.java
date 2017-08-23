@@ -27,6 +27,9 @@ import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.ListIterator;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
+
 import org.v2gclarity.risev2g.evcc.evController.DummyEVController;
 import org.v2gclarity.risev2g.evcc.evController.IACEVController;
 import org.v2gclarity.risev2g.evcc.evController.IDCEVController;
@@ -38,6 +41,7 @@ import org.v2gclarity.risev2g.shared.misc.State;
 import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVSEStatusType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
@@ -53,7 +57,9 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVPowerDeliveryParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MessageHeaderType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeteringReceiptResType;
@@ -418,9 +424,16 @@ public abstract class ClientState extends State {
 		powerDeliveryReq.setChargeProgress(chargeProgress);
 		powerDeliveryReq.setSAScheduleTupleID(getCommSessionContext().getEvController().getChosenSAScheduleTupleID());	
 		
-		// Optionally set DC_EVPowerDeliveryParameter if in DC charging mode
+		// Set DC_EVPowerDeliveryParameter if in DC charging mode
 		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
-			
+			/*
+			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
+			 * class name (DCEVPowerDeliveryParameter) and the name in the XSD (DC_EVPowerDeliveryParameter)
+			 */
+			JAXBElement jaxbDcEvPowerDeliveryParameter = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVPowerDeliveryParameter"), 
+					DCEVPowerDeliveryParameterType.class, 
+					((IDCEVController) getCommSessionContext().getEvController()).getEVPowerDeliveryParameter());
+			powerDeliveryReq.setEVPowerDeliveryParameter(jaxbDcEvPowerDeliveryParameter);
 		}
 		
 		return powerDeliveryReq;

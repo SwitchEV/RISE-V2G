@@ -26,6 +26,7 @@ package org.v2gclarity.risev2g.evcc.states;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.CPStates;
@@ -33,6 +34,7 @@ import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVSEChargeParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryResType;
@@ -60,8 +62,25 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			
 			if (chargeParameterDiscoveryRes.getEVSEProcessing().equals(EVSEProcessingType.ONGOING)) {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
+				
+				if (getCommSessionContext().isOngoingTimerActive()) {
+					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
+					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					
+					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT) 
+						return new TerminateSession("Ongoing timer timed out for ChargeParameterDiscoveryReq");
+				} else {
+					getCommSessionContext().setOngoingTimer(System.nanoTime());
+					getCommSessionContext().setOngoingTimerActive(true);
+				}
+				
 				return getSendMessage(getCommSessionContext().getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
 			} else {
+				getLogger().debug("EVSEProcessing was set to FINISHED");
+				
+				getCommSessionContext().setOngoingTimer(0L);
+				getCommSessionContext().setOngoingTimerActive(false);
+				
 				// Check for the EVSENotification
 				EVSENotificationType evseNotification = null;
 				
@@ -111,9 +130,13 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 							return getSendMessage(getPowerDeliveryReq(ChargeProgressType.START), V2GMessages.POWER_DELIVERY_RES);
 						} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
 							// CP state C signaling BEFORE sending CableCheckReq message in DC
-							if (getCommSessionContext().getEvController().setCPState(CPStates.STATE_C))
+							if (getCommSessionContext().getEvController().setCPState(CPStates.STATE_C)) {
+								// Set timer for CableCheck
+								getCommSessionContext().setOngoingTimer(System.nanoTime());
+								getCommSessionContext().setOngoingTimerActive(true);
+							
 								return getSendMessage(getCableCheckReq(), V2GMessages.CABLE_CHECK_RES);
-							else
+							} else
 								return new TerminateSession("CP state C not ready (current state = " + 
 										getCommSessionContext().getEvController().getCPState() +
 										")");

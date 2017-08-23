@@ -36,6 +36,7 @@ import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVChargeParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingProfileType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVChargeParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVErrorCodeType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVPowerDeliveryParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVStatusType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PMaxScheduleEntryType;
@@ -318,5 +319,15 @@ public class DummyEVController implements IACEVController, IDCEVController {
 
 	public void setChargingLoopCounter(int chargingLoopCounter) {
 		this.chargingLoopCounter = chargingLoopCounter;
+	}
+
+	@Override
+	public DCEVPowerDeliveryParameterType getEVPowerDeliveryParameter() {
+		DCEVPowerDeliveryParameterType dcEvPowerDeliveryParameter = new DCEVPowerDeliveryParameterType();
+		dcEvPowerDeliveryParameter.setBulkChargingComplete(false);
+		dcEvPowerDeliveryParameter.setChargingComplete(false);
+		dcEvPowerDeliveryParameter.setDCEVStatus(getDCEVStatus());
+		
+		return dcEvPowerDeliveryParameter;
 	}
 }

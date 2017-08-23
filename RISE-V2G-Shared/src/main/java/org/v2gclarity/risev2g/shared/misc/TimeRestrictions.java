@@ -38,6 +38,9 @@ public class TimeRestrictions {
 	private static Logger logger = LogManager.getLogger(TimeRestrictions.class.getSimpleName());
 	public static final int V2G_EVCC_SEQUENCE_PERFORMANCE_TIME = 40000;
 	public static final int V2G_SECC_SEQUENCE_TIMEOUT = 60000;
+	public static final int V2G_EVCC_ONGOING_TIMEOUT = 60000;
+	public static final int V2G_EVCC_CABLE_CHECK_TIMEOUT = 40000;
+	public static final int V2G_EVCC_PRE_CHARGE_TIMEOUT = 7000;
 	
 	/**
 	 * SDP client shall wait for SECC Discovery Response message for _at least_ 250 ms (see [V2G2-159])

@@ -23,11 +23,16 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.evcc.states;
 
+import java.util.concurrent.TimeUnit;
+
+import org.v2gclarity.risev2g.evcc.evController.IDCEVController;
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
@@ -44,9 +49,32 @@ public class WaitForPreChargeRes extends ClientState {
 			PreChargeResType preChargeRes = 
 					(PreChargeResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
-			// TODO how to react to DC_EVSEStatus and EVSEPresentVoltage?
+			// TODO how to react to DC_EVSEStatus
 			
-			return getSendMessage(getPowerDeliveryReq(ChargeProgressType.START), V2GMessages.POWER_DELIVERY_RES);
+			IDCEVController dcEvController = (IDCEVController) getCommSessionContext().getEvController();
+			double targetVoltage = dcEvController.getTargetVoltage().getValue() * Math.pow(10, dcEvController.getTargetVoltage().getMultiplier());
+			double presentVoltage = preChargeRes.getEVSEPresentVoltage().getValue() * Math.pow(10, preChargeRes.getEVSEPresentVoltage().getMultiplier());
+					
+			if (targetVoltage == presentVoltage) {
+				getCommSessionContext().setOngoingTimerActive(false);
+				getCommSessionContext().setOngoingTimer(0L);
+				
+				return getSendMessage(getPowerDeliveryReq(ChargeProgressType.START), V2GMessages.POWER_DELIVERY_RES);
+			} else {
+				long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
+				long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+				
+				if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_PRE_CHARGE_TIMEOUT) 
+					return new TerminateSession("PreCharge timer timed out for PreChargeReq");
+				else {
+					PreChargeReqType preChargeReq = new PreChargeReqType();
+					preChargeReq.setDCEVStatus(dcEvController.getDCEVStatus());
+					preChargeReq.setEVTargetCurrent(dcEvController.getTargetCurrent());
+					preChargeReq.setEVTargetVoltage(dcEvController.getTargetVoltage());
+					
+					return getSendMessage(preChargeReq, V2GMessages.PRE_CHARGE_RES);
+				}
+			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");
 		}

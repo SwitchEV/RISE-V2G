@@ -826,6 +826,8 @@ public final class SecurityUtils {
 			privateKey = (ECPrivateKey) keyStore.getKey(
 						alias, 
 						GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
+			
+			getLogger().debug("Private key used for creating signature: " + ByteUtils.toHexString(privateKey.getEncoded()));
 		} catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException e) {
 			getLogger().error("The private key from keystore with alias '" + alias + 
 							  "' could not be retrieved (" + e.getClass().getSimpleName() + ")", e);
@@ -981,6 +983,8 @@ public final class SecurityUtils {
 								 contractCert.getSubjectX500Principal().getName() + "' saved. " + 
 								 "Valid until " + contractCert.getNotAfter()
 								 ); 
+				getLogger().debug("Decrypted private key belonging to contract certificate saved. Key bytes: " + 
+								   ByteUtils.toHexString(contractCertPrivateKey.getEncoded()));
 			} else {
 				getLogger().error("Private key for contract certificate is not valid");
 				return false;

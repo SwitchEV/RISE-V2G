@@ -23,16 +23,20 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.evcc.states;
 
+import java.util.concurrent.TimeUnit;
+
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.AuthorizationResType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForAuthorizationRes extends ClientState {
@@ -49,6 +53,11 @@ public class WaitForAuthorizationRes extends ClientState {
 					(AuthorizationResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
 			if (authorizationRes.getEVSEProcessing().equals(EVSEProcessingType.FINISHED)) {
+				getLogger().debug("EVSEProcessing was set to FINISHED");
+				
+				getCommSessionContext().setOngoingTimer(0L);
+				getCommSessionContext().setOngoingTimerActive(false);
+				
 				ChargeParameterDiscoveryReqType chargeParameterDiscoveryReq = getChargeParameterDiscoveryReq();
 			
 				/*
@@ -59,19 +68,40 @@ public class WaitForAuthorizationRes extends ClientState {
 				
 				return getSendMessage(chargeParameterDiscoveryReq, V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
 			} else {
-				// Set xml reference element
-				AuthorizationReqType authorizationReq = getAuthorizationReq(null);
-				getXMLSignatureRefElements().put(
-						authorizationReq.getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
+				getLogger().debug("EVSEProcessing was set to ONGOING");
 				
-				// Set signing private key
-				setSignaturePrivateKey(SecurityUtils.getPrivateKey(
-						SecurityUtils.getKeyStore(
-								GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),
-								GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()), 
-						GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString())
-				);
+				if (getCommSessionContext().isOngoingTimerActive()) {
+					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
+					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					
+					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT) 
+						return new TerminateSession("Ongoing timer timed out for AuthorizationReq");
+				} else {
+					getCommSessionContext().setOngoingTimer(System.nanoTime());
+					getCommSessionContext().setOngoingTimerActive(true);
+				}
+					
+				AuthorizationReqType authorizationReq = null;
+				
+				if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT) && 
+					getCommSessionContext().isTlsConnection()) {
+					authorizationReq = getAuthorizationReq(getCommSessionContext().getSentGenChallenge());
+					
+					// Set xml reference element
+					getXMLSignatureRefElements().put(
+							authorizationReq.getId(), 
+							SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
+					
+					// Set signing private key
+					setSignaturePrivateKey(SecurityUtils.getPrivateKey(
+							SecurityUtils.getKeyStore(
+									GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),
+									GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()), 
+							GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString())
+					);
+				} else {
+					authorizationReq = getAuthorizationReq(null);
+				}
 				
 				return getSendMessage(authorizationReq, V2GMessages.AUTHORIZATION_RES);
 			}

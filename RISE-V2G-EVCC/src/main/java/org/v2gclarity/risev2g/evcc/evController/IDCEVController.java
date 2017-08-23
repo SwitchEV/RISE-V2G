@@ -26,6 +26,7 @@ package org.v2gclarity.risev2g.evcc.evController;
 import javax.xml.bind.JAXBElement;
 
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVChargeParameterType;
+import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVPowerDeliveryParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVStatusType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.PhysicalValueType;
 
@@ -107,4 +108,11 @@ public interface IDCEVController extends IEVController {
 	 * @return The estimated time given as a PhysicalValueType
 	 */
 	public PhysicalValueType getRemainingTimeToBulkSOC();
+	
+	
+	/**
+	 * Returns the DC_EVPowerDeliverParameter
+	 * @return The DC_EVPowerDeliverParameter
+	 */
+	public DCEVPowerDeliveryParameterType getEVPowerDeliveryParameter();
 }
