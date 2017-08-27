@@ -453,7 +453,7 @@ public final class SecurityUtils {
 			}
 			break;
 		case MO:
-			if (!isEMAIDSynstaxValid(leafCertificate)) {
+			if (!isEMAIDSyntaxValid(leafCertificate)) {
 				return ResponseCodeType.FAILED_CERT_CHAIN_ERROR;
 			}
 			break;
@@ -716,8 +716,11 @@ public final class SecurityUtils {
 		 * systems, the memory is very limited which is why we should not use long IDs for the signature reference
 		 * element. A good size would be 3 characters max (like the example in the ISO 15118-2 annex J)
 		 */
-		dhPublicKey.setId("id1"); // dhPublicKey
-		dhPublicKey.setValue(getUncompressedSubjectPublicKey((ECPublicKey) ecdhKeyPair.getPublic()));
+		dhPublicKey.setId("id1"); 
+		
+		byte[] uncompressedDHpublicKey = getUncompressedSubjectPublicKey((ECPublicKey) ecdhKeyPair.getPublic());
+		getLogger().debug("Created DHpublickey: " + ByteUtils.toHexString(uncompressedDHpublicKey));
+		dhPublicKey.setValue(uncompressedDHpublicKey);
 		
 		return dhPublicKey;
 	}
@@ -826,8 +829,6 @@ public final class SecurityUtils {
 			privateKey = (ECPrivateKey) keyStore.getKey(
 						alias, 
 						GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
-			
-			getLogger().debug("Private key used for creating signature: " + ByteUtils.toHexString(privateKey.getEncoded()));
 		} catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException e) {
 			getLogger().error("The private key from keystore with alias '" + alias + 
 							  "' could not be retrieved (" + e.getClass().getSimpleName() + ")", e);
@@ -1715,6 +1716,8 @@ public final class SecurityUtils {
 			encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
 		} else encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
 		
+		getLogger().debug("EXI encoded " + jaxbMessageOrField.getName().getLocalPart() + ": " + ByteUtils.toHexString(encoded));
+		
 		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
 		getExiCodec().setFragment(false);
 		
@@ -1735,7 +1738,7 @@ public final class SecurityUtils {
 				 */
 				if ( !(jaxbMessageOrField.getValue() instanceof SignedInfoType) ) {
 					getLogger().debug("\n"
-									+ "\tDigest generated for reference element " + jaxbMessageOrField.getClass().getSimpleName() + ": " + ByteUtils.toHexString(digest) + "\n"
+									+ "\tDigest generated for XML reference element " + jaxbMessageOrField.getName().getLocalPart() + ": " + ByteUtils.toHexString(digest) + "\n"
 									+ "\tBase64 encoding of digest: " + Base64.getEncoder().encodeToString(digest));
 				}
 			}
@@ -1759,6 +1762,9 @@ public final class SecurityUtils {
 		try {
 			Signature ecdsa = Signature.getInstance("SHA256withECDSA", "SunEC");
 		
+			getLogger().debug("EXI encoded SignedInfo: " + ByteUtils.toHexString(signedInfoElementExi));
+			getLogger().debug("\n\tPrivate key used for creating signature: " + ByteUtils.toHexString(ecPrivateKey.getS().toByteArray()));
+			
 			ecdsa.initSign(ecPrivateKey);
 			ecdsa.update(signedInfoElementExi);
 			
@@ -1766,6 +1772,8 @@ public final class SecurityUtils {
 			
 			// Java operates on DER encoded signatures, but we must send the raw r and s values as signature 
 			byte[] rawSignature = getRawSignatureFromDEREncoding(signature);
+			
+			getLogger().debug("Signature value: " + ByteUtils.toHexString(rawSignature));
 			
 			return rawSignature;
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchProviderException e) {
@@ -2132,7 +2140,7 @@ public final class SecurityUtils {
 	 * @param certChain The contract certificate chain. The EMAID is read from the contract certificate's common name
 	 * @return True, if the syntax is valid, false otherwise
 	 */
-	public static boolean isEMAIDSynstaxValid(X509Certificate contractCertificate) {
+	public static boolean isEMAIDSyntaxValid(X509Certificate contractCertificate) {
 		String emaid = getEMAID(contractCertificate).getValue().toUpperCase();
 		
 		if (emaid.length() < 14 || emaid.length() > 18) {

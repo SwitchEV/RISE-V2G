@@ -1,9 +1,4 @@
 *.jks
-*.p12
-*.pem
-*.cert
-*.cer
-*.key
 *.pfx
 *.bin
 *.der
@@ -19,5 +14,7 @@ RISE-V2G-Certificates/csrs
 RISE-V2G-Certificates/keystores
 RISE-V2G-Certificates/privateKeys
 RISE-V2G-Certificates/testing-symposia
+RISE-V2G-SECC/cpsCertChain.p12
+RISE-V2G-SECC/moCertChain.p12
 /.metadata/
 /.recommenders/

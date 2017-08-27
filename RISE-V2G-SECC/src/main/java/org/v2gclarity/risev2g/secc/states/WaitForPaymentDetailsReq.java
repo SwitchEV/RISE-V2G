@@ -109,7 +109,7 @@ public class WaitForPaymentDetailsReq extends ServerState {
 		
 		// Check for FAILED_ContractCancelled
 		// TODO how to check if the EMAID provided by EVCC is not accepted by secondary actor?
-		if (!SecurityUtils.isEMAIDSynstaxValid(
+		if (!SecurityUtils.isEMAIDSyntaxValid(
 				SecurityUtils.getCertificate(
 						paymentDetailsReq.getContractSignatureCertChain().getCertificate())
 						)

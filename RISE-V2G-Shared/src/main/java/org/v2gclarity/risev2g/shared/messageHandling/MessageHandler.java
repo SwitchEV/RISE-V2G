@@ -290,23 +290,29 @@ public class MessageHandler {
 			 * We need to set the localPart of the QName object for the CertificateInstallationRes/CertificateUpdateRes parameters
 			 * correctly. The messageOrField object's class name cannot be taken directly as it differs from what should be the 
 			 * XML element name.
+			 * 
+			 * In principle, there are two ways of setting the namespace for the XML elements of the parameters of a 
+			 * CertificateInstallationRes/CertificateUpdatenRes. Annex J of ISO 15118-2 is not clear about that. Standard rules of
+			 * XSD would require to always set a so-called target namespace, in this case GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.
+			 * But you could also use the empty namespace "" and would still be conform to the standard.
+			 * The choice of the namespace heavily influences interoperability as the resulting digest values will be different.
 			 */
 			switch (messageName) {
 			case "CertificateChain":
 				messageName = "ContractSignatureCertChain";
-				namespace = "";
+//				namespace = "";
 				break;
 			case "DiffieHellmanPublickey":
 				messageName = "DHpublickey";
-				namespace = "";
+//				namespace = "";
 				break;
 			case "EMAID":
 				messageName = "eMAID";
-				namespace = "";
+//				namespace = "";
 				break;
 			case "ContractSignatureEncryptedPrivateKey":
 				messageName = "ContractSignatureEncryptedPrivateKey";
-				namespace = "";
+//				namespace = "";
 				break;
 			default:
 				break;
