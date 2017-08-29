@@ -94,7 +94,7 @@ public class TCPClient extends StatefulTransportLayerClient {
 	
 	@Override
 	public void run() {
-		while (!Thread.interrupted()) { 
+		while (!Thread.currentThread().isInterrupted()) { 
 			if (getTimeout() > 0) {
 				try {
 					getSocketToServer().setSoTimeout(getTimeout());
@@ -110,6 +110,8 @@ public class TCPClient extends StatefulTransportLayerClient {
 				}
 			}
 		}
+		
+		stop();
 	}
 	
 	

@@ -296,6 +296,8 @@ public class MessageHandler {
 			 * XSD would require to always set a so-called target namespace, in this case GlobalValues.V2G_CI_MSG_BODY_NAMESPACE.
 			 * But you could also use the empty namespace "" and would still be conform to the standard.
 			 * The choice of the namespace heavily influences interoperability as the resulting digest values will be different.
+			 * 
+			 * I recommend using the namespace GlobalValues.V2G_CI_MSG_BODY_NAMESPACE as this seems to be adopted by the industry.
 			 */
 			switch (messageName) {
 			case "CertificateChain":

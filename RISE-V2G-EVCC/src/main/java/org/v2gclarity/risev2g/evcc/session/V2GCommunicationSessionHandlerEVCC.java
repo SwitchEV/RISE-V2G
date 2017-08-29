@@ -75,13 +75,14 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 		
 		setSessionRetryCounter(0);
 		
-		if (!initialize()) {
-			// TODO ja, was tun?
-		};
+		initialize();
 	}
 	
 	
 	private boolean initialize() {
+		UDPClient udpClient = UDPClient.getInstance();
+		udpClient.initialize();
+		
 		byte[] udpResponse = null;
 		SECCDiscoveryRes seccDiscoveryRes = null;
 		setSessionRetryCounter(getSeccDiscoveryRequestCounter() + 1);
@@ -237,7 +238,9 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 	}
 	
 	private void terminate(TerminateSession terminationObject) {
+		getTransportLayerThread().interrupt();
 		setV2gCommunicationSessionEVCC(null);
+		UDPClient.getInstance().stop();;
 		
 		if (!terminationObject.isSuccessfulTermination()) {
 			// TODO should there be a retry of the communication session, and if yes, how often?

@@ -24,7 +24,6 @@
 package org.v2gclarity.risev2g.evcc.main;
 
 import org.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionHandlerEVCC;
-import org.v2gclarity.risev2g.evcc.transportLayer.UDPClient;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 
@@ -33,11 +32,7 @@ public class StartEVCC {
 	public static void main(String[] args) {
 		MiscUtils.setV2gEntityConfig(GlobalValues.EVCC_CONFIG_PROPERTIES_PATH.toString());
 		
-		UDPClient udpClient = UDPClient.getInstance();
-		
-		if (udpClient.initialize()) {
-			V2GCommunicationSessionHandlerEVCC sessionHandler = new V2GCommunicationSessionHandlerEVCC();
-		}
+		new V2GCommunicationSessionHandlerEVCC();
 	}
 
 }

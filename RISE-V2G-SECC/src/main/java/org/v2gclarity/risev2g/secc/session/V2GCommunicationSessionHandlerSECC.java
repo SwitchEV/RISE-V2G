@@ -197,8 +197,7 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 			// Remove HashMap entry
 			getConnectionHandlerMap().remove(connectionHandler);
 			
-			getLogger().debug("Thread '" + connectionThread.getName() + 
-							  "' has been interrupted and removed" );
+			getLogger().debug("Thread '" + connectionThread.getName() + "' has been interrupted and removed\n\n" );
 		} else {
 			String address = connectionHandler.getAddress();
 			int port = connectionHandler.getPort(); 

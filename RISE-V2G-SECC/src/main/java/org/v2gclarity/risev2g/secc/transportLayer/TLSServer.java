@@ -105,7 +105,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 	@Override
 	public void run() {
 		try {
-			while (!Thread.interrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
 				getLogger().debug("Waiting for new TLS client connection ...");
 				setTlsClientSocket((SSLSocket) getTlsServerSocket().accept());
 				

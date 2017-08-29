@@ -719,6 +719,7 @@ public final class SecurityUtils {
 		dhPublicKey.setId("id1"); 
 		
 		byte[] uncompressedDHpublicKey = getUncompressedSubjectPublicKey((ECPublicKey) ecdhKeyPair.getPublic());
+		
 		getLogger().debug("Created DHpublickey: " + ByteUtils.toHexString(uncompressedDHpublicKey));
 		dhPublicKey.setValue(uncompressedDHpublicKey);
 		
@@ -1437,6 +1438,7 @@ public final class SecurityUtils {
 			byte[] encryptedKeyWithIV = new byte[ivParamSpec.getIV().length + encryptedKey.length];
 			System.arraycopy(ivParamSpec.getIV(), 0, encryptedKeyWithIV, 0, ivParamSpec.getIV().length);
 			System.arraycopy(encryptedKey, 0, encryptedKeyWithIV, ivParamSpec.getIV().length, encryptedKey.length);
+			getLogger().debug("Encrypted private key: " + ByteUtils.toHexString(encryptedKeyWithIV));
 			
 			return encryptedKeyWithIV;
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | 
@@ -1623,9 +1625,10 @@ public final class SecurityUtils {
 
 		for(Rdn rdn : ln.getRdns()) {
 		    if (rdn.getType().equalsIgnoreCase("CN")) {
-		    	// Optional hyphens used for better human readability must be omitted here
-		    	emaid.setId("id1");
-		    	emaid.setValue(rdn.getValue().toString().replace("-", ""));
+			    	// Optional hyphens used for better human readability must be omitted here
+			    	emaid.setId("id1");
+			    	emaid.setValue(rdn.getValue().toString().replace("-", ""));
+			    	
 		        break;
 		    }
 		}

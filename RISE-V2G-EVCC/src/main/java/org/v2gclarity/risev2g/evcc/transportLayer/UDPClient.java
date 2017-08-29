@@ -142,7 +142,8 @@ public class UDPClient {
 	
 
 	public void stop() {
-		// the UDPClient is not supposed to be stopped
+		getSocketToUDPServer().close();
+		getLogger().debug("UDP client stopped");
 	}
 	
 	

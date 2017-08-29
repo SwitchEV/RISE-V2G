@@ -161,7 +161,7 @@ public class TLSClient extends StatefulTransportLayerClient {
 	
 	@Override
 	public void run() {
-		while (!Thread.interrupted()) { 
+		while (!Thread.currentThread().isInterrupted()) { 
 			if (getTimeout() >= 0) {
 				try {
 					getTlsSocketToServer().setSoTimeout(getTimeout());
@@ -180,6 +180,8 @@ public class TLSClient extends StatefulTransportLayerClient {
 				break;
 			}
 		}
+		
+		stop();
 	}
 	
 	

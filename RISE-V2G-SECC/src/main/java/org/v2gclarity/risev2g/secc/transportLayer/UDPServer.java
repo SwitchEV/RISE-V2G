@@ -101,7 +101,7 @@ public class UDPServer extends Observable implements Runnable {
 
 
 	public void run() {
-		while (!Thread.interrupted()) {
+		while (!Thread.currentThread().isInterrupted()) {
 	        setUdpClientPacket(new DatagramPacket(udpClientRequest, udpClientRequest.length));
 	        
 	        try {
@@ -118,6 +118,8 @@ public class UDPServer extends Observable implements Runnable {
 				getUdpServerSocket().close();
 			}  
 	    }
+		
+		stop();
 	}
 
 	

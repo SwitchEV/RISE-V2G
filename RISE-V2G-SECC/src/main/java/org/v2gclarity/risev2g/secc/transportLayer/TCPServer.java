@@ -61,7 +61,7 @@ public final class TCPServer extends StatefulTransportLayerServer {
 	@Override
 	public void run() {
 		try {
-			while (!Thread.interrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
 				getLogger().debug("Waiting for new TCP client connection ...");
 				setTcpClientSocket(getTcpServerSocket().accept());
 				

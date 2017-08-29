@@ -35,6 +35,7 @@ import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import org.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import org.v2gclarity.risev2g.shared.misc.TimeRestrictions;
+import org.v2gclarity.risev2g.shared.utils.SleepUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVChargeParameterType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
@@ -92,11 +93,7 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 				
 				// Wait a bit and check if the schedule has already been provided
 				// TODO is this the best way?
-				try {
-					Thread.sleep(TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES)-1000);
-				} catch (InterruptedException e) {
-					return new TerminateSession("InterruptedException while waiting for schedule");
-				}
+				SleepUtils.safeSleep(TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES)-1000);
 				
 				if (chargeParameterDiscoveryReq.getRequestedEnergyTransferMode().toString().startsWith("AC")) 
 					chargeParameterDiscoveryRes.setEVSEChargeParameter(
