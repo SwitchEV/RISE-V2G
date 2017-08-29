@@ -65,7 +65,11 @@ public final class MiscUtils {
 		NetworkInterface nif = null;
 		
 		try {
-			nif = NetworkInterface.getByName(networkInterfaceConfig);
+			if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) {
+				nif = NetworkInterface.getByIndex(Integer.parseInt(networkInterfaceConfig));
+			} else {
+				nif = NetworkInterface.getByName(networkInterfaceConfig);
+			}
 			Enumeration<InetAddress> inetAddresses = nif.getInetAddresses();
 			
 			while (inetAddresses.hasMoreElements()) {
@@ -96,7 +100,11 @@ public final class MiscUtils {
 		byte[] macAddress = null;
 		
 		try {
-			nif = NetworkInterface.getByName(networkInterfaceConfig);
+			if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) {
+				nif = NetworkInterface.getByIndex(Integer.parseInt(networkInterfaceConfig));
+			} else {
+				nif = NetworkInterface.getByName(networkInterfaceConfig);
+			}
 			macAddress = nif.getHardwareAddress();
 		} catch (SocketException e) {
 			getLogger().error("Failed to retrieve local mac address (SocketException)", e);
