@@ -229,6 +229,10 @@ public final class MiscUtils {
 			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
 			else returnValue = false;
 			break;
+		case "EXICodec": // EV + EVSE property
+			if (propertyValue.equals("open_exi")) returnValue = "open_exi";
+			else returnValue = "exificient";
+			break;
 		default:
 			getLogger().error("No property with name '" + propertyName + "' found");
 		}

@@ -39,9 +39,11 @@ import org.apache.logging.log4j.LogManager;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import org.v2gclarity.risev2g.shared.exiCodec.EXIficientCodec;
 import org.v2gclarity.risev2g.shared.exiCodec.ExiCodec;
+import org.v2gclarity.risev2g.shared.exiCodec.OpenEXICodec;
 import org.v2gclarity.risev2g.shared.misc.V2GCommunicationSession;
 import org.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import org.v2gclarity.risev2g.shared.utils.ByteUtils;
+import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 import org.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
@@ -84,9 +86,11 @@ public class MessageHandler {
 	 * This constructor is used by V2GCommunicationSessionHandlerEVCC and -SECC
 	 */
 	public MessageHandler() {
-		// Choose which implementation of an EXI codec to use
-		setExiCodec(EXIficientCodec.getInstance());
-//		setExiCodec(OpenEXICodec.getInstance());
+		// Choose which implementation of an EXI codec to use in the respective properties file
+		String exiCodecChoice = (String) MiscUtils.getPropertyValue("EXICodec");
+		
+		if (exiCodecChoice.equals("open_exi")) setExiCodec(OpenEXICodec.getInstance());
+		else setExiCodec(EXIficientCodec.getInstance());
 		
 		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
 		setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
