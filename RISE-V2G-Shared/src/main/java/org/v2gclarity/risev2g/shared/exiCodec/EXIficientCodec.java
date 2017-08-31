@@ -76,21 +76,17 @@ public final class EXIficientCodec extends ExiCodec {
 		setGrammarFactory(GrammarFactory.newInstance());
 		
 		/*
-		 *  The supportedAppProtocolReq and -Res message have a different schema than the rest
-		 *  of the V2G application layer messages
+		 * The Java classes
+		 * - EXIficient_V2G_CI_AppProtocol,
+		 * - EXIficient_V2G_CI_MsgDef, and 
+		 * - EXIficient_xmldsig_core_schema
+		 * are serialized versions of the respective XSD schema files.
+		 * These serializations have been created using a tool available at
+		 * https://github.com/EXIficient/exificient-grammars/blob/master/src/main/java/com/siemens/ct/exi/grammars/persistency/Grammars2JavaSourceCode.java
 		 */
-		try {
-			setGrammarAppProtocol(getGrammarFactory().createGrammars(
-					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_APP_PROTOCOL.toString())));
-			setGrammarMsgDef(getGrammarFactory().createGrammars(
-					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_MSG_DEF.toString()),
-					XSDResolver.getInstance()));
-			setGrammarXMLDSig(getGrammarFactory().createGrammars(
-					getClass().getResourceAsStream(GlobalValues.SCHEMA_PATH_XMLDSIG.toString()),
-					XSDResolver.getInstance()));
-		} catch (EXIException e) {
-			getLogger().error("Error occurred while trying to initialize EXIficientCodec (EXIException)!", e);
-		}
+		setGrammarAppProtocol(new EXIficient_V2G_CI_AppProtocol());
+		setGrammarMsgDef(new EXIficient_V2G_CI_MsgDef());
+		setGrammarXMLDSig(new EXIficient_xmldsig_core_schema());
 		
 		// Non-default settings to fulfill requirements [V2G2-099] and [V2G2-600]
 		getExiFactory().setValuePartitionCapacity(0);

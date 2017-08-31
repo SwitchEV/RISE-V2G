@@ -63,13 +63,6 @@ public class MessageHandler {
 	private ExiCodec exiCodec;
 	private V2GCommunicationSession commSessionContext;
 	private JAXBContext jaxbContext;
-	private enum jaxbContextEnum {
-		SUPPORTED_APP_PROTOCOL_REQ,
-		SUPPORTED_APP_PROTOCOL_RES,
-		V2G_MESSAGE,
-		OTHER // includes the jaxbContext needed for the parameters of CertificateInstallationRes/CertificateUpdateRes
-	}
-	private jaxbContextEnum currentJaxbContext;
 	
 	/**
 	 * This constructor is used by V2GCommunicationSessionEVCC and -SECC
@@ -79,7 +72,9 @@ public class MessageHandler {
 	public MessageHandler(V2GCommunicationSession commSessionContext) {
 		this();
 		setCommSessionContext(commSessionContext);
-		setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
+		
+		// Setting the JAXBContext is a very time-consuming action and should only be done once during startup
+		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
 	}
 	
 	/**
@@ -92,8 +87,8 @@ public class MessageHandler {
 		if (exiCodecChoice.equals("open_exi")) setExiCodec(OpenEXICodec.getInstance());
 		else setExiCodec(EXIficientCodec.getInstance());
 		
+		// Setting the JAXBContext is a very time-consuming action and should only be done once during startup
 		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
-		setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
 	} 
 	
 	public boolean isV2GTPMessageValid(V2GTPMessage v2gTpMessage) {
@@ -160,10 +155,6 @@ public class MessageHandler {
 
 	public synchronized Object v2gMsgToExi(Object jaxbObject) {
 		byte[] encodedEXI = getExiCodec().encodeEXI(jaxbObject, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
-		
-		// For test purposes you can log the byte array
-//		getLogger().debug("Encoded EXI byte array: " + ByteUtils.toHexString(encodedEXI));
-		
 		return encodedEXI;
 	}
 	
@@ -173,9 +164,6 @@ public class MessageHandler {
 	}
 	
 	public synchronized Object exiToV2gMsg(byte[] exiEncodedMessage) {
-		// For debugging purposes
-//		getLogger().debug("Hex string of encoded EXI byte array: " + ByteUtils.toHexString(exiEncodedMessage));
-		
 		return getExiCodec().decodeEXI(exiEncodedMessage, false);
 	}
 	
@@ -258,32 +246,6 @@ public class MessageHandler {
 		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
 		String namespace = "";
 		JAXBElement jaxbElement = null;
-		
-		if (messageName.equals("EMAID") || 
-			messageName.equals("CertificateChain") ||
-			messageName.equals("DiffieHellmanPublickey") ||
-			messageName.equals("ContractSignatureEncryptedPrivateKey")) {
-			
-			/*
-			 * If this branch is entered, we always need to set the JAXBContext anew because those elements don't repeat 
-			 * (like the jaxbContext for V2GMessage.class)
-			 */
-			setJaxbContext(messageOrField.getClass());
-			setCurrentJaxbContext(jaxbContextEnum.OTHER);
-		} else if (messageOrField instanceof SupportedAppProtocolReq && 
-				  !getCurrentJaxbContext().equals(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ)) {
-			setJaxbContext(SupportedAppProtocolReq.class);
-			setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_REQ);
-		} else if (messageOrField instanceof SupportedAppProtocolRes && 
-				  !getCurrentJaxbContext().equals(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_RES)) {
-			setJaxbContext(SupportedAppProtocolRes.class);
-			setCurrentJaxbContext(jaxbContextEnum.SUPPORTED_APP_PROTOCOL_RES);
-		} else if (!getCurrentJaxbContext().equals(jaxbContextEnum.V2G_MESSAGE)) {
-			setJaxbContext(V2GMessage.class);
-			setCurrentJaxbContext(jaxbContextEnum.V2G_MESSAGE);
-		} else {
-			// nothing to do here
-		}
 		
 		if (messageOrField instanceof SignedInfoType) {
 			namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
@@ -386,13 +348,5 @@ public class MessageHandler {
 		} catch (JAXBException e) {
 			getLogger().error("A JAXBException occurred while trying to set JAXB context", e);
 		}
-	}
-
-	public jaxbContextEnum getCurrentJaxbContext() {
-		return currentJaxbContext;
-	}
-
-	public void setCurrentJaxbContext(jaxbContextEnum currentJaxbContext) {
-		this.currentJaxbContext = currentJaxbContext;
 	}
 }
