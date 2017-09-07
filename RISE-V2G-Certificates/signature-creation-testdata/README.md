@@ -126,7 +126,7 @@ HINT: Do not make the mistake to hash the EXI binary stream before you run ECDSA
 
 ## XML REFERENCE ELEMENT GENERATION WITH INCORRECT XML NAMESPACE ""
 
-There was a discussion going on whether the XML elements for a CertificateInstallationRes/CertificateUpdateRes need to be created using the namespace "urn:iso:15118:2:2013:MsgBody" or if using no namespace (the same as using the empty namespace "") is also a possible solution. The [ISO 15118 User Group issue #72] (http://extmgmt.kn.e-technik.tu-dortmund.de/issues/172) further elaborates on that and makes clear that the namespace "urn:iso:15118:2:2013:MsgBody" shall be used. Using the empty namespace would NOT conform to the standard's requirements.
+There was a discussion going on whether the XML elements for a CertificateInstallationRes/CertificateUpdateRes need to be created using the namespace "urn:iso:15118:2:2013:MsgBody" or if using no namespace (the same as using the empty namespace "") is also a possible solution. The [ISO 15118 User Group issue #72](http://extmgmt.kn.e-technik.tu-dortmund.de/issues/172) further elaborates on that and makes clear that the namespace "urn:iso:15118:2:2013:MsgBody" shall be used. Using the empty namespace would NOT conform to the standard's requirements.
 However, just to show the difference in the EXI encoding result as well as the difference in message size, the following values are created using the empty XML namespace "". As you can see, those EXI encoding results are bigger in size. This is due to a so-called schema deviation encoding for those message elements.
 
 
