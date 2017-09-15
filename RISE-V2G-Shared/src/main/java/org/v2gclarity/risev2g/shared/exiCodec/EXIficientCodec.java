@@ -40,6 +40,7 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -119,6 +120,9 @@ public final class EXIficientCodec extends ExiCodec {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		baos = ((ByteArrayOutputStream) encode(inStream, grammar));
 		
+		if (isHexAndBase64MsgRepresentation()) 
+			showHexAndBase64RepresentationOfMessage(jaxbObject, baos.toByteArray());
+		
 		return baos.toByteArray();
 	}
 
@@ -147,6 +151,8 @@ public final class EXIficientCodec extends ExiCodec {
 	
 	@Override
 	public synchronized Object decodeEXI(byte[] exiEncodedMessage, boolean supportedAppProtocolHandshake) {
+		getLogger().debug("Received EXI stream: " + ByteUtils.toHexString(exiEncodedMessage));
+		
 		ByteArrayInputStream bais = new ByteArrayInputStream(exiEncodedMessage);
 		setDecodedExi(decode(bais, supportedAppProtocolHandshake));
 		

@@ -228,12 +228,6 @@ public class MessageHandler {
 	 * message. In case of XML signature generation, for some messages certain fields need to be signed
 	 * instead of the complete message. 
 	 * 
-	 * Setting the JAXBContext is a little time consuming. Thus, this method checks which JAXBContext is currently set and does
-	 * only set it anew if needed. For example, if the JAXBContext is already set for V2GMessage.class, then it will not be set anew
-	 * if the JAXBElement for a message derived from V2GMessage is to be returned.
-	 * The JAXBContext for the XML reference elements of CertificateInstallationRes/CertificateUpdateRes should be minimal and not
-	 * comprise the complete V2GMessage.class.
-	 * 
 	 * Suppressed unchecked warning, previously used a type-safe version such as new 
 	 * JAXBElement<SessionStopReqType>(new QName ... ) but this seems to work as well 
 	 * (I don't know how to infer the type correctly)
@@ -273,7 +267,6 @@ public class MessageHandler {
 			default:
 				break;
 			}
-			
 		}
 		
 		jaxbElement = new JAXBElement(new QName(namespace, messageName), 

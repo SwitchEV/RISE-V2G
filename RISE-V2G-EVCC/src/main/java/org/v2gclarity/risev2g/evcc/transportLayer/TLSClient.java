@@ -138,7 +138,7 @@ public class TLSClient extends StatefulTransportLayerClient {
 				return false;
 			}
 			
-			getLogger().debug("TLS client connection established \n\t from link-local address " +
+			getLogger().info("TLS client connection established \n\t from link-local address " +
 							  getClientAddress() + " and port " + getClientPort() + 
 							  "\n\t to host " + host.getHostAddress() + " and port " + port);
 			

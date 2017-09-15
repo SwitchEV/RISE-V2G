@@ -112,7 +112,9 @@ public class WaitForAuthorizationReq extends ServerState {
 			HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 			verifyXMLSigRefElements.put(
 					authorizationReq.getId(), 
-					SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
+					SecurityUtils.generateDigest(
+							authorizationReq.getId(),
+							getMessageHandler().getJaxbElement(authorizationReq)));
 			
 			if (!SecurityUtils.verifySignature(
 					signature, 

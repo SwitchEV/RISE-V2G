@@ -104,7 +104,9 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		// Set xml reference element
 		getXMLSignatureRefElements().put(
 				certInstallationReq.getId(), 
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certInstallationReq)));
+				SecurityUtils.generateDigest(
+						certInstallationReq.getId(),
+						getMessageHandler().getJaxbElement(certInstallationReq)));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(
@@ -142,7 +144,9 @@ public class WaitForPaymentServiceSelectionRes extends ClientState {
 		// Set xml reference element
 		getXMLSignatureRefElements().put(
 				certificateUpdateReq.getId(), 
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateReq)));
+				SecurityUtils.generateDigest(
+						certificateUpdateReq.getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateReq)));
 		
 		// Set signing private key
 		setSignaturePrivateKey(SecurityUtils.getPrivateKey(

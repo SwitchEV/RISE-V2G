@@ -1705,7 +1705,8 @@ public final class SecurityUtils {
 	 * @param digestForSignedInfoElement True if a digest for the SignedInfoElement of the header's signature is to be generated, false otherwise
 	 * @return The SHA-256 digest for message or field
 	 */
-	public static byte[] generateDigest(JAXBElement jaxbMessageOrField) {
+	@SuppressWarnings("rawtypes")
+	public static byte[] generateDigest(String id, JAXBElement jaxbMessageOrField) {
 		byte[] encoded; 
 		
 		// The schema-informed fragment grammar option needs to be used for EXI encodings in the header's signature
@@ -1718,8 +1719,6 @@ public final class SecurityUtils {
 		if (jaxbMessageOrField.getValue() instanceof SignedInfoType) {
 			encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_XMLDSIG.toString());
 		} else encoded = getExiCodec().encodeEXI(jaxbMessageOrField, GlobalValues.SCHEMA_PATH_MSG_DEF.toString());
-		
-		getLogger().debug("EXI encoded " + jaxbMessageOrField.getName().getLocalPart() + ": " + ByteUtils.toHexString(encoded));
 		
 		// Do not use the schema-informed fragment grammar option for other EXI encodings (message bodies)
 		getExiCodec().setFragment(false);
@@ -1741,7 +1740,7 @@ public final class SecurityUtils {
 				 */
 				if ( !(jaxbMessageOrField.getValue() instanceof SignedInfoType) ) {
 					getLogger().debug("\n"
-									+ "\tDigest generated for XML reference element " + jaxbMessageOrField.getName().getLocalPart() + ": " + ByteUtils.toHexString(digest) + "\n"
+									+ "\tDigest generated for XML reference element " + jaxbMessageOrField.getName().getLocalPart() + " with ID '" + id + "': " + ByteUtils.toHexString(digest) + "\n"
 									+ "\tBase64 encoding of digest: " + Base64.getEncoder().encodeToString(digest));
 				}
 			}
@@ -1766,19 +1765,25 @@ public final class SecurityUtils {
 			Signature ecdsa = Signature.getInstance("SHA256withECDSA", "SunEC");
 		
 			getLogger().debug("EXI encoded SignedInfo: " + ByteUtils.toHexString(signedInfoElementExi));
-			getLogger().debug("\n\tPrivate key used for creating signature: " + ByteUtils.toHexString(ecPrivateKey.getS().toByteArray()));
 			
-			ecdsa.initSign(ecPrivateKey);
-			ecdsa.update(signedInfoElementExi);
-			
-			byte[] signature = ecdsa.sign();
-			
-			// Java operates on DER encoded signatures, but we must send the raw r and s values as signature 
-			byte[] rawSignature = getRawSignatureFromDEREncoding(signature);
-			
-			getLogger().debug("Signature value: " + ByteUtils.toHexString(rawSignature));
-			
-			return rawSignature;
+			if (ecPrivateKey != null) {
+				getLogger().debug("\n\tPrivate key used for creating signature: " + ByteUtils.toHexString(ecPrivateKey.getS().toByteArray()));
+				
+				ecdsa.initSign(ecPrivateKey);
+				ecdsa.update(signedInfoElementExi);
+				
+				byte[] signature = ecdsa.sign();
+				
+				// Java operates on DER encoded signatures, but we must send the raw r and s values as signature 
+				byte[] rawSignature = getRawSignatureFromDEREncoding(signature);
+				
+				getLogger().debug("Signature value: " + ByteUtils.toHexString(rawSignature));
+				
+				return rawSignature;
+			} else {
+				getLogger().error("Private key used to sign SignedInfo element is null");
+				return null;
+			}	
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchProviderException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to create signature", e);
 			return null;
@@ -1921,7 +1926,7 @@ public final class SecurityUtils {
 			SignatureType signature, 
 			JAXBElement jaxbSignedInfo, 
 			ECPublicKey ecPublicKey) {
-		byte[] computedSignedInfoDigest = generateDigest(jaxbSignedInfo);
+		byte[] computedSignedInfoDigest = generateDigest("", jaxbSignedInfo);
 		byte[] receivedSignatureValue = signature.getSignatureValue().getValue();
 		
 		getLogger().debug("\n" 
@@ -2036,8 +2041,14 @@ public final class SecurityUtils {
 		// First we separate x and y of coordinates into separate variables
 	    byte[] r = new byte[32];
 	    byte[] s = new byte[32];
-	    System.arraycopy(signatureValue, 0, r, 0, 32);
-	    System.arraycopy(signatureValue, 32, s, 0, 32);
+	    
+	    try {
+	    		System.arraycopy(signatureValue, 0, r, 0, 32);
+	    		System.arraycopy(signatureValue, 32, s, 0, 32);
+	    } catch (ArrayIndexOutOfBoundsException e) {
+	    		getLogger().error("ArrayIndexOutOfBoundsException occurred while trying to get DER encoded signature", e);
+	    		return new byte[0];
+	    }
 	    
 	    int neededByteLength = signatureValue.length + 6; // 6 bytes for the header
 	    boolean isFillByteForR = false;

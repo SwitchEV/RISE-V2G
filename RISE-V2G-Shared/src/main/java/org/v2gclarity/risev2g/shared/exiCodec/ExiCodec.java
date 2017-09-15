@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Base64;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -37,6 +38,7 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 import org.v2gclarity.risev2g.shared.utils.MiscUtils;
 import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import org.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
@@ -50,14 +52,21 @@ public abstract class ExiCodec {
 	private InputStream inStream;
 	private Object decodedMessage;
 	private String decodedExi;
-	private boolean xmlRepresentation;
+	private boolean xmlMsgRepresentation;
+	private boolean hexAndBase64MsgRepresentation;
 	
 	public ExiCodec() {
 		// Check if XML representation of sent messages is to be shown (for debug purposes)
 		if ((boolean) MiscUtils.getPropertyValue("XMLRepresentationOfMessages")) 
-			setXMLRepresentation(true);
+			setXMLMsgRepresentation(true);
 		else
-			setXMLRepresentation(false);
+			setXMLMsgRepresentation(false);
+		
+		// Check if hexadecimal and Base64 representation of sent messages is to be shown (for debug purposes)
+		if ((boolean) MiscUtils.getPropertyValue("HexAndBase64RepresentationOfMessages")) 
+			setHexAndBase64MsgRepresentation(true);
+		else
+			setHexAndBase64MsgRepresentation(false);
 	}
 	
 	
@@ -71,7 +80,7 @@ public abstract class ExiCodec {
 			setInStream(new ByteArrayInputStream(baos.toByteArray()));
 			baos.close();
 			
-			if (isXMLRepresentation()) showXMLRepresentationOfMessage(jaxbObject);
+			if (isXMLMsgRepresentation()) showXMLRepresentationOfMessage(jaxbObject);
 			return getInStream();
 		} catch (JAXBException | IOException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to marshal to InputStream from JAXBElement", e);
@@ -86,7 +95,7 @@ public abstract class ExiCodec {
 			setInStream(new ByteArrayInputStream(decodedExiString.getBytes()));
 			Object unmarhalledObject = getUnmarshaller().unmarshal(getInStream());
 			
-			if (isXMLRepresentation()) showXMLRepresentationOfMessage(unmarhalledObject);
+			if (isXMLMsgRepresentation()) showXMLRepresentationOfMessage(unmarhalledObject);
 			return unmarhalledObject;
 		} catch (IOException | JAXBException | RuntimeException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to unmarshall decoded message", e);
@@ -124,6 +133,27 @@ public abstract class ExiCodec {
 		} catch (JAXBException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to show XML representation of " + className, e);
 		}
+	}
+	
+	
+	@SuppressWarnings("rawtypes")
+	public void showHexAndBase64RepresentationOfMessage(Object messageOrField, byte[] exiEncodedObject) {
+		String className = "";
+		
+		if (messageOrField instanceof V2GMessage) {
+			className = ((V2GMessage) messageOrField).getBody().getBodyElement().getName().getLocalPart();
+		} else if (messageOrField instanceof JAXBElement) {
+			className = ((JAXBElement) messageOrField).getName().getLocalPart();
+		} else if (messageOrField instanceof SupportedAppProtocolReq) {
+			className = "SupportedAppProtocolReq"; 
+		} else if (messageOrField instanceof SupportedAppProtocolRes) {
+			className = "SupportedAppProtocolRes";
+		} else {
+			className = " JAXBElement";
+		}
+		
+		getLogger().debug("EXI encoded " + className + ": " + ByteUtils.toHexString(exiEncodedObject));
+		getLogger().debug("Base64 encoded " + className + ": " + Base64.getEncoder().encodeToString(exiEncodedObject));
 	}
 	
 	
@@ -207,11 +237,21 @@ public abstract class ExiCodec {
 	}
 	
 	
-	private void setXMLRepresentation(boolean showXMLRepresentation) {
-		this.xmlRepresentation = showXMLRepresentation;
+	private void setXMLMsgRepresentation(boolean xmlMsgRepresentation) {
+		this.xmlMsgRepresentation = xmlMsgRepresentation;
 	}
 	
-	public boolean isXMLRepresentation() {
-		return xmlRepresentation;
+	public boolean isXMLMsgRepresentation() {
+		return xmlMsgRepresentation;
+	}
+
+
+	public boolean isHexAndBase64MsgRepresentation() {
+		return hexAndBase64MsgRepresentation;
+	}
+
+
+	public void setHexAndBase64MsgRepresentation(boolean hexAndBase64MsgRepresentation) {
+		this.hexAndBase64MsgRepresentation = hexAndBase64MsgRepresentation;
 	}
 }

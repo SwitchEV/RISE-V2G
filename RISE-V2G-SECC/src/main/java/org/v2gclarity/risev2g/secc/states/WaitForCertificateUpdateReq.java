@@ -96,16 +96,24 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				// Set xml reference elements
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureCertChain().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
+						SecurityUtils.generateDigest(
+								certificateUpdateRes.getContractSignatureCertChain().getId(),
+								getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
+						SecurityUtils.generateDigest(
+								certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
+								getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getDHpublickey().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
+						SecurityUtils.generateDigest(
+								certificateUpdateRes.getDHpublickey().getId(),
+								getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
 				getXMLSignatureRefElements().put(
 						certificateUpdateRes.getEMAID().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
+						SecurityUtils.generateDigest(
+								certificateUpdateRes.getEMAID().getId(),
+								getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
 				
 				// Set signing private key
 				setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getCPSLeafPrivateKey());
@@ -162,7 +170,9 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				certificateUpdateReq.getId(), 
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateReq)));
+				SecurityUtils.generateDigest(
+						certificateUpdateReq.getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateReq)));
 
 		if (!SecurityUtils.verifySignature(
 				signature, 

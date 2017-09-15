@@ -77,7 +77,7 @@ public class TCPClient extends StatefulTransportLayerClient {
 			setInStream(getTcpSocketToServer().getInputStream());
 			setOutStream(getTcpSocketToServer().getOutputStream());
 
-			getLogger().debug("TCP client connection established \n\t from link-local address " +
+			getLogger().info("TCP client connection established \n\t from link-local address " +
 							  getClientAddress() + " and port " + getClientPort() + 
 							  "\n\t to host " + host.getHostAddress() + " and port " + port);
 			

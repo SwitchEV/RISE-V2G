@@ -53,9 +53,25 @@ public class DummyBackendInterface implements IBackendInterface {
 
 	private V2GCommunicationSessionSECC commSessionContext;
 	private Logger logger = LogManager.getLogger(this.getClass().getSimpleName());
+	private ECPrivateKey moSubCA2PrivateKey;
 	
+	public void setMoSubCA2PrivateKey(ECPrivateKey moSubCA2PrivateKey) {
+		this.moSubCA2PrivateKey = moSubCA2PrivateKey;
+	}
+
 	public DummyBackendInterface(V2GCommunicationSessionSECC commSessionContext) {
 		setCommSessionContext(commSessionContext);
+		
+		/*
+		 * In order to reduce timing problems with handling ChargeParameterDiscoveryReq, reading the private key of the MO Sub-CA2
+		 * from the keystore to sign the SalesTariff will be done during initialization of this class.
+		 */
+		ECPrivateKey privateKey = SecurityUtils.getPrivateKey("./moSubCA2.pkcs8.der");
+		if (privateKey == null) 
+			getLogger().error("No private key available from MO Sub-CA 2 PKCS#8 file");
+		else
+			setMoSubCA2PrivateKey(privateKey);
+		
 	}
 	
 	@Override
@@ -145,7 +161,9 @@ public class DummyBackendInterface implements IBackendInterface {
 		if (saScheduleTuple.getSalesTariff() != null) {
 			xmlSignatureRefElements.put(
 					salesTariff.getId(), 
-					SecurityUtils.generateDigest(getCommSessionContext().getMessageHandler().getJaxbElement(salesTariff)));
+					SecurityUtils.generateDigest(
+							salesTariff.getId(),
+							getCommSessionContext().getMessageHandler().getJaxbElement(salesTariff)));
 		}
 	
 		return saScheduleList;
@@ -225,8 +243,13 @@ public class DummyBackendInterface implements IBackendInterface {
 		authorizedEMAID2.setId("id2");
 		authorizedEMAID2.setValue("DE1ABCD2EF357C");
 		
+		EMAIDType authorizedEMAID3 = new EMAIDType();
+		authorizedEMAID3.setId("id2");
+		authorizedEMAID3.setValue("DE1230000000021");
+		
 		authorizedEMAIDs.add(authorizedEMAID1);
 		authorizedEMAIDs.add(authorizedEMAID2);
+		authorizedEMAIDs.add(authorizedEMAID3);
 		
 		boolean emaidFound = false;
 		
@@ -275,12 +298,7 @@ public class DummyBackendInterface implements IBackendInterface {
 	
 	@Override
 	public ECPrivateKey getMOSubCA2PrivateKey() {
-		ECPrivateKey privateKey = SecurityUtils.getPrivateKey("./moSubCA2.pkcs8.der");
-		
-		if (privateKey == null) 
-			getLogger().error("No private key available from MO Sub-CA 2 PKCS#8 file");
-		
-		return privateKey;
+		return this.moSubCA2PrivateKey;
 	}
 	
 	

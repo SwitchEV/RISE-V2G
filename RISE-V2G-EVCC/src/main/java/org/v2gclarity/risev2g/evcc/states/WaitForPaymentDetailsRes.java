@@ -62,7 +62,9 @@ public class WaitForPaymentDetailsRes extends ClientState {
 				// Set xml reference element
 				getXMLSignatureRefElements().put(
 						authorizationReq.getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
+						SecurityUtils.generateDigest(
+								authorizationReq.getId(),
+								getMessageHandler().getJaxbElement(authorizationReq)));
 				
 				// Set signing private key
 				setSignaturePrivateKey(SecurityUtils.getPrivateKey(

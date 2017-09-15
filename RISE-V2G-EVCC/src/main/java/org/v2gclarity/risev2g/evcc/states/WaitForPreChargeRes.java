@@ -72,7 +72,7 @@ public class WaitForPreChargeRes extends ClientState {
 					preChargeReq.setEVTargetCurrent(dcEvController.getTargetCurrent());
 					preChargeReq.setEVTargetVoltage(dcEvController.getTargetVoltage());
 					
-					return getSendMessage(preChargeReq, V2GMessages.PRE_CHARGE_RES);
+					return getSendMessage(preChargeReq, V2GMessages.PRE_CHARGE_RES, Math.min((TimeRestrictions.V2G_EVCC_PRE_CHARGE_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.PRE_CHARGE_RES)));
 				}
 			}
 		} else {

@@ -92,16 +92,24 @@ public class WaitForCertificateUpdateRes extends ClientState {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getContractSignatureCertChain().getId(),
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
+				SecurityUtils.generateDigest(
+						certificateUpdateRes.getContractSignatureCertChain().getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureCertChain())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
+				SecurityUtils.generateDigest(
+						certificateUpdateRes.getContractSignatureEncryptedPrivateKey().getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateRes.getContractSignatureEncryptedPrivateKey())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getDHpublickey().getId(),
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
+				SecurityUtils.generateDigest(
+						certificateUpdateRes.getDHpublickey().getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateRes.getDHpublickey())));
 		verifyXMLSigRefElements.put(
 				certificateUpdateRes.getEMAID().getId(),
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
+				SecurityUtils.generateDigest(
+						certificateUpdateRes.getEMAID().getId(),
+						getMessageHandler().getJaxbElement(certificateUpdateRes.getEMAID())));
 				
 		if (!SecurityUtils.verifySignature(
 				signature, 

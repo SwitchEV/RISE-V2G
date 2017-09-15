@@ -233,6 +233,10 @@ public final class MiscUtils {
 			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
 			else returnValue = false;
 			break;
+		case "HexAndBase64RepresentationOfMessages": // EV + EVSE property
+			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
+			else returnValue = false;
+			break;
 		case "SignatureVerificationLog": // EV + EVSE property
 			if (Boolean.parseBoolean(propertyValue)) returnValue = true;
 			else returnValue = false;

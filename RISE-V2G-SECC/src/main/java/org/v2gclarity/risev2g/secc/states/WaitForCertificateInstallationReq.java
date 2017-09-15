@@ -99,16 +99,24 @@ public class WaitForCertificateInstallationReq extends ServerState  {
 				// Set xml reference elements
 				getXMLSignatureRefElements().put(
 						certificateInstallationRes.getContractSignatureCertChain().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateInstallationRes.getContractSignatureCertChain())));
+						SecurityUtils.generateDigest(
+								certificateInstallationRes.getContractSignatureCertChain().getId(),
+								getMessageHandler().getJaxbElement(certificateInstallationRes.getContractSignatureCertChain())));
 				getXMLSignatureRefElements().put(
 						certificateInstallationRes.getContractSignatureEncryptedPrivateKey().getId(),
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateInstallationRes.getContractSignatureEncryptedPrivateKey())));
+						SecurityUtils.generateDigest(
+								certificateInstallationRes.getContractSignatureEncryptedPrivateKey().getId(),
+								getMessageHandler().getJaxbElement(certificateInstallationRes.getContractSignatureEncryptedPrivateKey())));
 				getXMLSignatureRefElements().put(
 						certificateInstallationRes.getDHpublickey().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateInstallationRes.getDHpublickey())));
+						SecurityUtils.generateDigest(
+								certificateInstallationRes.getDHpublickey().getId(),
+								getMessageHandler().getJaxbElement(certificateInstallationRes.getDHpublickey())));
 				getXMLSignatureRefElements().put(
 						certificateInstallationRes.getEMAID().getId(), 
-						SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateInstallationRes.getEMAID())));
+						SecurityUtils.generateDigest(
+								certificateInstallationRes.getEMAID().getId(),
+								getMessageHandler().getJaxbElement(certificateInstallationRes.getEMAID())));
 				
 				// Set signing private key
 				setSignaturePrivateKey(getCommSessionContext().getBackendInterface().getCPSLeafPrivateKey());
@@ -166,7 +174,9 @@ public class WaitForCertificateInstallationReq extends ServerState  {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				certificateInstallationReq.getId(), 
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(certificateInstallationReq)));
+				SecurityUtils.generateDigest(
+						certificateInstallationReq.getId(),
+						getMessageHandler().getJaxbElement(certificateInstallationReq)));
 		
 		if (!SecurityUtils.verifySignature(
 				signature, 

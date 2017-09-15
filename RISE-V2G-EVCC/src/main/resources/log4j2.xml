@@ -1,22 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-  <appenders>
-	  <console name="Console" target="SYSTEM_OUT"> 
-	    <patternLayout pattern="%d{ISO8601} %-5p [%t] %c: %m%n" />
-	  </console> 
-	  <!--   <param name="threshold" value="debug" />
-	    <param name="Target" value="System.out" />
-	    <layout class="org.apache.log4j.PatternLayout">
-	      <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c: %m%n" />
-	    </layout>-->
-  </appenders>
-
-  <loggers>
-	  <root level="debug">
-	    <appender-ref ref="Console" />
-	  </root>
-  </loggers>
-
-</log4j:configuration>
+<Configuration>
+  <Appenders>
+	  <Console name="Console" target="SYSTEM_OUT"> 
+	    <PatternLayout pattern="%d{ISO8601} %highlight{%level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} [%t] %c: %m%n" />
+	  </Console> 
+  </Appenders>
+  <Loggers>
+	  <Root level="debug">
+	    <AppenderRef ref="Console" />
+	  </Root>
+  </Loggers>
+</Configuration>
 <!-- see http://logging.apache.org/log4j/2.x/manual/configuration.html -->

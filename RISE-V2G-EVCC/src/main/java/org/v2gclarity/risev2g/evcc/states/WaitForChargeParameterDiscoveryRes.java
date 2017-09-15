@@ -60,12 +60,17 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			ChargeParameterDiscoveryResType chargeParameterDiscoveryRes = 
 					(ChargeParameterDiscoveryResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
+			if (chargeParameterDiscoveryRes.getEVSEProcessing() == null)
+				return new TerminateSession("EVSEProcessing parameter of ChargeParameterDiscoveryRes is null. Parameter is mandatory.");
+			
 			if (chargeParameterDiscoveryRes.getEVSEProcessing().equals(EVSEProcessingType.ONGOING)) {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
 				
+				long elapsedTimeInMs = 0;
+				
 				if (getCommSessionContext().isOngoingTimerActive()) {
 					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
-					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
 					
 					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT) 
 						return new TerminateSession("Ongoing timer timed out for ChargeParameterDiscoveryReq");
@@ -74,7 +79,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					getCommSessionContext().setOngoingTimerActive(true);
 				}
 				
-				return getSendMessage(getCommSessionContext().getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
+				return getSendMessage(getCommSessionContext().getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES, Math.min((TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES)));
 			} else {
 				getLogger().debug("EVSEProcessing was set to FINISHED");
 				
@@ -200,7 +205,9 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 			
 			verifyXMLSigRefElements.put(
 					saScheduleTuple.getSalesTariff().getId(),
-					SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(saScheduleTuple.getSalesTariff())));
+					SecurityUtils.generateDigest(
+							saScheduleTuple.getSalesTariff().getId(),
+							getMessageHandler().getJaxbElement(saScheduleTuple.getSalesTariff())));
 		}
 		
 		if (salesTariffCounter > 0) {

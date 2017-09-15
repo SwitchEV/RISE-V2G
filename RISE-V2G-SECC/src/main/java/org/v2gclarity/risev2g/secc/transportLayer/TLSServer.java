@@ -87,7 +87,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			String[] enabledProtocols = {"TLSv1.2"};
 			getTlsServerSocket().setEnabledProtocols(enabledProtocols);
 			
-			getLogger().debug("TLS server initialized at link-local address " + 
+			getLogger().info("TLS server initialized at link-local address " + 
 			  		  		  getTlsServerSocket().getInetAddress().getHostAddress() +
 			  		  		  " and port " + getTlsServerSocket().getLocalPort());
 		} catch (IOException e) {
@@ -106,10 +106,10 @@ public final class TLSServer extends StatefulTransportLayerServer {
 	public void run() {
 		try {
 			while (!Thread.currentThread().isInterrupted()) {
-				getLogger().debug("Waiting for new TLS client connection ...");
+				getLogger().info("Waiting for new TLS client connection ...");
 				setTlsClientSocket((SSLSocket) getTlsServerSocket().accept());
 				
-				getLogger().debug("TLS client connection with IP address " + 
+				getLogger().info("TLS client connection with IP address " + 
 						  getTlsClientSocket().getInetAddress().getHostAddress() + " and port " +
 						  getTlsClientSocket().getPort());
 				

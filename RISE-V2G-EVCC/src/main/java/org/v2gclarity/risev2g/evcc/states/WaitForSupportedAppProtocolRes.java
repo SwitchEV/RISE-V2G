@@ -95,7 +95,7 @@ public class WaitForSupportedAppProtocolRes extends ClientState {
 			long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
 			
 			return getSendMessage(sessionSetupReq, V2GMessages.SESSION_SETUP_RES, (int) Math.min(
-					TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.SESSION_SETUP_RES), 
+					TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.SESSION_SETUP_RES), 
 					TimeRestrictions.V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT - elapsedTimeInMs
 					));
 		} else {

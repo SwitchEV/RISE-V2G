@@ -107,7 +107,7 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		HashMap<String, byte[]> verifyXMLSigRefElements = new HashMap<String, byte[]>();
 		verifyXMLSigRefElements.put(
 				meteringReceiptReq.getId(), 
-				SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(meteringReceiptReq)));
+				SecurityUtils.generateDigest(meteringReceiptReq.getId(), getMessageHandler().getJaxbElement(meteringReceiptReq)));
 
 		if (!SecurityUtils.verifySignature(
 				signature, 

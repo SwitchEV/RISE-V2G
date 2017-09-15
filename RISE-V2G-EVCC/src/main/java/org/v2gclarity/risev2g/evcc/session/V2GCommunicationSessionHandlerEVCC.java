@@ -88,8 +88,7 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 		setSessionRetryCounter(getSeccDiscoveryRequestCounter() + 1);
 		
 		// Create SECCDiscoveryReq and check response
-		while (udpResponse == null && 
-			   getSeccDiscoveryRequestCounter() < TimeRestrictions.SDP_REQUEST_MAX_COUNTER) {
+		while (getSeccDiscoveryRequestCounter() < TimeRestrictions.SDP_REQUEST_MAX_COUNTER) {
 			udpResponse = sendSECCDiscoveryReq(getSecurity());
 			
 			if (udpResponse == null) {
@@ -99,7 +98,9 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 				
 				if (getMessageHandler().isV2GTPMessageValid(getV2gTpMessage())) {
 					seccDiscoveryRes = new SECCDiscoveryRes(getV2gTpMessage().getPayload());
-					break;
+					break; // if everything is OK and a valid SDP response is received, the while loop is stopped here
+				} else {
+					continue;
 				}
 			}
 		}
@@ -307,11 +308,11 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 		if (isSecureCommunication()) {
 			TLSClient.getInstance().send(
 				getV2gTpMessage(), 
-				TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.SUPPORTED_APP_PROTOCOL_RES));
+				TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.SUPPORTED_APP_PROTOCOL_RES));
 		} else {
 			TCPClient.getInstance().send(
 				getV2gTpMessage(), 
-				TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.SUPPORTED_APP_PROTOCOL_RES));
+				TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.SUPPORTED_APP_PROTOCOL_RES));
 		}
 	}
 	

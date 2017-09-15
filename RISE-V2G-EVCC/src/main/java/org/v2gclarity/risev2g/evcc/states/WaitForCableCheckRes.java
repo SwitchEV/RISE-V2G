@@ -66,9 +66,11 @@ public class WaitForCableCheckRes extends ClientState {
 			} else {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
 				
+				long elapsedTimeInMs = 0;
+				
 				if (getCommSessionContext().isOngoingTimerActive()) {
 					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
-					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
 					
 					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_CABLE_CHECK_TIMEOUT) 
 						return new TerminateSession("CableCheck timer timed out for CableCheckReq");
@@ -77,7 +79,7 @@ public class WaitForCableCheckRes extends ClientState {
 					getCommSessionContext().setOngoingTimerActive(true);
 				}
 				
-				return getSendMessage(getCableCheckReq(), V2GMessages.CABLE_CHECK_RES);
+				return getSendMessage(getCableCheckReq(), V2GMessages.CABLE_CHECK_RES, Math.min((TimeRestrictions.V2G_EVCC_CABLE_CHECK_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.CABLE_CHECK_RES)));
 			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");

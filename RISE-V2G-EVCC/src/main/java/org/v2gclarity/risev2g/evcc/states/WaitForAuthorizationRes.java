@@ -52,6 +52,9 @@ public class WaitForAuthorizationRes extends ClientState {
 			AuthorizationResType authorizationRes = 
 					(AuthorizationResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
+			if (authorizationRes.getEVSEProcessing() == null)
+				return new TerminateSession("EVSEProcessing parameter of AuthorizationRes is null. Parameter is mandatory.");
+			
 			if (authorizationRes.getEVSEProcessing().equals(EVSEProcessingType.FINISHED)) {
 				getLogger().debug("EVSEProcessing was set to FINISHED");
 				
@@ -70,9 +73,11 @@ public class WaitForAuthorizationRes extends ClientState {
 			} else {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
 				
+				long elapsedTimeInMs = 0;
+				
 				if (getCommSessionContext().isOngoingTimerActive()) {
 					long elapsedTime = System.nanoTime() - getCommSessionContext().getOngoingTimer();
-					long elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
+					elapsedTimeInMs = TimeUnit.MILLISECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS);
 					
 					if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT) 
 						return new TerminateSession("Ongoing timer timed out for AuthorizationReq");
@@ -90,7 +95,9 @@ public class WaitForAuthorizationRes extends ClientState {
 					// Set xml reference element
 					getXMLSignatureRefElements().put(
 							authorizationReq.getId(), 
-							SecurityUtils.generateDigest(getMessageHandler().getJaxbElement(authorizationReq)));
+							SecurityUtils.generateDigest(
+									authorizationReq.getId(),
+									getMessageHandler().getJaxbElement(authorizationReq)));
 					
 					// Set signing private key
 					setSignaturePrivateKey(SecurityUtils.getPrivateKey(
@@ -103,7 +110,7 @@ public class WaitForAuthorizationRes extends ClientState {
 					authorizationReq = getAuthorizationReq(null);
 				}
 				
-				return getSendMessage(authorizationReq, V2GMessages.AUTHORIZATION_RES);
+				return getSendMessage(authorizationReq, V2GMessages.AUTHORIZATION_RES, Math.min((TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.AUTHORIZATION_RES)));
 			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");

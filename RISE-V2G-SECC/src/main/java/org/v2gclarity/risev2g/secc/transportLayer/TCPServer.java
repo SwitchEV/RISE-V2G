@@ -47,7 +47,7 @@ public final class TCPServer extends StatefulTransportLayerServer {
 
 		try {
 			setTcpServerSocket(new ServerSocket(getServerPort(), 50, getServerAddress()));
-			getLogger().debug("TCP server initialized at link-local address " + 
+			getLogger().info("TCP server initialized at link-local address " + 
 					  		  getTcpServerSocket().getInetAddress().getHostAddress() +
 					  		  " and port " + getTcpServerSocket().getLocalPort());
 		} catch (IOException e) {
@@ -62,10 +62,10 @@ public final class TCPServer extends StatefulTransportLayerServer {
 	public void run() {
 		try {
 			while (!Thread.currentThread().isInterrupted()) {
-				getLogger().debug("Waiting for new TCP client connection ...");
+				getLogger().info("Waiting for new TCP client connection ...");
 				setTcpClientSocket(getTcpServerSocket().accept());
 				
-				getLogger().debug("TCP client connection with IP address " + 
+				getLogger().info("TCP client connection with IP address " + 
 								  getTcpClientSocket().getInetAddress().getHostAddress() + " and port " +
 								  getTcpClientSocket().getPort());
 				

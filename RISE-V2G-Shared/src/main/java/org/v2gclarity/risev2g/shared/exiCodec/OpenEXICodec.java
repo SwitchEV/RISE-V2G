@@ -47,6 +47,7 @@ import org.openexi.scomp.EXISchemaFactory;
 import org.openexi.scomp.EXISchemaFactoryException;
 import org.openexi.scomp.EXISchemaReader;
 import org.v2gclarity.risev2g.shared.enumerations.GlobalValues;
+import org.v2gclarity.risev2g.shared.utils.ByteUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -166,6 +167,10 @@ public final class OpenEXICodec extends ExiCodec {
 			getTransmogrifier().encode(new InputSource(marshalToInputStream(jaxbObject)));
 
 			byte[] encodedExi = baos.toByteArray();
+			
+			if (isHexAndBase64MsgRepresentation()) 
+				showHexAndBase64RepresentationOfMessage(jaxbObject, encodedExi);
+			
 			baos.close();
 			
 			return encodedExi;
@@ -178,6 +183,8 @@ public final class OpenEXICodec extends ExiCodec {
 	
 	@Override
 	public Object decodeEXI(byte[] exiEncodedMessage, boolean supportedAppProtocolHandshake) {
+		getLogger().debug("Received EXI stream: " + ByteUtils.toHexString(exiEncodedMessage));
+		
 		StringWriter stringWriter = new StringWriter();
 		
 		try {

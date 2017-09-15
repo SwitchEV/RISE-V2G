@@ -91,9 +91,7 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 							);
 				}
 				
-				// Wait a bit and check if the schedule has already been provided
-				// TODO is this the best way?
-				SleepUtils.safeSleep(TimeRestrictions.getV2G_EVCC_Msg_Timeout(V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES)-1000);
+				// TODO An integration to a backend system which provides the SalesTariff would be needed here
 				
 				if (chargeParameterDiscoveryReq.getRequestedEnergyTransferMode().toString().startsWith("AC")) 
 					chargeParameterDiscoveryRes.setEVSEChargeParameter(

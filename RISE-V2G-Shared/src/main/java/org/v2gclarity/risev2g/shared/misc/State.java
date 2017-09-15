@@ -75,7 +75,7 @@ public abstract class State {
 		// If the sent message is a response message, 60s sequence timeout is used
 		if (messageName.endsWith("Res")) return TimeRestrictions.V2G_SECC_SEQUENCE_TIMEOUT;
 		// otherwise the message specific timeout
-		else return TimeRestrictions.getV2G_EVCC_Msg_Timeout(nextExpectedMessage);
+		else return TimeRestrictions.getV2gEvccMsgTimeout(nextExpectedMessage);
 	}
 	
 	

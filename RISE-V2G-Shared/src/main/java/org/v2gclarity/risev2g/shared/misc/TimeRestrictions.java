@@ -69,7 +69,7 @@ public class TimeRestrictions {
 	 */
 	public static final int STAY_AWAKE_THRESHOLD = 125;
 	
-	public static int getV2G_EVCC_Msg_Timeout(V2GMessages messageType) {
+	public static int getV2gEvccMsgTimeout(V2GMessages messageType) {
 		switch(messageType) {
 			case SUPPORTED_APP_PROTOCOL_RES : return 2000;
 			case SESSION_SETUP_RES: return 2000;
