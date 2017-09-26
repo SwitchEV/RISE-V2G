@@ -23,7 +23,6 @@
  *******************************************************************************/
 package org.v2gclarity.risev2g.secc.states;
 
-import org.v2gclarity.risev2g.secc.evseController.IACEVSEController;
 import org.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import org.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import org.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;

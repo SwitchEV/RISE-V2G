@@ -28,7 +28,6 @@ import java.security.interfaces.ECPrivateKey;
 import java.util.HashMap;
 
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
-import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.EMAIDType;
 import org.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 
 public interface IBackendInterface {

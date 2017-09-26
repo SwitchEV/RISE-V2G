@@ -25,7 +25,6 @@ package org.v2gclarity.risev2g.secc.transportLayer;
 
 import java.io.IOException;
 import java.net.SocketException;
-
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -59,8 +58,9 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			 * - System.setProperty("javax.net.ssl.keyStore", [filePath given as a String])
 			 * - System.setProperty("javax.net.ssl.trustStore", [filePath given as a String])
 			 * does not work in a JAR file since only getResourceAsStream works there (which on the other
-			 * hand only returns an InputStream, not a file resource). Thus use setSSLFactories()
+			 * hand only returns an InputStream, not a file resource). Thus use setSSLContext()
 			 */
+			
 			SecurityUtils.setSSLContext(
 					GlobalValues.SECC_KEYSTORE_FILEPATH.toString(), 
 					GlobalValues.SECC_TRUSTSTORE_FILEPATH.toString(),

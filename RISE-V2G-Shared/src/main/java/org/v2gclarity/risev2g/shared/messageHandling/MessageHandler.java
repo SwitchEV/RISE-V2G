@@ -264,6 +264,9 @@ public class MessageHandler {
 			case "ContractSignatureEncryptedPrivateKey":
 				messageName = "ContractSignatureEncryptedPrivateKey";
 				break;
+			case "SalesTariff": // SalesTariff is not defined in MsgBody XSD schema, but MsgDataTypes XSD schema
+				namespace = GlobalValues.V2G_CI_MSG_DATATYPES_NAMESPACE.toString();
+				break;
 			default:
 				break;
 			}

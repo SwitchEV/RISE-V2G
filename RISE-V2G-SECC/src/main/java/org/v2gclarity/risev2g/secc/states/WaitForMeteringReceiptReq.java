@@ -53,7 +53,6 @@ public class WaitForMeteringReceiptReq extends ServerState {
 		meteringReceiptRes = new MeteringReceiptResType();
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		if (isIncomingMessageValid(message, MeteringReceiptReqType.class, meteringReceiptRes)) {
