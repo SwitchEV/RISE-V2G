@@ -1,0 +1,65 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+	<id>project</id>
+	<formats>
+ 		<format>zip</format>
+	</formats>
+	<fileSets>
+		<fileSet> <!-- LICENSE.txt and README.md from root directory -->
+			<directory>../</directory>
+			<outputDirectory></outputDirectory>
+			<includes>
+	      		<include>LICENSE.txt</include>
+	      		<include>README.md</include>
+	      	</includes>
+		</fileSet>
+	 	<fileSet> <!-- rise-v2g-parent -->
+	    		<directory>${project.basedir}</directory>
+	      	<outputDirectory>rise-v2g-parent</outputDirectory>
+	      	<excludes>
+	        		<exclude>**/*.log</exclude>
+	        		<exclude>**/${project.build.directory}/**</exclude>
+	      	</excludes>
+	    </fileSet>
+	    <fileSet> <!-- rise-v2g-certificates -->
+            <directory>../RISE-V2G-Certificates</directory>
+            <outputDirectory>rise-v2g-certificates</outputDirectory>
+            <excludes>
+                <exclude>/certs/**</exclude>
+                <exclude>/csrs/**</exclude>
+                <exclude>/keystores/**</exclude>
+                <exclude>/privateKeys/**</exclude>
+                <exclude>/testing-symposia/**</exclude>
+            </excludes>
+        </fileSet>
+  	</fileSets>
+  	<moduleSets> <!-- rise-v2g-evcc and rise-v2g-secc -->
+  		<moduleSet>
+  			
+  			<!-- Enable access to all projects in the current multi-module build.
+  				 Includes all submodules (rise-v2g-evcc and rise-v2g-secc) -->
+	      	<useAllReactorProjects>true</useAllReactorProjects> 
+	      	
+	      	<sources>
+	      		<fileSets>
+				 	<fileSet>
+				    		<directory>${project.basedir}</directory>
+				      	<outputDirectory>/</outputDirectory>
+				     	<useDefaultExcludes>true</useDefaultExcludes>
+				      	<excludes>
+				        		<exclude>**/*.log</exclude>
+				        		<exclude>**/${project.build.directory}/**</exclude>
+				        		<exclude>**/.classpath</exclude>
+					        <exclude>**/.project</exclude>
+					        <exclude>**/.settings</exclude>
+					        <exclude>/src/main/resources/*.p12</exclude> 
+					        <exclude>/src/main/resources/*.jks</exclude>
+					        <exclude>/src/main/resources/*.pkcs8.der</exclude>
+				      	</excludes>
+				    </fileSet>
+			  	</fileSets>
+	      	</sources>
+  		</moduleSet>
+  	</moduleSets>
+</assembly>

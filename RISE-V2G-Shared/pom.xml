@@ -2,21 +2,24 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<parent>
-		<groupId>org.v2gclarity.risev2g</groupId>
-		<artifactId>parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<groupId>com.v2gclarity.risev2g</groupId>
+		<artifactId>rise-v2g-parent</artifactId>
+		<version>1.1.4-SNAPSHOT</version>
+		<relativePath>../RISE-V2G-PARENT</relativePath>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
-	<url>http://maven.apache.org</url>
-	<artifactId>shared</artifactId>
-	<name>risev2g.shared</name>
+	<artifactId>rise-v2g-shared</artifactId>
+	<name>rise-v2g-shared</name>
 	
 	<repositories>
-		<repository>
-			<id>in-project</id>
-			<name>In Project Repo</name>
-			<url>file://${project.basedir}/libs</url>
+		<!-- OpenEXI jars deployed in the /repo folder of RISE-V2G-Shared.
+			 See https://devcenter.heroku.com/articles/local-maven-dependencies for how to deploy .jars locally which are not 
+			 published in a public Maven repo. -->
+		<repository> 
+			<id>project.local</id>
+			<name>project</name>
+			<url>file:${project.basedir}/repo</url>
 		</repository>
 	</repositories>
 	
@@ -32,20 +35,15 @@
 			<version>2.11.0</version>
 		</dependency>
 		<dependency>
-			<groupId>xml-apis</groupId>
-			<artifactId>xml-apis</artifactId>
-			<version>1.4.01</version>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-api</artifactId>
+		    <version>2.9.1</version>
 		</dependency>
 		<dependency>
 		    <groupId>org.apache.logging.log4j</groupId>
-		    <artifactId>log4j-api</artifactId>
-		    <version>2.9.0</version>
-		 </dependency>
-		 <dependency>
-		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-core</artifactId>
-		    <version>2.9.0</version>
-		  </dependency>
+		    <version>2.9.1</version>
+		</dependency>
 		<dependency>
 			<groupId>net.sourceforge.openexi</groupId>
 			<artifactId>nagasena</artifactId>
@@ -58,28 +56,4 @@
 		</dependency>
 	</dependencies>
 	
-	<build>
-		<plugins>
-			<plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-		        <artifactId>maven-shade-plugin</artifactId>
-		        <version>2.4.1</version>
-		        <executions>
-		          <execution>
-		            <phase>package</phase>
-		            <goals>
-		              <goal>shade</goal>
-		            </goals>
-		            <configuration>
-		              <transformers>
-		                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-		                  <mainClass>org.sonatype.haven.HavenCli</mainClass>
-		                </transformer>
-		              </transformers>
-		            </configuration>
-		          </execution>
-		        </executions>
-			</plugin>
-		</plugins>
-	</build>
 </project>

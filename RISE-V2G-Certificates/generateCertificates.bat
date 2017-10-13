@@ -2,7 +2,7 @@
 REM *******************************************************************************
 REM The MIT License (MIT)
 REM 
-REM Copyright (c) 2015-207  V2G Clarity (Dr.-Ing. Marc Mültin) 
+REM Copyright (c) 2015-2017  V2G Clarity (Dr. Marc Mültin) 
 REM
 REM Permission is hereby granted, free of charge, to any person obtaining a copy
 REM of this software and associated documentation files (the "Software"), to deal
@@ -23,16 +23,19 @@ REM OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 REM THE SOFTWARE.
 REM *******************************************************************************
 
+REM ===========================================================================================================
 REM This shell script can be used to create all necessary certificates and keystores needed in order to
 REM - successfully perform a TLS handshake between the EVCC (TLSClient) and the SECC (TLSServer) and 
 REM - install/update a contract certificate in the EVCC.
-REM Previously created certificates should have been provided with the respective release of the RISE V2G project for testing purposes. However, certain certificates might not be valid any more in which case you need to create new certificates. 
+REM 
 REM This file shall serve you with all information needed to create your own certificate chains.
 REM 
 REM Helpful information about using openssl is provided by Ivan Ristic's book "Bulletproof SSL and TLS".
-REM Furthermore, you should have openssl 1.0.2 (or above) installed to comply with all security requirements imposed by ISO 15118. For example, openssl 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms. Some MacOS X installations unfortunately still use openssl < v1.0.2. You could use Homebrew to install openssl. Be aware that you probably then need to use an absolute path for your openssl commands, such as /usr/local/Cellar/openssl/1.0.2h_1/bin/openssl (for linux based systems).
+REM Furthermore, you should have openssl 1.0.2 (or above) installed to comply with all security requirements 
+REM imposed by ISO 15118. For example, openssl 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms. 
 REM 
-REM Author: Marc Mültin (marc.mueltin@v2g-clarity.com) 
+REM Author: Dr. Marc Mültin (marc.mueltin@v2g-clarity.com) 
+REM ===========================================================================================================
 
 
 REM Some variables to create different outcomes of the PKI for testing purposes. Change the validity periods (given in number of days) to test 
@@ -56,7 +59,8 @@ SET validity_oem_root_cert=3650
 SET validity_mo_root_cert=3650
 
 
-REM 0) Create directories if not yet existing
+REM 0) Create directories if not yet existing. The keystores in the keystores folder (if existing) need to be deleted at first, so delete the complete folder.
+if exist keystores rd /s /q keystores 
 if not exist certs mkdir certs
 if not exist csrs mkdir csrs
 if not exist keystores mkdir keystores

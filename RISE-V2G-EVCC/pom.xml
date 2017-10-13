@@ -2,76 +2,84 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<parent>
-		<groupId>org.v2gclarity.risev2g</groupId>
-		<artifactId>parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<groupId>com.v2gclarity.risev2g</groupId>
+		<artifactId>rise-v2g-parent</artifactId>
+		<version>1.1.4-SNAPSHOT</version>
+		<relativePath>../RISE-V2G-PARENT</relativePath>
 	</parent>
-
+	
 	<modelVersion>4.0.0</modelVersion>
-	<packaging>jar</packaging>
-	<url>http://maven.apache.org</url>
-	<artifactId>evcc</artifactId>
-	<name>risev2g.evcc</name>
+	<artifactId>rise-v2g-evcc</artifactId>
+	<name>rise-v2g-evcc</name>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.v2gclarity.risev2g</groupId>
-			<artifactId>shared</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>2.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.1</version>
+			<groupId>com.v2gclarity.risev2g</groupId>
+			<artifactId>rise-v2g-shared</artifactId>
+			<version>1.1.4-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
-
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.version>1.1.4-SNAPSHOT</project.version>
+	</properties>
+	
 	<build>
 		<plugins>
 			<plugin>
-			<artifactId>maven-assembly-plugin</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId> <!-- See http://maven.apache.org/plugins/maven-assembly-plugin/usage.html -->
+				<version>3.1.0</version>
 				<configuration>
+					<finalName>rise-v2g-evcc-${project.version}</finalName>
+         			<appendAssemblyId>false</appendAssemblyId>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>org.v2gclarity.risev2g.evcc.main.StartEVCC</mainClass>
+							<mainClass>com.v2gclarity.risev2g.evcc.main.StartEVCC</mainClass>
 						</manifest>
 					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<appendAssemblyId>false</appendAssemblyId>
+		          	<descriptors> <!-- Same as jar-with-dependencies descriptorRef, but can be adapted if needed -->
+		          		<descriptor>src/assembly/bin.xml</descriptor>
+		          	</descriptors>
 				</configuration>
 				<executions>
 					<execution>
-						<id>make-my-jar-with-dependencies</id>
-						<phase>package</phase>
+						<id>one-jar-only</id>
+						<phase>package</phase> <!-- bind to the packaging phase -->
 						<goals>
 							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-			<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<appendAssemblyId>false</appendAssemblyId>
-					<descriptor>${project.baseUri}src/assembly/bin.xml</descriptor>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+			<plugin> <!-- For copying the keystores and private key to the target folder next to the JAR file -->
+		        <artifactId>maven-resources-plugin</artifactId>
+		        <version>3.0.2</version>
+		        <executions>
+		        		<execution>
+		            		<id>copy-resources</id>
+			            <phase>install</phase>
+			            <goals>
+			            		<goal>copy-resources</goal>
+			            </goals>
+			            <configuration>
+			            		<outputDirectory>${basedir}/target</outputDirectory>
+			              	<resources>          
+			                		<resource>
+			                  		<directory>${basedir}</directory>
+			                  		<includes>
+			                  			<include>*.p12</include>
+			                  			<include>*.jks</include>
+			                  			<include>*.properties</include>
+			                  		</includes>
+			                		</resource>
+			              	</resources>              
+			            </configuration>            
+		          	</execution>
+		        	</executions>
+		    </plugin>
 		</plugins>
 	</build>
 

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>com.v2gclarity.risev2g</groupId>
+	<artifactId>rise-v2g-parent</artifactId>
+	<name>rise-v2g-parent</name>
+	<version>1.1.4-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	
+	<modules>
+		<module>../RISE-V2G-EVCC</module>
+		<module>../RISE-V2G-SECC</module>
+		<module>../RISE-V2G-Shared</module>
+	</modules>
+	
+	<url>https://www.v2g-clarity.com/en/risev2g/</url>
+	<description>RISE V2G is a complete reference implementation of ISO 15118-2, both implementing the EV (EVCC) and charging station (SECC) side. Messages are provided for AC as well as DC charging. Both identification modes, EIM (External Identification Means) as well as Plug and Charge are supported, including all the security relevant features such as TLS, X.509 certificates and digital signatures.</description>
+	
+	<organization>
+		<name>V2G Clarity</name>
+		<url>https://www.v2g-clarity.com</url>
+	</organization>
+	
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/V2GClarity/RISE-V2G/issues</url>
+	</issueManagement>
+	
+	<developers>
+		<developer>
+			<name>Dr. Marc Mültin</name>
+			<email>marc.mueltin@v2g-clarity.com</email>
+			<organization>V2G Clarity</organization>
+		</developer>
+	</developers>	
+	
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.version>1.1.4-SNAPSHOT</project.version>
+	</properties>
+	
+	<build>
+		<plugins>
+     		<plugin>
+        			<groupId>org.apache.maven.plugins</groupId>
+        			<artifactId>maven-compiler-plugin</artifactId>
+        			<version>3.7.0</version>
+        			<configuration> 
+          			<source>1.8</source> <!-- Which Java version to use -->
+         			<target>1.8</target> <!-- Which Java version to use -->
+        			</configuration>
+      		</plugin>
+      		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId> <!-- See http://maven.apache.org/plugins/maven-assembly-plugin/usage.html -->
+				<version>3.1.0</version>
+				<configuration>
+					<finalName>rise-v2g-${project.version}-src</finalName>
+         			<appendAssemblyId>false</appendAssemblyId>
+		          	<descriptors>
+		          		<descriptor>src/assembly/src.xml</descriptor> <!-- Generate the release .zip with the sources -->
+		          	</descriptors>
+				</configuration>
+				<executions>
+					<execution>
+						<id>one-jar-only</id>
+						<phase>package</phase> <!-- bind to the packaging phase -->
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+    		</plugins>
+	</build>
+
+</project>

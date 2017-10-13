@@ -1,40 +1,18 @@
-<assembly>
-	<id>bin</id>
-	<formats>
-		<format>tar.gz</format>
-		<format>tar.bz2</format>
-		<format>zip</format>
-	</formats>
-
-	<fileSets>
-		<fileSet>
-			<includes>
-				<include>README*</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>target</directory>
-			<outputDirectory>.</outputDirectory>
-			<includes>
-				<include>*.jar</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>.</directory>
-			<outputDirectory>.</outputDirectory>
-			<includes>
-				<include>*.p12</include>
-				<include>*.jks</include>
-				<include>*.pkcs8.der</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>.</directory>
-			<outputDirectory>.</outputDirectory>
-			<includes>
-				<include>*.properties</include>
-			</includes>
-		</fileSet>
-
-	</fileSets>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+  <!-- TODO: a jarjar format would be better -->
+  <id>jar-with-dependencies</id>
+  <formats>
+  	<format>jar</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>/</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+    </dependencySet>
+  </dependencySets>
 </assembly>

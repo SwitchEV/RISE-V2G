@@ -1,7 +1,7 @@
 #*******************************************************************************
 # The MIT License (MIT)
 #
-# Copyright (c) 2015-207  V2G Clarity (Dr.-Ing. Marc Mültin) 
+# Copyright (c) 2015-207  V2G Clarity (Dr. Marc Mültin) 
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #*******************************************************************************
+
+# ===============================================================================================================
 # This shell script can be used to create all necessary certificates and keystores needed in order to
 # - successfully perform a TLS handshake between the EVCC (TLSClient) and the SECC (TLSServer) and 
 # - install/update a contract certificate in the EVCC.
-# Previously created certificates should have been provided with the respective release of the RISE V2G project for testing purposes. However, certain certificates might not be valid any more in which case you need to create new certificates. 
+# 
 # This file shall serve you with all information needed to create your own certificate chains.
 #
 # Helpful information about using openssl is provided by Ivan Ristic's book "Bulletproof SSL and TLS".
-# Furthermore, you should have openssl 1.0.2 (or above) installed to comply with all security requirements imposed by ISO 15118. For example, openssl 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms. Some MacOS X installations unfortunately still use openssl < v1.0.2. You could use Homebrew to install openssl. Be aware that you probably then need to use an absolute path for your openssl commands, such as /usr/local/Cellar/openssl/1.0.2h_1/bin/openssl.
+# Furthermore, you should have openssl 1.0.2 (or above) installed to comply with all security requirements 
+# imposed by ISO 15118. For example, openssl 0.9.8 does not come with SHA-2 for SHA-256 signature algorithms. 
+# Some MacOS X installations unfortunately still use openssl < v1.0.2. You could use Homebrew to install openssl. 
+# Be aware that you probably then need to use an absolute path for your openssl commands, such as 
+# /usr/local/Cellar/openssl/1.0.2h_1/bin/openssl.
 #
-# Author: Marc Mültin (marc.mueltin@v2g-clarity.com) 
+# Author: Dr. Marc Mültin (marc.mueltin@v2g-clarity.com) 
+# ===============================================================================================================
 
 
 # Some variables to create different outcomes of the PKI for testing purposes. Change the validity periods (given in number of days) to test 
@@ -55,6 +62,7 @@ validity_mo_root_cert=3650
 
 
 # 0) Create directories if not yet existing
+rm -r keystores # the keystores in the keystores folder (if existing) need to be deleted at first, so delete the complete folder
 mkdir -p certs
 mkdir -p csrs
 mkdir -p keystores

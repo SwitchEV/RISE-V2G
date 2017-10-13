@@ -2,7 +2,7 @@
 <Configuration>
   <Appenders>
 	  <Console name="Console" target="SYSTEM_OUT"> 
-	    <PatternLayout pattern="%d{ISO8601} %highlight{%level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue} [%t] %c: %m%n" />
+	    <PatternLayout pattern="%d{ISO8601} %level [%t] %c: %m%n" />
 	  </Console> 
   </Appenders>
   <Loggers>
