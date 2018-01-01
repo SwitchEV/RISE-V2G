@@ -65,7 +65,7 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 	private StatefulTransportLayerClient transportLayerClient;
 	
 	public V2GCommunicationSessionHandlerEVCC() {	
-		setMessageHandler(new MessageHandler());
+		setMessageHandler(MessageHandler.getInstance());
 		
 		setSecurity(
 				(MiscUtils.getPropertyValue("tls") != null ? 

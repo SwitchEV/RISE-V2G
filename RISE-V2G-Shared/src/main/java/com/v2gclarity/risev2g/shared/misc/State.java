@@ -95,6 +95,7 @@ public abstract class State {
 		
 		@SuppressWarnings({"unchecked"})
 		V2GMessage v2gMessage = getMessageHandler().getV2GMessage(
+				getCommSessionContext().getSessionID(),
 				getXMLSignatureRefElements(), 
 				getSignaturePrivateKey(),
 				getCommSessionContext().getMessageHandler().getJaxbElement(message)

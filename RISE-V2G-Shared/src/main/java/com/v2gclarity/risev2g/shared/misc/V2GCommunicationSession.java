@@ -56,7 +56,7 @@ public abstract class V2GCommunicationSession extends Observable {
 	
 	public V2GCommunicationSession() {
 		setStates(new HashMap<V2GMessages, State>());
-		setMessageHandler(new MessageHandler(this));
+		setMessageHandler(MessageHandler.getInstance());
 		setSessionID(null);
 		setV2gTpMessage(null);
 	}

@@ -183,7 +183,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 			
 			processReaction(getCurrentState().processIncomingMessage(incomingMessage));
 		} else {
-			terminateSession("Received incoming message is not a valid V2GTPMessage", false);
+			getLogger().warn("Received incoming message is not a valid V2GTPMessage", false);
 		}
 	}
 	
@@ -202,9 +202,9 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 							((ChangeProcessingState) reactionToIncomingMessage).getPayload()));
 		} else if (reactionToIncomingMessage instanceof TerminateSession) {
 			/*
-			 * TODO is this really needed? if sth. goes wrong, a negative response code will be send by
+			 * TODO is this really needed? if sth. goes wrong, a negative response code will be sent by
 			 * the respective state anyway, the reaction to this negative response code should only
-			 * instantiate a TerminateSession object!
+			 * instantiate a TerminateSession object.
 			 */
 			terminateSession(((TerminateSession) reactionToIncomingMessage));
 		} else {

@@ -808,7 +808,7 @@ public final class SecurityUtils {
 		try {
 			pkcs8ByteArray = Files.readAllBytes(fileLocation);
 			
-			// The DER encoded private key is encrypted in PKCS#8. So we need to decrypt it first
+			// The DER encoded private key is password-based encrypted and provided in PKCS#8. So we need to decrypt it first
 			PBEKeySpec pbeKeySpec = new PBEKeySpec(GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
 		    EncryptedPrivateKeyInfo encryptedPrivKeyInfo = new EncryptedPrivateKeyInfo(pkcs8ByteArray);
 		    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivKeyInfo.getAlgName());

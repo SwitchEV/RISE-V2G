@@ -40,7 +40,6 @@ import com.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import com.v2gclarity.risev2g.shared.exiCodec.EXIficientCodec;
 import com.v2gclarity.risev2g.shared.exiCodec.ExiCodec;
 import com.v2gclarity.risev2g.shared.exiCodec.OpenEXICodec;
-import com.v2gclarity.risev2g.shared.misc.V2GCommunicationSession;
 import com.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import com.v2gclarity.risev2g.shared.utils.ByteUtils;
 import com.v2gclarity.risev2g.shared.utils.MiscUtils;
@@ -57,25 +56,24 @@ import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 
-public class MessageHandler {
+public final class MessageHandler {
+	// -- BEGIN: SINGLETON DEFINITION --
+	/*
+	 *  Eager instantiation of the singleton, since a MessageHandler is always needed. 
+	 *  The JVM creates the unique instance when the class is loaded and before any thread tries to 
+	 *  access the instance variable -> thread safe.
+	 */
+	private static final MessageHandler instance = new MessageHandler();
+	
+	public static MessageHandler getInstance() {
+		return instance;
+	}
+	// -- END: SINGLETON DEFINITION --
 	
 	private Logger logger = LogManager.getLogger(this.getClass().getSimpleName()); 
 	private ExiCodec exiCodec;
-	private V2GCommunicationSession commSessionContext;
 	private JAXBContext jaxbContext;
 	
-	/**
-	 * This constructor is used by V2GCommunicationSessionEVCC and -SECC
-	 * 
-	 * @param commSessionContext The respective V2GCommunicationSessionEVCC or -SECC instance
-	 */
-	public MessageHandler(V2GCommunicationSession commSessionContext) {
-		this();
-		setCommSessionContext(commSessionContext);
-		
-		// Setting the JAXBContext is a very time-consuming action and should only be done once during startup
-		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
-	}
 	
 	/**
 	 * This constructor is used by V2GCommunicationSessionHandlerEVCC and -SECC
@@ -91,7 +89,7 @@ public class MessageHandler {
 		setJaxbContext(SupportedAppProtocolReq.class, SupportedAppProtocolRes.class, V2GMessage.class);
 	} 
 	
-	public boolean isV2GTPMessageValid(V2GTPMessage v2gTpMessage) {
+	public synchronized boolean isV2GTPMessageValid(V2GTPMessage v2gTpMessage) {
 		if (isVersionAndInversionFieldCorrect(v2gTpMessage) && 
 			isPayloadTypeCorrect(v2gTpMessage) && 
 			isPayloadLengthCorrect(v2gTpMessage)) 
@@ -99,7 +97,7 @@ public class MessageHandler {
 		return false;
 	}
 	
-	public boolean isVersionAndInversionFieldCorrect(V2GTPMessage v2gTpMessage) {
+	public synchronized boolean isVersionAndInversionFieldCorrect(V2GTPMessage v2gTpMessage) {
 		if (v2gTpMessage.getProtocolVersion() != GlobalValues.V2GTP_VERSION_1_IS.getByteValue()) {
 			getLogger().error("Protocol version (" + ByteUtils.toStringFromByte(v2gTpMessage.getProtocolVersion()) + 
 							  ") is not supported!");
@@ -115,7 +113,7 @@ public class MessageHandler {
 		return true;
 	}
 	
-	public boolean isPayloadTypeCorrect(V2GTPMessage v2gTpMessage) {
+	public synchronized boolean isPayloadTypeCorrect(V2GTPMessage v2gTpMessage) {
 		byte[] payloadType = v2gTpMessage.getPayloadType();
 
 		if (Arrays.equals(payloadType, GlobalValues.V2GTP_PAYLOAD_TYPE_EXI_ENCODED_V2G_MESSAGE.getByteArrayValue()) ||
@@ -127,7 +125,7 @@ public class MessageHandler {
 		return false;
 	}
 	
-	public boolean isPayloadLengthCorrect(V2GTPMessage v2gTpMessage) {
+	public synchronized boolean isPayloadLengthCorrect(V2GTPMessage v2gTpMessage) {
 		if (ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) > GlobalValues.V2GTP_HEADER_MAX_PAYLOAD_LENGTH.getLongValue() ||
 			ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) < 0L) {
 			getLogger().error("Payload length (" + ByteUtils.toLongFromByteArray(v2gTpMessage.getPayloadLength()) + 
@@ -168,15 +166,17 @@ public class MessageHandler {
 	}
 	
 	
-	public V2GMessage getV2GMessage(
+	public synchronized V2GMessage getV2GMessage(
+			byte[] sessionID, 
 			HashMap<String, byte[]> xmlSignatureRefElements,
 			ECPrivateKey signaturePrivateKey,
 			JAXBElement<? extends BodyBaseType> v2gMessageInstance) {
-		return getV2GMessage(null, xmlSignatureRefElements, signaturePrivateKey, v2gMessageInstance);
+		return getV2GMessage(sessionID, null, xmlSignatureRefElements, signaturePrivateKey, v2gMessageInstance);
 	}
 
 	
-	public V2GMessage getV2GMessage(
+	public synchronized V2GMessage getV2GMessage(
+			byte[] sessionID,
 			NotificationType notification, 
 			HashMap<String, byte[]> xmlSignatureRefElements, 
 			ECPrivateKey signaturePrivateKey,
@@ -185,20 +185,21 @@ public class MessageHandler {
 		body.setBodyElement(v2gMessageInstance);
 		
 		V2GMessage v2gMessage = new V2GMessage();
-		v2gMessage.setHeader(getHeader(notification, v2gMessageInstance, xmlSignatureRefElements, signaturePrivateKey));
+		v2gMessage.setHeader(getHeader(sessionID, notification, v2gMessageInstance, xmlSignatureRefElements, signaturePrivateKey));
 		v2gMessage.setBody(body);
 		
 		return v2gMessage;
 	}
 	
 	
-	private MessageHeaderType getHeader(
+	private synchronized MessageHeaderType getHeader(
+			byte[] sessionID,
 			NotificationType notification,
 			JAXBElement<? extends BodyBaseType> v2gMessageInstance,
 			HashMap<String, byte[]> xmlSignatureRefElements,
 			ECPrivateKey signaturePrivateKey) {
 		MessageHeaderType header =  new MessageHeaderType();
-		header.setSessionID(getCommSessionContext().getSessionID());
+		header.setSessionID(sessionID);
 		header.setNotification(notification);
 		
 		if (xmlSignatureRefElements != null && xmlSignatureRefElements.size() != 0) {
@@ -236,7 +237,7 @@ public class MessageHandler {
 	 * @return The JAXBElement of the provided message or field
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public JAXBElement getJaxbElement(Object messageOrField) {
+	public synchronized JAXBElement getJaxbElement(Object messageOrField) {
 		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
 		String namespace = "";
 		JAXBElement jaxbElement = null;
@@ -292,14 +293,6 @@ public class MessageHandler {
 		this.exiCodec = exiCodec;
 		SecurityUtils.setExiCodec(exiCodec);
 	}
-
-	public V2GCommunicationSession getCommSessionContext() {
-		return commSessionContext;
-	}
-
-	public void setCommSessionContext(V2GCommunicationSession commSessionContext) {
-		this.commSessionContext = commSessionContext;
-	}
 	
 	public JAXBContext getJaxbContext() {
 		return jaxbContext;
@@ -309,7 +302,7 @@ public class MessageHandler {
 		this.jaxbContext = jaxbContext;
 	}
 	
-	public void setJaxbContext(Class... classesToBeBound) {
+	public synchronized void setJaxbContext(Class... classesToBeBound) {
 		try {
 			setJaxbContext(JAXBContext.newInstance(classesToBeBound));
 			

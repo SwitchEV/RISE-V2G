@@ -53,7 +53,7 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 	 * Keeps a list of all ConnectionHandlers and their respective running Threads.
 	 * The V2GCommunicationSessionHandlerSECC needs a ConnectionHandler (with its TCP/TLS client socket)
 	 * in order to associate it with a V2GCommunicationSessionSECC. Handing over a Thread instead brings
-	 * up the problem that you can't access the Threads runnable object (ConnectionHandler).
+	 * up the problem that you can't access the Thread's runnable object (ConnectionHandler).
 	 */
 	private static HashMap<ConnectionHandler, Thread> connectionHandlerMap;
 	private MessageHandler messageHandler;

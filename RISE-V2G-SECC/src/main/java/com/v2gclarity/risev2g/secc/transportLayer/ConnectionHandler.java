@@ -121,7 +121,8 @@ public class ConnectionHandler extends Observable implements Runnable {
 					break;
 				} else {
 					setPayloadLength(ByteUtils.toIntFromByteArray(Arrays.copyOfRange(getV2gTpHeader(), 4, 8)));
-					setV2gTPPayload(new byte[payloadLength]);
+					getLogger().debug("Length of V2GTP payload in bytes according to V2GTP header: " + getPayloadLength());
+					setV2gTPPayload(new byte[getPayloadLength()]);
 					
 					getInStream().read(getV2gTPPayload());
 	

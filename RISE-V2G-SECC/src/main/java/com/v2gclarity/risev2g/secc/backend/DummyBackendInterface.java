@@ -144,9 +144,9 @@ public class DummyBackendInterface implements IBackendInterface {
 		salesTariff.setId("ID1"); 
 		salesTariff.setSalesTariffID((short) 1);
 		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(0L, (short) 1));
-//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
-//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(3600L, (short) 2));
-//		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(5400L, (short) 3));
+		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(1800L, (short) 4));
+		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(3600L, (short) 2));
+		salesTariff.getSalesTariffEntry().add(createSalesTariffEntry(5400L, (short) 3));
 		
 		// Put 'em all together
 		SAScheduleTupleType saScheduleTuple = new SAScheduleTupleType();
