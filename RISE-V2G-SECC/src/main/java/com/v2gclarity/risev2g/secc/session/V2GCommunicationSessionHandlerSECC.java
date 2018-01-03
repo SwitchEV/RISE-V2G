@@ -72,7 +72,7 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 		// Maps ConnectionHandlers to their respective running threads
 		setConnectionHandlerMap(new HashMap<ConnectionHandler, Thread>());
 		
-		setMessageHandler(new MessageHandler());
+		setMessageHandler(MessageHandler.getInstance());
 	}
 
 	@Override
