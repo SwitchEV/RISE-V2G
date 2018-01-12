@@ -1981,10 +1981,11 @@ public final class SecurityUtils {
 	
 	
 	/**
-	 * An ECDSA signature consists of two integers r and s, each of the bit length equal to the curve size.
+	 * An ECDSA signature consists of two positive integers r and s, each of the bit length equal to the curve size.
 	 * When Java is creating an ECDSA signature, it is encoding it in the DER (Distinguished Encoding Rules) format.
 	 * But in ISO 15118, we do not expect DER encoded signatures. Thus, this function takes the DER encoded signature
 	 * as input and returns the raw r and s integer values of the signature. 
+	 * See further explanations in the @getDEREncodedSignature function for DER encoded ECDSA signatures.
 	 * 
 	 * @param derEncodedSignature The DER encoded signature as a result from java.security.Signature.sign()
 	 * @return A byte array containing only the r and s value of the signature
@@ -1994,32 +1995,43 @@ public final class SecurityUtils {
 		byte[] r = new byte[32];
 		byte[] s = new byte[32];
 		
-		// Length of r is encoded in the fourth byte (either 32 (hex: 0x20) or 33 (hex: 0x21))
+		// Length of r is encoded in the fourth byte 
 		int lengthOfR = derEncodedSignature[3];
-		// Length of r is encoded in the second byte AFTER r (either 32 (hex: 0x20) or 33 (hex: 0x21))
+		
+		// Length of r is encoded in the second byte AFTER r 
 		int lengthOfS = derEncodedSignature[lengthOfR + 5];
 		
+		// Length of r and s are either 33 bytes (including padding byte 0x00), 32 bytes (normal), or less (leftmost 0x00 bytes were removed)
 		try {
-			// If r is made up of 33 bytes, then we need to skip the first fill byte (0x00) of r
-			if (lengthOfR == 33) System.arraycopy(derEncodedSignature, 5, r, 0, 32);
-			else System.arraycopy(derEncodedSignature, 4, r, 0, 32);
+			if (lengthOfR == 33) System.arraycopy(derEncodedSignature, 5, r, 0, lengthOfR - 1); // skip leftmost padding byte 0x00
+			else if (lengthOfR == 32) System.arraycopy(derEncodedSignature, 4, r, 0, lengthOfR);
+			else System.arraycopy(derEncodedSignature, 4, r, 32 - lengthOfR, lengthOfR); // destPos = number of leftmost 0x00 bytes
 			
-			// If r is made up of 33 bytes (hex value 0x21), then we need to skip the first fill byte (0x00) or r
-			if (lengthOfS == 33) System.arraycopy(derEncodedSignature, lengthOfR + 7, s, 0, 32);
-			else System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 0, 32);
+			if (lengthOfS == 33) System.arraycopy(derEncodedSignature, lengthOfR + 7, s, 0, lengthOfS - 1); // skip leftmost padding byte 0x00
+			else if (lengthOfS == 32) System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 0, lengthOfS);
+			else System.arraycopy(derEncodedSignature, lengthOfR + 6, s, 32 - lengthOfS, lengthOfS); // destPos = number of leftmost 0x00 bytes
 		} catch (ArrayIndexOutOfBoundsException e) {
-			getLogger().warn("ArrayIndexOutOfBoundsException occurred while trying to get raw signature from DER encoded signature", e);
+			getLogger().error("ArrayIndexOutOfBoundsException occurred while trying to get raw signature from DER encoded signature.", e);
 		}
 		
 	    try {
 			baos.write(r);
 			baos.write(s);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			getLogger().error("IOException occurred while trying to write r and s into DER-encoded signature", e);
 		}
 	    
 	    byte[] rawRAndS = baos.toByteArray();
+	   
+	    if (showSignatureVerificationLog) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Signature encoding DER -> raw:").append(System.lineSeparator());
+			sb.append("\tDER: ").append(ByteUtils.toHexString(derEncodedSignature)).append(System.lineSeparator());
+			sb.append("\tR: ").append(ByteUtils.toHexString(r)).append(System.lineSeparator());
+			sb.append("\tS: ").append(ByteUtils.toHexString(s)).append(System.lineSeparator());
+			sb.append("\tRaw: ").append(ByteUtils.toHexString(rawRAndS));
+			getLogger().debug(sb.toString());
+		}
 	    
 	    return rawRAndS;
 	}
@@ -2030,86 +2042,77 @@ public final class SecurityUtils {
 	 * x-coordinate of the elliptic curve point in the value "r"
 	 * and the 
 	 * y-coordinate of the elliptic curve point in the value "s" 
-	 * - becomes the following sequence of bytes (in total 70 bytes instead of 64 bytes):
+	 * - becomes the following sequence of bytes (in total somewhere between 68 and 72 bytes instead of 64 bytes):
 	 *
-	 * 0x30 b1 0x02 b2 (vr) 0x02 b3 (vs)
+	 * 0x30 len(z) 0x02 len(r) r 0x02 len(s) s
 	 *	
 	 * where:
 	 *	
-	 * - 0x30 is always the first byte of the DER encoded signature format (ASN.1 tag for sequence)
-	 * - b1 is a single byte value, encoding the length in bytes of the remaining list of bytes 
-	 *   (from the first 0x02 to the end of the encoding); is a value between 0x44 and 0x46
-	 * - 0x02 is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
-	 * - b2 is a single byte value, encoding the length in bytes of (vr);
-	 *   (either 0x20 (32 bytes) or 0x21 (33 bytes), depending on whether an optional fill byte 0x00 is used as most significant byte)
-	 * - (vr) is the signed big-endian encoding of the value "r", of minimal length;
-	 * - 0x02 is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
-	 * - b3 is a single byte value, encoding the length in bytes of (vs);
-	 *   (either 0x20 (32 bytes) or 0x21 (33 bytes), depending on whether an optional fill byte 0x00 is used as most significant byte)
-	 * - (vs) is the signed big-endian encoding of the value "s", of minimal length.
+	 * - 0x30: is always the first byte of the DER encoded signature format (ASN.1 tag for sequence)
+	 * 
+	 * - len(z): is a single byte value, encoding the length in bytes of the sequence z (remaining list of bytes)
+	 *   (from the first 0x02 to the end of the encoding); is a value between 0x43 and 0x46
+	 *   
+	 * - 0x02: is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
+	 * 
+	 * - len(r): is a single byte value, encoding the length in bytes of r; 
+	 *   Distinguished Encoding Rules (DER)-encoded integers are defined so that they can encode both positive and negative values  
+	 *   (aka signed values). This means that the leftmost bit (aka most-significant bit in big-endian) indicates whether the value 
+	 *   is positive (0) or negative (1).
+	 *   For ECDSA, however, the r and s values are positive integers. So the leftmost bit must be a 0. If it's not, a 0x00  
+	 *   padding byte must be added.
+	 *   
+	 *   Furthermore, DER require that integer values are represented in the shortest byte representation possible. This 
+	 *   effectively prohibits the use of leading zeroes (0x00) if the leftmost bit was not set to 1.
+	 *   
+	 *   So len(r) will either be 0x21 (33 bytes), 0x20 (32 bytes) or less (mostly not less than 0x1F (31 bytes)).
+	 *   Case 31 bytes or less: The leftmost bytes of the raw (non-DER-encoded) r are 0x00 and, according to DER, need to be 
+	 *    			    			removed so that r is DER-encoded in the shortest possible way. Also, the leftmost bit of the 
+	 *    						remaining byte array is 0 (-> a positive x-value).
+	 *   Case 32 bytes: What we would normally expect, as the x- and y-coordinates are positive values of 32 bytes length. 
+	 *   				The leftmost bit is set to 0 and the leftmost byte is not 0x00.
+	 *   Case 33 bytes: A padding 0x00 byte was added as the most significant (leftmost) byte because the raw (non-DER-encoded) r
+	 *   				 value had the leftmost bit set to 1, which would result in a negative value. 
+	 *   
+	 * - r: is the signed big-endian encoding of the value "r", of minimal length;
+	 * 
+	 * - 0x02: is a fixed value indicating that an integer value will follow (ASN.1 tag for int)
+	 * 
+	 * - len(s): is a single byte value, encoding the length in bytes of s;
+	 *   (See further explanation of len(r) that applies as well for len(s))
+	 *   
+	 * - s: is the signed big-endian encoding of the value "s", of minimal length.
+	 * 
+	 * @param rawSignatureValue The r and s values (each 32 bytes) of an ECDSA signature, given as a byte array of 64 bytes
+	 * @return A byte array representing the DER-encoded version of the raw r and s values
 	 */
-	private static byte[] getDEREncodedSignature (byte[] signatureValue) {
+	private static byte[] getDEREncodedSignature (byte[] rawSignatureValue) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		
-		// First we separate x and y of coordinates into separate variables
-	    byte[] r = new byte[32];
-	    byte[] s = new byte[32];
-	    
-	    try {
-	    		System.arraycopy(signatureValue, 0, r, 0, 32);
-	    		System.arraycopy(signatureValue, 32, s, 0, 32);
-	    } catch (ArrayIndexOutOfBoundsException e) {
-	    		getLogger().error("ArrayIndexOutOfBoundsException occurred while trying to get DER encoded signature", e);
-	    		return new byte[0];
-	    }
-	    
-	    int neededByteLength = signatureValue.length + 6; // 6 bytes for the header
-	    boolean isFillByteForR = false;
-	    boolean isFillByteForS = false;
-	    
-	    if (r[0] < 0) { // checks if the value is negative which is equivalent to r[0] is bigger than 0x7f
-	    	isFillByteForR = true;
-	    	neededByteLength += 1;
-	    }
-	    
-	    if (s[0] < 0)  {
-	    	isFillByteForS = true;
-	    	neededByteLength += 1;
-	    }
-	    
+		// First we separate x and y of coordinates into separate byte arrays r and s
+		byte[] r = new byte[32];
+		byte[] s = new byte[32];
+		
+		try {
+			System.arraycopy(rawSignatureValue, 0, r, 0, 32);
+			System.arraycopy(rawSignatureValue, 32, s, 0, 32);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			getLogger().error("ArrayIndexOutOfBoundsException occurred while trying to get DER encoded signature", e);
+			return new byte[0];
+ 		}
+		
+		// Then encode both parts (r & s) individually 
+		byte[] rDerEncoded = getDerEncodedSignatureValue(r);
+		byte[] sDerEncoded = getDerEncodedSignatureValue(s);
+		
+		// And write everything with the proper header to the buffer
 		baos.write(0x30);
-		baos.write(neededByteLength - 2);
-		
-		baos.write(0x02);
-		
+		baos.write(rDerEncoded.length + sDerEncoded.length);
 		try {
-			if (isFillByteForR) {
-				baos.write(0x21);
-				baos.write(0x00);
-				baos.write(r);
-			} else {
-				baos.write(0x20);
-				baos.write(r);
-			}
+			baos.write(rDerEncoded);
+			baos.write(sDerEncoded);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		baos.write(0x02);
-		
-		try {
-			if (isFillByteForS) {
-				baos.write(0x21);
-				baos.write(0x00);
-				baos.write(s);
-			} else {
-				baos.write(0x20);
-				baos.write(s);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			getLogger().error("IOException occurred while trying to write DER encoded signature r and s value", e);
 		}
 		
 		byte[] derEncodedSignature = baos.toByteArray();
@@ -2117,11 +2120,63 @@ public final class SecurityUtils {
 		try {
 			baos.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			getLogger().error("IOException occurred while trying to close ByteArrayOutputStream", e);
 		}
 		
+		if (showSignatureVerificationLog) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Signature encoding raw -> DER:").append(System.lineSeparator());
+			sb.append("\tRaw: ").append(ByteUtils.toHexString(rawSignatureValue)).append(System.lineSeparator());
+			sb.append("\tR: ").append(ByteUtils.toHexString(r)).append(System.lineSeparator());
+			sb.append("\tR (DER-encoded): ").append(ByteUtils.toHexString(rDerEncoded)).append(System.lineSeparator());
+			sb.append("\tS: ").append(ByteUtils.toHexString(s)).append(System.lineSeparator());
+			sb.append("\tS (DER-encoded): ").append(ByteUtils.toHexString(sDerEncoded)).append(System.lineSeparator());
+			sb.append("\tDER: ").append(ByteUtils.toHexString(derEncodedSignature));
+			getLogger().debug(sb.toString());
+ 		}
+		
 		return derEncodedSignature;
+	}
+	
+	
+	/**
+	* Helper function which provides a partial DER encoding for positive integer values used for r and s
+	* 
+	* @param value byte array containing a positive integer (non two's complement)
+	* @return DER-encoded value of r or s (depending on the @param), including int content type, length and, if needed, padding 
+	*/
+	private static byte[] getDerEncodedSignatureValue(byte[] value) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		// Check if the value is negative which is equivalent to r[0] being bigger than 0x7f
+		boolean isFillByteNeeded = value[0] < 0; 
+		
+		int indexOfFirstNonNullValue = 0;
+		for (/* empty init statement */; indexOfFirstNonNullValue < value.length; indexOfFirstNonNullValue++) {
+			if (value[indexOfFirstNonNullValue] != 0) {
+				break;
+			}
+		}
+		
+		byte derEncodedLength = (byte) (value.length - indexOfFirstNonNullValue);
+	    
+	    baos.write(0x02);
+    		if (isFillByteNeeded) {
+    			baos.write(derEncodedLength + 1);
+    			baos.write(0x00);
+    		} else {
+    			baos.write(derEncodedLength);
+    		}
+    		
+    		baos.write(value, indexOfFirstNonNullValue, value.length - indexOfFirstNonNullValue);
+    		byte[] result = baos.toByteArray();
+    		
+    		try {
+    			baos.close();
+    		} catch (IOException e) {
+    			getLogger().error("IOException occurred while trying to close ByteArrayOutputStream", e);
+    		}
+	   
+    		return result;
 	}
 	
 	

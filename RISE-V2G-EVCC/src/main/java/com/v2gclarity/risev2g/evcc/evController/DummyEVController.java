@@ -305,8 +305,8 @@ public class DummyEVController implements IACEVController, IDCEVController {
 
 	@Override
 	public boolean isChargingLoopActive() {
-		// Keep charging until 10 charging loops are finished
-		if (getChargingLoopCounter() < 10) {
+		// Keep charging until 100 charging loops are finished
+		if (getChargingLoopCounter() < 100) {
 			setChargingLoopCounter(getChargingLoopCounter() + 1);
 			return true;
 		} else 
