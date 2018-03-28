@@ -11,9 +11,9 @@
 	<packaging>pom</packaging>
 	
 	<modules>
-		<module>../RISE-V2G-EVCC</module>
-		<module>../RISE-V2G-SECC</module>
-		<module>../RISE-V2G-Shared</module>
+		<module>../rise-v2g-evcc</module>
+		<module>../rise-v2g-secc</module>
+		<module>../rise-v2g-shared</module>
 	</modules>
 	
 	<url>https://www.v2g-clarity.com/en/risev2g/</url>
