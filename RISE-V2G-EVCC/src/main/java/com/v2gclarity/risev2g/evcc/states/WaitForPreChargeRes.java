@@ -31,6 +31,7 @@ import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.misc.TimeRestrictions;
+import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PreChargeResType;
@@ -55,7 +56,10 @@ public class WaitForPreChargeRes extends ClientState {
 			double targetVoltage = dcEvController.getTargetVoltage().getValue() * Math.pow(10, dcEvController.getTargetVoltage().getMultiplier());
 			double presentVoltage = preChargeRes.getEVSEPresentVoltage().getValue() * Math.pow(10, preChargeRes.getEVSEPresentVoltage().getMultiplier());
 					
-			if (targetVoltage == presentVoltage) {
+			// Each EV has an EV-specific allowed deviation when measuring a target voltage
+			int voltageAccuracy = (int) MiscUtils.getPropertyValue("voltage.accuracy");
+			
+			if (presentVoltage >= targetVoltage * (1 - voltageAccuracy / 100) && presentVoltage <= targetVoltage * (1 + voltageAccuracy / 100)) {
 				getCommSessionContext().setOngoingTimerActive(false);
 				getCommSessionContext().setOngoingTimer(0L);
 				
@@ -67,6 +71,7 @@ public class WaitForPreChargeRes extends ClientState {
 				if (elapsedTimeInMs > TimeRestrictions.V2G_EVCC_PRE_CHARGE_TIMEOUT) 
 					return new TerminateSession("PreCharge timer timed out for PreChargeReq");
 				else {
+					getLogger().debug("Target voltage of " + targetVoltage + " V not yet reached. Present voltage at EVSE is " + presentVoltage);
 					PreChargeReqType preChargeReq = new PreChargeReqType();
 					preChargeReq.setDCEVStatus(dcEvController.getDCEVStatus());
 					preChargeReq.setEVTargetCurrent(dcEvController.getTargetCurrent());

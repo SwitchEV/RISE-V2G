@@ -95,6 +95,16 @@ public final class MiscUtils {
 	}
 	
 	
+	/**
+	 * Is used by the UDP client as well as by the TCP/TLS server whose ports may be in the range
+	 * of 49152 and 65535.
+	 * @return A port number given as an integer value.
+	 */
+	public static int getRandomPortNumber() {
+		return (int) Math.round(Math.random() * (65535-49152)) + 49152;
+	}
+	
+	
 	public static byte[] getMacAddress() {
 		String networkInterfaceConfig = getPropertyValue("network.interface").toString();
 		NetworkInterface nif = null;
@@ -114,14 +124,6 @@ public final class MiscUtils {
 		return macAddress;
 	}
 	
-	/**
-	 * Is used by the UDP client as well as by the TCP/TLS server whose ports may be in the range
-	 * of 49152 and 65535.
-	 * @return A port number given as an integer value.
-	 */
-	public static int getRandomPortNumber() {
-		return (int) Math.round(Math.random() * (65535-49152)) + 49152;
-	}
 	
 	/**
 	 * This is a more sophisticated method compared to the getProperty(String propertyName) method
@@ -245,6 +247,16 @@ public final class MiscUtils {
 		case "exi.codec": // EV + EVSE property
 			if (propertyValue.equals("open_exi")) returnValue = "open_exi";
 			else returnValue = "exificient";
+			break;
+		case "voltage.accuracy": // EV property
+			try {
+				returnValue = Integer.parseInt(propertyValue);
+			} catch (NumberFormatException e) {
+				getLogger().warn("Voltage accuracy '" + propertyValue + "' not supported. " +
+							     "Setting default value to 5.", e);
+				getV2gEntityConfig().setProperty("voltage.accuracy", "5");
+				returnValue = 5;
+			}
 			break;
 		default:
 			getLogger().error("No property with name '" + propertyName + "' found");

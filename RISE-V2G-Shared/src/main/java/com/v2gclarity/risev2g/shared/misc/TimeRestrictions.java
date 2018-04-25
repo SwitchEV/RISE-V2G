@@ -27,12 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 
-/**
- * All time restrictions are given as millisecond values. 
- * 
- * @author Marc
- *
- */
 public class TimeRestrictions {
 	
 	private static Logger logger = LogManager.getLogger(TimeRestrictions.class.getSimpleName());
@@ -59,15 +53,6 @@ public class TimeRestrictions {
 	 */
 	public static final int V2G_EVCC_COMMUNICATION_SETUP_TIMEOUT = 20000;
 	
-	/**
-	 * Timeout for retrieving a response from the ProtoTCPClient after having sent a request
-	 */
-	public static final int PROTO_TCP_CLIENT_RESPONSE_TIMEOUT = 30000;
-	
-	/**
-	 * Threshold time in seconds for sending the EV controller to sleep
-	 */
-	public static final int STAY_AWAKE_THRESHOLD = 125;
 	
 	public static int getV2gEvccMsgTimeout(V2GMessages messageType) {
 		switch(messageType) {

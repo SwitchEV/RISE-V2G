@@ -86,11 +86,6 @@ public class DummyACEVSEController implements IACEVSEController {
 	}
 
 	
-	public V2GCommunicationSessionSECC getCommSessionContext() {
-		return commSessionContext;
-	}
-
-	
 	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext) {
 		this.commSessionContext = commSessionContext;
 	}

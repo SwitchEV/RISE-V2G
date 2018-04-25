@@ -68,7 +68,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		 */
 		ECPrivateKey privateKey = SecurityUtils.getPrivateKey("./moSubCA2.pkcs8.der");
 		if (privateKey == null) 
-			getLogger().error("No private key available from MO Sub-CA 2 PKCS#8 file");
+			getLogger().warn("No private key available from MO Sub-CA 2 PKCS#8 file. Signing a SalesTariff will therefore not be possible");
 		else
 			setMoSubCA2PrivateKey(privateKey);
 		
@@ -152,7 +152,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		SAScheduleTupleType saScheduleTuple = new SAScheduleTupleType();
 		saScheduleTuple.setSAScheduleTupleID((short) 1); 
 		saScheduleTuple.setPMaxSchedule(pMaxSchedule);
-		saScheduleTuple.setSalesTariff(salesTariff);
+		saScheduleTuple.setSalesTariff(salesTariff); 
 		
 		SAScheduleListType saScheduleList = new SAScheduleListType();
 		saScheduleList.getSAScheduleTuple().add(saScheduleTuple);
@@ -235,6 +235,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		 */
 		ArrayList<EMAIDType> authorizedEMAIDs = new ArrayList<EMAIDType>();
 		
+		// This is a list of EMAIDs used for testing purposes, like a whitelist 
 		EMAIDType authorizedEMAID1 = new EMAIDType();
 		authorizedEMAID1.setId("id1");
 		authorizedEMAID1.setValue("DE1ABCD2EF357A");

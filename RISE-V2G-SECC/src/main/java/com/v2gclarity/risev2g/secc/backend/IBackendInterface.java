@@ -51,6 +51,8 @@ public interface IBackendInterface {
 	 * Provides a certificate chain coming from a secondary actor with the leaf certificate being 
 	 * the contract certificate and possible intermediate certificates (Sub-CAs) included.
 	 * 
+	 * This interface is to be used for the CertificateUpdate
+	 * 
 	 * @param oldContractCertificateChain The to-be-updated contract certificate chain
 	 * @return Certificate chain for contract certificate
 	 */
@@ -61,6 +63,8 @@ public interface IBackendInterface {
 	 * Provides a certificate chain coming from a secondary actor with the leaf certificate being 
 	 * the contract certificate and possible intermediate certificates (Sub-CAs) included.
 	 * 
+	 * This interface is to be used for the CertificateInstallation
+	 * 
 	 * @param oemProvisioningCert The OEM provisioning certificate
 	 * @return Certificate chain for contract certificate
 	 */
@@ -69,6 +73,7 @@ public interface IBackendInterface {
 	
 	/**
 	 * Provides the private key belonging to the contract certificate.
+	 * 
 	 * @return PrivateKey of the contract certificate
 	 */
 	public ECPrivateKey getContractCertificatePrivateKey();
@@ -77,6 +82,7 @@ public interface IBackendInterface {
 	/**
 	 * Provides a certificate chain coming from a secondary actor with the leaf certificate being 
 	 * the provisioning certificate and possible intermediate certificates (sub CAs) included.
+	 * 
 	 * @return Certificate chain for provisioning certificate
 	 */
 	public CertificateChainType getCPSCertificateChain();
@@ -84,6 +90,7 @@ public interface IBackendInterface {
 	
 	/**
 	 * Provides the private key belonging to the SA provisioning certificate.
+	 * 
 	 * @return PrivateKey of the SA provisioning certificate
 	 */
 	public ECPrivateKey getCPSLeafPrivateKey();
@@ -91,6 +98,7 @@ public interface IBackendInterface {
 	
 	/**
 	 * Provides the private key belonging to the MO Sub-CA 2 certificate (signature of SalesTariff).
+	 * 
 	 * @return PrivateKey of the MO Sub-CA 2 certificate
 	 */
 	public ECPrivateKey getMOSubCA2PrivateKey();

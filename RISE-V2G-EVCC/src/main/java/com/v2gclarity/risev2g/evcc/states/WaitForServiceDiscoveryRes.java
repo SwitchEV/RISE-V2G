@@ -73,7 +73,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 					getCommSessionContext().getOfferedServices().getService().add(serviceDiscoveryRes.getChargeService());
 					addSelectedService(1, null); // Assumption: a charge service is always used
 				} else {
-					return new TerminateSession("Offered EnergyTransferModes not compatible with the requested one");
+					return new TerminateSession("Offered EnergyTransferModes not compatible with the requested one, which is " + requestedEnergyTransferMode.toString());
 				}
 			} else return new TerminateSession("No charge service available");
 			

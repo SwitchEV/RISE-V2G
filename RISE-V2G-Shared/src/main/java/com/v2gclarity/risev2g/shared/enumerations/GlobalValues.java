@@ -71,7 +71,7 @@ public enum GlobalValues {
 	 */
 	V2GTP_HEADER_MAX_PAYLOAD_LENGTH((long) Integer.MAX_VALUE * 2, GlobalTypes.PAYLOAD_LENGTH),
 	
-	// Protocol versions (1 = IS compliant), see Table 9
+	// Protocol version of V2GTP messages (1 = IS compliant), see Table 9
 	V2GTP_VERSION_1_IS(ByteUtils.toByteFromHexString("01"), GlobalTypes.PROTOCOL_VERSION),
 	
 	// Schema information

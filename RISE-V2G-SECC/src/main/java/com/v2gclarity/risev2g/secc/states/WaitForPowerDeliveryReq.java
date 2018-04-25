@@ -114,6 +114,9 @@ public class WaitForPowerDeliveryReq extends ServerState {
 	public boolean isResponseCodeOK(PowerDeliveryReqType powerDeliveryReq) {
 		SAScheduleTupleType chosenSASchedule = getChosenSASCheduleTuple(powerDeliveryReq.getSAScheduleTupleID());
 		
+		// This debug message is helpful to determine why the EV might not send a ChargingProfile (parameter is optional and should only be left out if ChargeProgress is set to Stop)
+		getLogger().debug("ChargeProgress is set to " + powerDeliveryReq.getChargeProgress());
+		
 		if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.RENEGOTIATE) && 
 				!getCommSessionContext().isChargeProgressStarted()) {
 				getLogger().error("EVCC wants to renegotiate, but charge progress has not started yet (no "
@@ -171,7 +174,8 @@ public class WaitForPowerDeliveryReq extends ServerState {
 	
 	
 	protected void setEVSEStatus(PowerDeliveryResType powerDeliveryRes) {
-		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
+		// In case the SECC received a PowerDeliveryReq before a PaymentServiceSelectionReq, the field requestedEnergyTransferMode will be null. So we need to check for it.
+		if (getCommSessionContext().getRequestedEnergyTransferMode() != null && getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
 			/*
 			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
@@ -180,7 +184,7 @@ public class WaitForPowerDeliveryReq extends ServerState {
 					ACEVSEStatusType.class, 
 					getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
 			powerDeliveryRes.setEVSEStatus(jaxbEVSEStatus);
-		} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
+		} else if (getCommSessionContext().getRequestedEnergyTransferMode() != null && getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
 			/*
 			 * The MiscUtils method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)

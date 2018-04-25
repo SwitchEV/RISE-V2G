@@ -92,6 +92,7 @@ public class WaitForCurrentDemandRes extends ClientState {
 										  V2GMessages.POWER_DELIVERY_RES,
 										  " (ChargeProgress = STOP_CHARGING)");
 				case RE_NEGOTIATION:
+					getCommSessionContext().setRenegotiationRequested(true);
 					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.RENEGOTIATE), 
 										  V2GMessages.POWER_DELIVERY_RES,
 							  			  " (ChargeProgress = RE_NEGOTIATION)");

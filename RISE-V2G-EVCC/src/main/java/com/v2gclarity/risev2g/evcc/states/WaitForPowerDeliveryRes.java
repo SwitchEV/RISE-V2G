@@ -61,6 +61,11 @@ public class WaitForPowerDeliveryRes extends ClientState {
 			 */
 			
 			if (getCommSessionContext().isRenegotiationRequested()) {
+				// In DC charging, we need to switch to state B during renegotiation because we need to go through CableCheckReq and PreChargeReq again for which state B is required
+				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
+					getCommSessionContext().setChangeToState(CPStates.STATE_B);
+				}
+				
 				getCommSessionContext().setRenegotiationRequested(false);
 				return getSendMessage(getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
 			} else if (getCommSessionContext().isStopChargingRequested()) {

@@ -228,7 +228,7 @@ public class DummyEVController implements IACEVController, IDCEVController {
 		PhysicalValueType targetCurrent = new PhysicalValueType();
 		targetCurrent.setMultiplier(new Byte("0"));
 		targetCurrent.setUnit(UnitSymbolType.A);
-		targetCurrent.setValue((short) 32); 
+		targetCurrent.setValue((short) 2); // according to IEC 61851-23, this value should be limited to 2A as it seems (see https://github.com/V2GClarity/RISE-V2G/issues/20)
 		
 		return targetCurrent;
 	}
