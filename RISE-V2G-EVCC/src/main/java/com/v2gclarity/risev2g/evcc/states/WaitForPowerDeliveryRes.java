@@ -88,15 +88,15 @@ public class WaitForPowerDeliveryRes extends ClientState {
 	
 	private ReactionToIncomingMessage getSendMessage(ChargingSessionType chargingSessionType, boolean stopChargingRequested) {
 		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
-			// CP state C signaling BEFORE sending WeldingDetectionReq message in DC
-			if (getCommSessionContext().getEvController().setCPState(CPStates.STATE_C)) {
+			// CP state B signaling BEFORE sending WeldingDetectionReq message in DC
+			if (getCommSessionContext().getEvController().setCPState(CPStates.STATE_B)) {
 				WeldingDetectionReqType weldingDetectionReq = new WeldingDetectionReqType();
 				DCEVStatusType dcEVStatus = ((IDCEVController) getCommSessionContext().getEvController()).getDCEVStatus();
 				weldingDetectionReq.setDCEVStatus(dcEVStatus);
 				
 				return getSendMessage(weldingDetectionReq, V2GMessages.WELDING_DETECTION_RES);
 			} else {
-				return new TerminateSession("CP state C not ready (current state = " + 
+				return new TerminateSession("CP state B not ready (current state = " + 
 						getCommSessionContext().getEvController().getCPState() +
 						")");
 			}
