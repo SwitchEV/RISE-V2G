@@ -79,7 +79,7 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			 */
 			String[] enabledCipherSuites = {
 					"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 
-					"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256"
+					"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256" // this cipher suite should be avoided, ECDH does not support perfect forward secrecy
 			};
 			getTlsServerSocket().setEnabledCipherSuites(enabledCipherSuites);
 			

@@ -60,7 +60,9 @@ validity_v2g_root_cert=3650
 validity_oem_root_cert=3650
 validity_mo_root_cert=3650
 
-# OpenSSL does not use the named curve 'secp256r1' but the equivalent 'prime256v1'. So this file uses only 'prime256v1'.
+# FURTHER REMARKS:
+# 1. OpenSSL does not use the named curve 'secp256r1' but the equivalent 'prime256v1'. So this file uses only 'prime256v1'.
+# 2. The password used is stored in the file passphrase.txt. In it, you'll find two lines. The first line is used for the -passin option, the second line for the -passout option (especially when dealing with PKCS12 containers). See also https://www.openssl.org/docs/man1.0.2/apps/openssl.html, section "Pass Phrase Arguments"
 
 
 # 0) Create directories if not yet existing
@@ -79,7 +81,7 @@ mkdir -p privateKeys
 #	- encrypt the key with symmetric cipher AES-128-CBC using the 'ec' utility command -> ec -aes-128-cbc
 #   - the passphrase for the encryption of the private key is provided in a file -> -passout file:passphrase.txt
 #	- save the encrypted private key at the location provided -> -out 
-openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/v2gRootA.key 
+openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/v2gRootCA.key 
 # 1.2) Create a CSR
 #	- new -> -new
 #	- certificate signing request -> req
@@ -129,14 +131,6 @@ openssl x509 -req -in csrs/cpoSubCA2.csr -extfile configs/cpoSubCA2Cert.cnf -ext
 openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/secc.key 
 openssl req -new -key privateKeys/secc.key -passin file:passphrase.txt -config configs/seccCert.cnf -out csrs/seccCert.csr
 openssl x509 -req -in csrs/seccCert.csr -extfile configs/seccCert.cnf -extensions ext -CA certs/cpoSubCA2Cert.pem -CAkey privateKeys/cpoSubCA2.key -passin file:passphrase.txt -set_serial 12345 -days $validity_secc_cert -out certs/seccCert.pem
-# Concatenate the intermediate CAs into one file intermediateCAs.pem
-# IMPORTANT: Concatenate in such a way that the chain leads from the leaf certificate to the root (excluding), this means here: first parameter of the cat command is the intermediate CA's certificate which signs the leaf certificate (in this case cpoSubCA2.pem). Otherwise the Java method getCertificateChain() which is called on the keystore will only return the leaf certificate!
-cat certs/cpoSubCA2Cert.pem certs/cpoSubCA1Cert.pem > certs/intermediateCPOCACerts.pem
-# Put the seccCertificate, the private key of the seccCertificate as well as the intermediate CAs in a pkcs12 container. 
-# IMPORTANT: It is necessary to put all necessary intermediate CAs directly into the PKCS12 container (with the -certfile switch), instead of later on importing the PKCS12 containter only holding the leaf certificate (seccCert) and its private key and additionally importing the intermediate CAs via the keytool command (TLS handshake will fail).
-# This is the reason why we need two password files (passphrase.txt and passphrase2.txt). Possibly the passphrase.txt file resource is locked before being accessed a second time within the same command? See also http://rt.openssl.org/Ticket/Display.html?id=3168&user=guest&pass=guest
-# The -name switch corresponds to the -alias switch in the keytool command later on
-openssl pkcs12 -export -inkey privateKeys/secc.key -in certs/seccCert.pem -certfile certs/intermediateCPOCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name secc_cert -out certs/cpoCertChain.p12
 
 
 # 5) Create a self-signed OEMRootCA certificate (validity is up to the OEM, this example applies the same validity as the V2GRootCA)
@@ -161,8 +155,6 @@ openssl x509 -req -in csrs/oemSubCA2.csr -extfile configs/oemSubCA2Cert.cnf -ext
 openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/oemProv.key 
 openssl req -new -key privateKeys/oemProv.key -passin file:passphrase.txt -config configs/oemProvCert.cnf -out csrs/oemProvCert.csr
 openssl x509 -req -in csrs/oemProvCert.csr -extfile configs/oemProvCert.cnf -extensions ext -CA certs/oemSubCA2Cert.pem -CAkey privateKeys/oemSubCA2.key -passin file:passphrase.txt -set_serial 12345 -days $validity_oem_prov_cert -out certs/oemProvCert.pem
-cat certs/oemSubCA2Cert.pem certs/oemSubCA1Cert.pem > certs/intermediateOEMCACerts.pem
-openssl pkcs12 -export -inkey privateKeys/oemProv.key -in certs/oemProvCert.pem -certfile certs/intermediateOEMCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name oem_prov_cert -out certs/oemCertChain.p12
 
 
 # 9) Create a self-signed MORootCA (mobility operator) certificate (validity is up to the MO, this example applies the same validity as the V2GRootCA)
@@ -189,7 +181,7 @@ openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file
 openssl req -new -key privateKeys/contract.key -passin file:passphrase.txt -config configs/contractCert.cnf -out csrs/contractCert.csr
 openssl x509 -req -in csrs/contractCert.csr -extfile configs/contractCert.cnf -extensions ext -CA certs/moSubCA2Cert.pem -CAkey privateKeys/moSubCA2.key -passin file:passphrase.txt -set_serial 12345 -days $validity_contract_cert -out certs/contractCert.pem
 cat certs/moSubCA2Cert.pem certs/moSubCA1Cert.pem > certs/intermediateMOCACerts.pem
-openssl pkcs12 -export -inkey privateKeys/contract.key -in certs/contractCert.pem -certfile certs/intermediateMOCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name contract_cert -out certs/moCertChain.p12
+openssl pkcs12 -export -inkey privateKeys/contract.key -in certs/contractCert.pem -certfile certs/intermediateMOCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -name contract_cert -out certs/moCertChain.p12
 
 
 # 13) Create an intermediate provisioning service sub-CA certificate which is directly signed by the V2GRootCA certificate 
@@ -210,7 +202,7 @@ openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file
 openssl req -new -key privateKeys/cpsLeaf.key -passin file:passphrase.txt -config configs/cpsLeafCert.cnf -out csrs/cpsLeafCert.csr
 openssl x509 -req -in csrs/cpsLeafCert.csr -extfile configs/cpsLeafCert.cnf -extensions ext -CA certs/cpsSubCA2Cert.pem -CAkey privateKeys/cpsSubCA2.key -passin file:passphrase.txt -set_serial 12345 -days $validity_cps_leaf_cert -out certs/cpsLeafCert.pem
 cat certs/cpsSubCA2Cert.pem certs/cpsSubCA1Cert.pem > certs/intermediateCPSCACerts.pem
-openssl pkcs12 -export -inkey privateKeys/cpsLeaf.key -in certs/cpsLeafCert.pem -certfile certs/intermediateCPSCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase2.txt -name cps_leaf_cert -out certs/cpsCertChain.p12
+openssl pkcs12 -export -inkey privateKeys/cpsLeaf.key -in certs/cpsLeafCert.pem -certfile certs/intermediateCPSCACerts.pem -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -name cps_leaf_cert -out certs/cpsCertChain.p12
 
 
 # 16) Finally we need to convert the certificates from PEM format to DER format (PEM is the default format, but ISO 15118 only allows DER format)
@@ -233,19 +225,46 @@ openssl x509 -inform PEM -in certs/contractCert.pem    -outform DER -out certs/c
 
 
 # 17) In case you want the private keys in PKCS#8 file format and DER encoded, use this command. Especially necessary for the private key of MOSubCA2 in RISE V2G
-openssl pkcs8 -topk8 -in privateKeys/moSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase2.txt -outform DER -out privateKeys/moSubCA2.pkcs8.der
+openssl pkcs8 -topk8 -in privateKeys/moSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase.txt -outform DER -out privateKeys/moSubCA2.pkcs8.der
 
 
-# XX) Create the initial Java truststores and keystores
-# XX.1) truststore for the EVCC which needs to hold the V2GRootCA certificate (the EVCC does not verify the received contract certificate chain, therefore no MORootCA needs to be imported in evccTruststore.jks )
+# 18) Create the keystores for the EVCC and SECC. We need to first create the PKCS12 files and then import them into the JKS using the 'keytool' command.
+# 	- create a PKCS12 file -> -export
+#	- if no private keys are added, e.g. for a truststore that holds only root CA certificates -> -nokeys
+# 	- add a private key to the newly created PKCS12 container; must be in PEM format (not DER) -> -inkey
+#	- add any certificate (leaf certificate or root certificate); must be in PEM format (not DER) -> -in
+#	- add additional certificats (intermediate sub-CA certificates or more root CA certificates); must be in PEM format (not DER) -> -certfile
+#	- use AES to encrypt private keys before outputting -> -aes128
+#	- passphrase source to decrypt any private keys that are to be imported -> -passin
+#	- passphrase to encrypt any outputted private keys with -> -passout
+#	- provide the "friendly name" for the leaf certificate, which is used as the alias in Java -> -name
+# 	- provide the "friendly name" for CA certificates, which is used as the alias in Java;
+#	  this option may be used multiple times to specify names for all certificates in the order they appear -> -caname
+#	- the file location to store the PKCS12 data container -> -out
+#
+# 18.1) SECC keystore needs to hold initially hold the OEM provisioning certificate (contract certificate will be installed with ISO 15118 message exchange)
+# First, concatenate the intermediate sub-CA certificates into one file intermediateCAs.pem
+# IMPORTANT: Concatenate in such a way that the chain leads from the leaf certificate to the root (excluding), this means here: first parameter of the cat command is the sub-CA certificate which signs the leaf certificate (in this case cpoSubCA2.pem). Otherwise the Java method getCertificateChain() which is called on the keystore will only return the leaf certificate!
+cat certs/cpoSubCA2Cert.pem certs/cpoSubCA1Cert.pem > certs/intermediateCPOCACerts.pem
+# Put the seccCertificate, the private key associated with the seccCertificate as well as the intermediate sub-CA certificates in a PKCS12 container with the -certfile switch.
+openssl pkcs12 -export -inkey privateKeys/secc.key -in certs/seccCert.pem -name secc_cert -certfile certs/intermediateCPOCACerts.pem -caname mo_subca_2 -caname mo_subca_1 -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -out keystores/cpoCertChain.p12
+keytool -importkeystore -srckeystore keystores/cpoCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias secc_cert -destalias secc_cert -destkeystore keystores/seccKeystore.jks -storepass:file passphrase.txt -noprompt
+#
+# 18.2) EVCC keystore needs to initally hold the OEM provisioning certificate (contract certificate will be installed with ISO 15118 message exchange)
+cat certs/oemSubCA2Cert.pem certs/oemSubCA1Cert.pem > certs/intermediateOEMCACerts.pem
+openssl pkcs12 -export -inkey privateKeys/oemProv.key -in certs/oemProvCert.pem -name oem_prov_cert -certfile certs/intermediateOEMCACerts.pem -caname oem_subca_2 -caname oem_subca_1 -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -out keystores/oemCertChain.p12
+keytool -importkeystore -srckeystore keystores/oemCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias oem_prov_cert -destalias oem_prov_cert -destkeystore keystores/evccKeystore.jks -storepass:file passphrase.txt -noprompt
+
+
+# 19) Create truststores for EVCC and SECC. Storing trust anchors in PKCS12 is not supported in Java 8. For creating trusstores we need a Java KeyStore (JKS) and import the DER encoded root CA certificates.
+#
+# 19.1) EVCC truststore needs to hold the V2GRootCA certificate 
 keytool -import -keystore keystores/evccTruststore.jks -alias v2g_root_ca -file certs/v2gRootCACert.der -storepass:file passphrase.txt -noprompt
-# XX.2) truststore for the SECC which needs to hold the V2GRootCA certificate and the MORootCA which signed the MOSubCA1 (needed for verifying the  contract certificate signature chain which will be sent from the EVCC to the SECC with PaymentDetailsReq message). According to ISO 15118-2, MORootCA is not necessarily needed as the MOSubCA1 could instead be signed by a V2GRootCA.
+#
+# 19.2) SECC truststore needs to hold the V2G root CA certificate and MO root CA certificate. 
+# According to ISO 15118-2, MO root CA is not necessarily needed as the MO sub-CA 1 could instead be signed by a V2G root CA.
 keytool -import -keystore keystores/seccTruststore.jks -alias v2g_root_ca -file certs/v2gRootCACert.der -storepass:file passphrase.txt -noprompt
 keytool -import -keystore keystores/seccTruststore.jks -alias mo_root_ca -file certs/moRootCACert.der -storepass:file passphrase.txt -noprompt
-# XX.3) keystore for the SECC which needs to hold the CPOSubCA1, CPOSubCA2, and SECCCert certificates
-keytool -importkeystore -srckeystore certs/cpoCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias secc_cert -destalias secc_cert -destkeystore keystores/seccKeystore.jks -storepass:file passphrase.txt -noprompt
-# XX.4) keystore for the EVCC which needs to hold the OEMSubCA1, OEMSubCA2, and OEMProvCert certificates
-keytool -importkeystore -srckeystore certs/oemCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias oem_prov_cert -destalias oem_prov_cert -destkeystore keystores/evccKeystore.jks -storepass:file passphrase.txt -noprompt
 
 
-# Side notes for OCSP stapling in Java: see http://openjdk.java.net/jeps/8046321
+# Side notes for OCSP stapling in Java: see http://openjdk.java.net/jeps/249

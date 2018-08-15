@@ -2,8 +2,8 @@
 
 This file provides test data needed to reproduce the same digest and signature values for a CertificateInstallationRes. This test data is provided for your convenience to verify that your implementation of creating and verifying digital XML-based signatures is correct.
 
-Further explanation is given in the ISO 15118 Manual in section 3.11.3 "Test Data To Verify Your CertificateInstallationRes".
-For further explanation why the different usage of XML namespace matters with regards to the resulting digest and signature values, have a look at section 3.11.4 "Pitfalls with Signatures And XML Namespaces" in the [ISO 15118 Manual](http://v2g-clarity.com/en/iso15118-masterclass/ebook/).
+Further explanation is given in the ISO 15118 Manual in section 3.12.3 "Test Data To Verify Your CertificateInstallationRes".
+For further explanation why the different usage of XML namespace matters with regards to the resulting digest and signature values, have a look at section 3.12.4 "Pitfalls with Signatures And XML Namespaces" in the [ISO 15118 Manual](http://v2g-clarity.com/en/iso15118-masterclass/ebook/).
 
 
 
