@@ -32,7 +32,10 @@ import java.util.Observable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import com.v2gclarity.risev2g.shared.misc.TimeRestrictions;
 import com.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import com.v2gclarity.risev2g.shared.utils.ByteUtils;
 import com.v2gclarity.risev2g.shared.utils.MiscUtils;
@@ -58,7 +61,7 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 		setClientPort(MiscUtils.getRandomPortNumber());
 		setClientAddress(MiscUtils.getLinkLocalAddress());
 		setV2gTPHeader(new byte[8]);
-		setTimeout(2000); // Needed for the supportedAppProtocol timeout
+		setTimeout(TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.SUPPORTED_APP_PROTOCOL_RES)); // Needed for the supportedAppProtocol timeout
 	}
 	
 	protected boolean processIncomingMessage() throws IOException {
