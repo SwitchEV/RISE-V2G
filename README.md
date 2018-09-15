@@ -1,4 +1,4 @@
-![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500560160/182/ "RISE V2G logo")
+![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500556560/182/ "RISE V2G logo")
 
 The open source reference implementation of the Vehicle-2-Grid communication interface ISO 15118
 
