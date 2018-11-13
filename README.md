@@ -1,13 +1,6 @@
-![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500560160/182/ "RISE V2G logo")
+![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500556560/182/ "RISE V2G logo")
 
 The open source reference implementation of the Vehicle-2-Grid communication interface ISO 15118
-
-### Get Prioritized Email Support
-I'd like to know which companies and institutions are using or plan to use RISE V2G across the planet and how it helps them in their daily business. Therefore, I'd appreciate if you shared this information with me by [signing up in an email form](https://www.v2g-clarity.com/en/risev2g/), preferably providing the **email address of the company or organization you are associated with**.
-
-And as a little thank you, you will get prioritized email support by me for any questions which you might have regarding RISE V2G. Sounds like a win-win situation, right?
-
-
 
 ### About RISE V2G
 
@@ -28,7 +21,7 @@ A thorough documentation for RISE V2G will follow soon.
 - Have a look at the ISO 15118 Manual at [www.v2g-clarity.com/iso15118-masterclass](https://www.v2g-clarity.com/iso15118-masterclass) to fully understand how ISO 15118 works
 - View the [RISE V2G Basics online course](https://courses.v2g-clarity.com/p/risev2g-basics) to get RISE V2G up and running on your computer in under an hour. 
 
-![RISE V2G Basics Course](https://www.v2g-clarity.com/filer/media/1510236151/192/ "RISE V2G Basics Course")
+![RISE V2G Basics Course](https://www.v2g-clarity.com/filer/media/1510232551/192/ "RISE V2G Basics Course")
 
 - Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@tu-dortmund.de)
 
