@@ -50,7 +50,7 @@ public class WaitForCurrentDemandRes extends ClientState {
 					(CurrentDemandResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
 			// ReceiptRequired has higher priority than a possible EVSENotification=Renegotiate
-			if (currentDemandRes.isReceiptRequired() != null && currentDemandRes.isReceiptRequired()) {
+			if (currentDemandRes.isReceiptRequired() != null && currentDemandRes.isReceiptRequired() && getCommSessionContext().isTlsConnection()) {
 				MeteringReceiptReqType meteringReceiptReq = new MeteringReceiptReqType();
 				/*
 				 * Experience from the test symposium in San Diego (April 2016):

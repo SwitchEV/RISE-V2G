@@ -56,7 +56,7 @@ public class WaitForChargingStatusRes extends ClientState {
 			 * a MeteringReceiptRequest. If no TLS is used, a MeteringReceiptRequest may not be sent because
 			 * a signature cannot be applied without private key of the contract certificate.
 			 */
-			if (chargingStatusRes.isReceiptRequired() && getCommSessionContext().isTlsConnection()) {
+			if (chargingStatusRes.isReceiptRequired() != null & chargingStatusRes.isReceiptRequired() && getCommSessionContext().isTlsConnection()) {
 				MeteringReceiptReqType meteringReceiptReq = new MeteringReceiptReqType();
 				/*
 				 * Experience from the test symposium in San Diego (April 2016):
