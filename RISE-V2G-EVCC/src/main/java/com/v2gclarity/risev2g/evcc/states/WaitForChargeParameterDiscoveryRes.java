@@ -61,7 +61,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					(ChargeParameterDiscoveryResType) v2gMessageRes.getBody().getBodyElement().getValue();
 			
 			if (chargeParameterDiscoveryRes.getEVSEProcessing() == null)
-				return new TerminateSession("EVSEProcessing parameter of ChargeParameterDiscoveryRes is null. Parameter is mandatory.");
+				return new TerminateSession("EVSEProcessing field of ChargeParameterDiscoveryRes is null. This field is mandatory.");
 			
 			if (chargeParameterDiscoveryRes.getEVSEProcessing().equals(EVSEProcessingType.ONGOING)) {
 				getLogger().debug("EVSEProcessing was set to ONGOING");
@@ -80,7 +80,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 				}
 				
 				return getSendMessage(getCommSessionContext().getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES, Math.min((TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES)));
-			} else {
+			} else {	
 				getLogger().debug("EVSEProcessing was set to FINISHED");
 				
 				getCommSessionContext().setOngoingTimer(0L);
@@ -116,6 +116,9 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					 * - MeteringReceiptRes
 					 * - CurrentDemandRes
 					 */
+					
+					if (chargeParameterDiscoveryRes.getSASchedules() == null) 
+						return new TerminateSession("SASchedules field of ChargeParameterDiscoveryRes is null although EVSEProcessing is set to FINISHED. SASchedules is mandatory in this case.");
 					
 					SAScheduleListType saSchedules = (SAScheduleListType) chargeParameterDiscoveryRes.getSASchedules().getValue();
 					
