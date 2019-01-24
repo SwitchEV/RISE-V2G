@@ -301,7 +301,7 @@ public final class MessageHandler {
 		this.jaxbContext = jaxbContext;
 	}
 	
-	public synchronized void setJaxbContext(Class... classesToBeBound) {
+	public synchronized void setJaxbContext(@SuppressWarnings("rawtypes") Class... classesToBeBound) {
 		try {
 			setJaxbContext(JAXBContext.newInstance(classesToBeBound));
 			
