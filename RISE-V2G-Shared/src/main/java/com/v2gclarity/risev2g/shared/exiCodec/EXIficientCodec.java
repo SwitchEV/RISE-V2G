@@ -222,6 +222,7 @@ public final class EXIficientCodec extends ExiCodec {
 		this.exiFactory = exiFactory;
 	}
 
+	@SuppressWarnings("unused")
 	private GrammarFactory getGrammarFactory() {
 		return grammarFactory;
 	}

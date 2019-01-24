@@ -246,6 +246,7 @@ public final class OpenEXICodec extends ExiCodec {
 		this.exiSchemaFactory = exiSchemaFactory;
 	}
 
+	@SuppressWarnings("unused")
 	private InputStream getSchemaMsgDefIS() {
 		return schemaMsgDefIS;
 	}

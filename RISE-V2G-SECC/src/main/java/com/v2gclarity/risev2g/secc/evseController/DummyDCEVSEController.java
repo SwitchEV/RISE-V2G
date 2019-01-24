@@ -43,8 +43,11 @@ public class DummyDCEVSEController implements IDCEVSEController {
 	private V2GCommunicationSessionSECC commSessionContext;
 	private PhysicalValueType targetCurrent;
 	private PhysicalValueType targetVoltage;
+	@SuppressWarnings("unused")
 	private PhysicalValueType maximumEVVoltageLimit;
+	@SuppressWarnings("unused")
 	private PhysicalValueType maximumEVCurrentLimit;
+	@SuppressWarnings("unused")
 	private PhysicalValueType maximumEVPowerLimit;
 	private IsolationLevelType isolationLevel;
 	
