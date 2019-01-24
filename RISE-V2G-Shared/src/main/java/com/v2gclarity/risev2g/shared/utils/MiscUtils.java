@@ -26,7 +26,6 @@ package com.v2gclarity.risev2g.shared.utils;
 			import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
