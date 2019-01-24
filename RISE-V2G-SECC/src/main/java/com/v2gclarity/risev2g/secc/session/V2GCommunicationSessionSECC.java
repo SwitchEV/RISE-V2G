@@ -89,7 +89,6 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	private short chosenSAScheduleTuple;
 	private IACEVSEController acEvseController;
 	private IDCEVSEController dcEvseController;
-	private IEVSEController evseController;
 	private IBackendInterface backendInterface;
 	private boolean oldSessionJoined;
 	private byte[] incomingV2GTPMessage;
@@ -457,11 +456,6 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 				return null;
 			}
 		} else return acEvseController; // just AC controller as default
-	}
-
-
-	public void setEvseController(IEVSEController evseController) {
-		this.evseController = evseController;
 	}
 
 
