@@ -147,7 +147,7 @@ public class WaitForMeteringReceiptReq extends ServerState {
 			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (ACEVSEStatus) and the name in the XSD (AC_EVSEStatus)
 			 */
-			JAXBElement jaxbEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
+			JAXBElement<ACEVSEStatusType> jaxbEVSEStatus = new JAXBElement<>(new QName("urn:iso:15118:2:2013:MsgDataTypes", "AC_EVSEStatus"), 
 					ACEVSEStatusType.class, 
 					getCommSessionContext().getACEvseController().getACEVSEStatus(EVSENotificationType.NONE));
 			meteringReceiptRes.setEVSEStatus(jaxbEVSEStatus);
@@ -156,7 +156,7 @@ public class WaitForMeteringReceiptReq extends ServerState {
 			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (DCEVSEStatus) and the name in the XSD (DC_EVSEStatus)
 			 */
-			JAXBElement jaxbACEVSEStatus = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
+			JAXBElement<DCEVSEStatusType> jaxbACEVSEStatus = new JAXBElement<>(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVSEStatus"), 
 					DCEVSEStatusType.class, 
 					getCommSessionContext().getDCEvseController().getDCEVSEStatus(EVSENotificationType.NONE));
 			meteringReceiptRes.setEVSEStatus(jaxbACEVSEStatus);
