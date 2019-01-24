@@ -229,18 +229,17 @@ public final class MessageHandler {
 	 * message. In case of XML signature generation, for some messages certain fields need to be signed
 	 * instead of the complete message. 
 	 * 
-	 * Suppressed unchecked warning, previously used a type-safe version such as new 
-	 * JAXBElement<SessionStopReqType>(new QName ... ) but this seems to work as well 
-	 * (I don't know how to infer the type correctly)
+	 * Suppressed unchecked warning, because the cast is inferred from the type
+	 * of messageOrField parameter 
 	 * 
 	 * @param messageOrField The message or field for which a digest is to be generated
 	 * @return The JAXBElement of the provided message or field
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public synchronized JAXBElement getJaxbElement(Object messageOrField) {
+	@SuppressWarnings({ "unchecked" })
+	public synchronized <T> JAXBElement<T> getJaxbElement(T messageOrField) {
 		String messageName = messageOrField.getClass().getSimpleName().replace("Type", "");
 		String namespace = "";
-		JAXBElement jaxbElement = null;
+		JAXBElement<T> jaxbElement = null;
 		
 		if (messageOrField instanceof SignedInfoType) {
 			namespace = GlobalValues.V2G_CI_XMLDSIG_NAMESPACE.toString();
@@ -273,8 +272,8 @@ public final class MessageHandler {
 			}
 		}
 		
-		jaxbElement = new JAXBElement(new QName(namespace, messageName), 
-				messageOrField.getClass(), 
+		jaxbElement = new JAXBElement<T>(new QName(namespace, messageName), 
+				(Class<T>) messageOrField.getClass(), 
 				messageOrField);
 		
 		return jaxbElement; 
