@@ -1819,7 +1819,7 @@ public final class SecurityUtils {
 	 */
 	public static boolean verifySignature(
 			SignatureType signature, 
-			JAXBElement jaxbSignature,
+			JAXBElement<SignedInfoType> jaxbSignature,
 			HashMap<String, byte[]> verifyXMLSigRefElements, 
 			byte[] verifyCert) {
 		X509Certificate x509VerifyCert = getCertificate(verifyCert);
@@ -1840,7 +1840,7 @@ public final class SecurityUtils {
 	 */
 	public static boolean verifySignature(
 				SignatureType signature,
-				JAXBElement jaxbSignedInfo,
+				JAXBElement<SignedInfoType> jaxbSignedInfo,
 				HashMap<String, byte[]> verifyXMLSigRefElements, 
 				X509Certificate verifyCert) {
 		byte[] calculatedReferenceDigest; 
@@ -1937,7 +1937,7 @@ public final class SecurityUtils {
 	private static void showSignatureVerificationLog(
 			X509Certificate verifyCert, 
 			SignatureType signature, 
-			JAXBElement jaxbSignedInfo, 
+			JAXBElement<SignedInfoType> jaxbSignedInfo, 
 			ECPublicKey ecPublicKey) {
 		byte[] computedSignedInfoDigest = generateDigest("", jaxbSignedInfo);
 		byte[] receivedSignatureValue = signature.getSignatureValue().getValue();
