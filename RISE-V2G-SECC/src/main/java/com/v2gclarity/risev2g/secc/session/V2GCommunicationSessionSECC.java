@@ -29,13 +29,11 @@ import java.util.Arrays;
 import java.util.Observable;
 import java.util.Observer;
 
-import com.v2gclarity.risev2g.secc.backend.DummyBackendInterface;
 import com.v2gclarity.risev2g.secc.backend.IBackendInterface;
-import com.v2gclarity.risev2g.secc.evseController.DummyACEVSEController;
-import com.v2gclarity.risev2g.secc.evseController.DummyDCEVSEController;
 import com.v2gclarity.risev2g.secc.evseController.IACEVSEController;
 import com.v2gclarity.risev2g.secc.evseController.IDCEVSEController;
 import com.v2gclarity.risev2g.secc.evseController.IEVSEController;
+import com.v2gclarity.risev2g.secc.misc.SECCImplementationFactory;
 import com.v2gclarity.risev2g.secc.states.ForkState;
 import com.v2gclarity.risev2g.secc.states.WaitForAuthorizationReq;
 import com.v2gclarity.risev2g.secc.states.WaitForCableCheckReq;
@@ -133,11 +131,11 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		setCurrentState(getStartState());
 		
 		// Configure which EVSE controller implementation to use
-		setACEvseController(new DummyACEVSEController(this));
-		setDCEvseController(new DummyDCEVSEController(this));
+		setACEvseController(SECCImplementationFactory.createACEVSEController(this));
+		setDCEvseController(SECCImplementationFactory.createDCEVSEController(this));
 		
 		// Configures which backend interface implementation to use for retrieving SASchedules
-		setBackendInterface(new DummyBackendInterface(this));
+		setBackendInterface(SECCImplementationFactory.createBackendInterface(this));
 
 		// ACEVSE notification
 		setAcEVSEStatus(new ACEVSEStatusType());
