@@ -40,7 +40,7 @@ abstract public class V2GImplementationFactory {
 	 * Builds an object instance from the configuration properties
 	 * The configuration should hold the class of the instance that
 	 * will be built.
-	 * @param propertyName Name of the property the contains the fully qualified class name
+	 * @param propertyName Name of the property that contains the fully qualified class name
 	 * @param cls Target class of the build instance
 	 * @param params Optional arguments to the constructor
 	 * @return
@@ -61,7 +61,7 @@ abstract public class V2GImplementationFactory {
 			Constructor<?> constructor = clazz.getConstructor(paramClasses);
 			Object instance = constructor.newInstance(params);
 			if (!cls.isInstance(instance)) {
-				throw new Exception("Instantiated object is not of excepted type");
+				throw new Exception("Instantiated object does not match the expected type " + cls.getCanonicalName());
 			}
 			return cls.cast(instance);
 		} catch (Exception e) {
