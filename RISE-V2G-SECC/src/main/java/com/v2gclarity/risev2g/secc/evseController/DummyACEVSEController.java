@@ -39,6 +39,7 @@ import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.UnitSymbolType;
 
 public class DummyACEVSEController implements IACEVSEController {
 
+	@SuppressWarnings("unused")
 	private V2GCommunicationSessionSECC commSessionContext;
 	
 	public DummyACEVSEController(V2GCommunicationSessionSECC commSessionContext) {

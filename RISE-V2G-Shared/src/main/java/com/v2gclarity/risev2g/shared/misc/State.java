@@ -93,7 +93,6 @@ public abstract class State {
 			int timeout) {
 		String messageName = message.getClass().getSimpleName().replace("Type", "");
 		
-		@SuppressWarnings({"unchecked"})
 		V2GMessage v2gMessage = getMessageHandler().getV2GMessage(
 				getCommSessionContext().getSessionID(),
 				getXMLSignatureRefElements(), 

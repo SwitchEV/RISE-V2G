@@ -428,7 +428,7 @@ public abstract class ClientState extends State {
 			 * The MessageHandler method getJAXBElement() cannot be used here because of the difference in the
 			 * class name (DCEVPowerDeliveryParameter) and the name in the XSD (DC_EVPowerDeliveryParameter)
 			 */
-			JAXBElement jaxbDcEvPowerDeliveryParameter = new JAXBElement(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVPowerDeliveryParameter"), 
+			JAXBElement<DCEVPowerDeliveryParameterType> jaxbDcEvPowerDeliveryParameter = new JAXBElement<>(new QName("urn:iso:15118:2:2013:MsgDataTypes", "DC_EVPowerDeliveryParameter"), 
 					DCEVPowerDeliveryParameterType.class, 
 					((IDCEVController) getCommSessionContext().getEvController()).getEVPowerDeliveryParameter());
 			powerDeliveryReq.setEVPowerDeliveryParameter(jaxbDcEvPowerDeliveryParameter);

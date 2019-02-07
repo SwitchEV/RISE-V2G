@@ -25,7 +25,6 @@ package com.v2gclarity.risev2g.secc.session;
 
 import java.net.DatagramPacket;
 import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Observable;
@@ -211,10 +210,6 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 		return Byte.compare(getSecurity(), GlobalValues.V2G_SECURITY_WITH_TLS.getByteValue()) == 0 ? true : false;
 	}
 	
-	public void removeV2GCommunicationSession(InetAddress requesterAddress) {
-		getV2gCommunicationSessions().remove(getV2gCommunicationSessions().get(requesterAddress));
-	}
-
 	public HashMap<String, V2GCommunicationSessionSECC> getV2gCommunicationSessions() {
 		return v2gCommunicationSessions;
 	}

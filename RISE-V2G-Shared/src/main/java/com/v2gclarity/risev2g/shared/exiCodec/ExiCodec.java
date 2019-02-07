@@ -42,6 +42,7 @@ import com.v2gclarity.risev2g.shared.utils.ByteUtils;
 import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SignedInfoType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public abstract class ExiCodec {
@@ -164,7 +165,7 @@ public abstract class ExiCodec {
 	 * @param jaxbSignedInfo The SignedInfo element of the V2GMessage header, given as a JAXB element
 	 * @return The EXI encoding of the SignedInfo element given as a byte array
 	 */
-	public byte[] getExiEncodedSignedInfo(JAXBElement jaxbSignedInfo) {
+	public byte[] getExiEncodedSignedInfo(JAXBElement<SignedInfoType> jaxbSignedInfo) {
 		// The schema-informed fragment grammar option needs to be used for EXI encodings in the header's signature
 		setFragment(true);
 		
