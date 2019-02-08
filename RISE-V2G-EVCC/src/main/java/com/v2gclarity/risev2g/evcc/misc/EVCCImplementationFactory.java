@@ -40,11 +40,11 @@ public class EVCCImplementationFactory extends V2GImplementationFactory {
 	 * @return
 	 */
 	public static IEVController createEVController(V2GCommunicationSessionEVCC commSessionContext) {
-		IEVController instance = buildFromProperties("implementation.evcc.controller", IEVController.class, commSessionContext);
+		IEVController instance = buildFromProperties("implementation.evcc.controller", IEVController.class);
 		if (instance == null) {
-			return new DummyEVController(commSessionContext);
-		} else {
-			return instance;
+			instance = new DummyEVController();
 		}
+		instance.setCommSessionContext(commSessionContext);
+		return instance;
 	}
 }

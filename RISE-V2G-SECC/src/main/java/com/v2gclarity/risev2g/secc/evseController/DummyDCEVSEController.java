@@ -48,8 +48,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 	private PhysicalValueType maximumEVPowerLimit;
 	private IsolationLevelType isolationLevel;
 	
-	public DummyDCEVSEController(V2GCommunicationSessionSECC commSessionContext) {
-		setCommSessionContext(commSessionContext);
+	public DummyDCEVSEController() {
 		setIsolationLevel(IsolationLevelType.INVALID);
 	}
 	
@@ -82,6 +81,7 @@ public class DummyDCEVSEController implements IDCEVSEController {
 		return commSessionContext;
 	}
 
+	@Override
 	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext) {
 		this.commSessionContext = commSessionContext;
 	}

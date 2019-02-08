@@ -41,8 +41,7 @@ public class DummyACEVSEController implements IACEVSEController {
 
 	private V2GCommunicationSessionSECC commSessionContext;
 	
-	public DummyACEVSEController(V2GCommunicationSessionSECC commSessionContext) {
-		setCommSessionContext(commSessionContext);
+	public DummyACEVSEController() {
 	}
 	
 	@Override
@@ -86,6 +85,7 @@ public class DummyACEVSEController implements IACEVSEController {
 	}
 
 	
+	@Override
 	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext) {
 		this.commSessionContext = commSessionContext;
 	}

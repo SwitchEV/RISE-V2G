@@ -23,9 +23,6 @@
  *******************************************************************************/
 package com.v2gclarity.risev2g.shared.misc;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-
 import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 
 /**
@@ -42,24 +39,17 @@ abstract public class V2GImplementationFactory {
 	 * will be built.
 	 * @param propertyName Name of the property that contains the fully qualified class name
 	 * @param cls Target class of the build instance
-	 * @param params Optional arguments to the constructor
 	 * @return
 	 */
-	protected static <T> T buildFromProperties(String propertyName, Class<T> cls, Object...params) {
+	protected static <T> T buildFromProperties(String propertyName, Class<T> cls) {
 		try {
 			String className = MiscUtils.getV2gEntityConfig().getProperty(propertyName);
 			if (className == null) {
 				return null;
 			}
 			
-			Class<?> clazz = Class.forName(className);
+			Object instance = Class.forName(className).newInstance();
 			
-			Class<?>[] paramClasses = Arrays.stream(params)
-					.map(param -> param.getClass())
-					.toArray(size -> new Class<?>[size]);
-			
-			Constructor<?> constructor = clazz.getConstructor(paramClasses);
-			Object instance = constructor.newInstance(params);
 			if (!cls.isInstance(instance)) {
 				throw new Exception("Instantiated object does not match the expected type " + cls.getCanonicalName());
 			}

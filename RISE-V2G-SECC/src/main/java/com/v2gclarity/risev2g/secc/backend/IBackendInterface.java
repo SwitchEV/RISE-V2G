@@ -27,11 +27,19 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.util.HashMap;
 
+import com.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 
 public interface IBackendInterface {
 
+	/**
+	 * Provides a reference to the current communication session for
+	 * this backend interface.
+	 * @param commSessionContext The active communication session
+	 */
+	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext);
+	
 	/**
 	 * Provides a list of schedules coming from a secondary actor (SAScheduleList) with pMax values
 	 * and optional tariff incentives which shall influence the charging behaviour of the EV.

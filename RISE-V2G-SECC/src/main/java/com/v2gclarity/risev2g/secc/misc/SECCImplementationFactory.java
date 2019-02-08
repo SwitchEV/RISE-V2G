@@ -45,12 +45,12 @@ public class SECCImplementationFactory extends V2GImplementationFactory {
 	 * @return
 	 */
 	public static IBackendInterface createBackendInterface(V2GCommunicationSessionSECC commSessionContext) {
-		IBackendInterface instance = buildFromProperties("implementation.secc.backend", IBackendInterface.class, commSessionContext);
+		IBackendInterface instance = buildFromProperties("implementation.secc.backend", IBackendInterface.class);
 		if (instance == null) {
-			return new DummyBackendInterface(commSessionContext);
-		} else {
-			return instance;
+			instance = new DummyBackendInterface();
 		}
+		instance.setCommSessionContext(commSessionContext);
+		return instance;
 	}
 	
 	/**
@@ -59,12 +59,12 @@ public class SECCImplementationFactory extends V2GImplementationFactory {
 	 * @return
 	 */
 	public static IACEVSEController createACEVSEController(V2GCommunicationSessionSECC commSessionContext) {
-		IACEVSEController instance = buildFromProperties("implementation.secc.acevsecontroller", IACEVSEController.class, commSessionContext);
+		IACEVSEController instance = buildFromProperties("implementation.secc.acevsecontroller", IACEVSEController.class);
 		if (instance == null) {
-			return new DummyACEVSEController(commSessionContext);
-		} else {
-			return instance;
+			instance = new DummyACEVSEController();
 		}
+		instance.setCommSessionContext(commSessionContext);
+		return instance;
 	}
 	
 	/**
@@ -73,12 +73,12 @@ public class SECCImplementationFactory extends V2GImplementationFactory {
 	 * @return
 	 */
 	public static IDCEVSEController createDCEVSEController(V2GCommunicationSessionSECC commSessionContext) {
-		IDCEVSEController instance = buildFromProperties("implementation.secc.dcevsecontroller", IDCEVSEController.class, commSessionContext);
+		IDCEVSEController instance = buildFromProperties("implementation.secc.dcevsecontroller", IDCEVSEController.class);
 		if (instance == null) {
-			return new DummyDCEVSEController(commSessionContext);
-		} else {
-			return instance;
+			instance = new DummyDCEVSEController();
 		}
+		instance.setCommSessionContext(commSessionContext);
+		return instance;
 	}
 	
 }

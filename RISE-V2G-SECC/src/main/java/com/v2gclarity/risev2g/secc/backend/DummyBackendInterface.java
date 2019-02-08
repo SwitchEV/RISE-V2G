@@ -59,8 +59,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		this.moSubCA2PrivateKey = moSubCA2PrivateKey;
 	}
 
-	public DummyBackendInterface(V2GCommunicationSessionSECC commSessionContext) {
-		setCommSessionContext(commSessionContext);
+	public DummyBackendInterface() {
 		
 		/*
 		 * In order to reduce timing problems with handling ChargeParameterDiscoveryReq, reading the private key of the MO Sub-CA2
@@ -313,6 +312,7 @@ public class DummyBackendInterface implements IBackendInterface {
 		return commSessionContext;
 	}
 
+	@Override
 	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext) {
 		this.commSessionContext = commSessionContext;
 	}
