@@ -57,8 +57,7 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	private CPStates cpState;
 	private int chargingLoopCounter;
 	
-	public DummyEVController(V2GCommunicationSessionEVCC commSessionContext) {
-		setCommSessionContext(commSessionContext);
+	public DummyEVController() {
 		setCPState(CPStates.STATE_B); // should be signaled before ISO/IEC 15118 stack initializes
 		setChargingLoopCounter((short) 0);
 	}
@@ -187,6 +186,7 @@ public class DummyEVController implements IACEVController, IDCEVController {
 		return commSessionContext;
 	}
 
+	@Override
 	public void setCommSessionContext(V2GCommunicationSessionEVCC commSessionContext) {
 		this.commSessionContext = commSessionContext;
 	}

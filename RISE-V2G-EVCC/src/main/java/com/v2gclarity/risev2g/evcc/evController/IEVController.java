@@ -23,6 +23,7 @@
  *******************************************************************************/
 package com.v2gclarity.risev2g.evcc.evController;
 
+import com.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import com.v2gclarity.risev2g.shared.enumerations.CPStates;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingProfileType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
@@ -31,6 +32,13 @@ import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 
 public interface IEVController {
 
+	/**
+	 * Provides a reference to the current communication session for
+	 * this controller instance.
+	 * @param commSessionContext The active communication session
+	 */
+	public void setCommSessionContext(V2GCommunicationSessionEVCC commSessionContext);
+	
 	/**
 	 * Returns the user-chosen payment method, either external identification means (EIM) such as an 
 	 * RFID card or via Plug-and-Charge (PnC)

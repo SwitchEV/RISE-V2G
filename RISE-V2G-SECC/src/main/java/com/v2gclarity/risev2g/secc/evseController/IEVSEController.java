@@ -23,11 +23,19 @@
  *******************************************************************************/
 package com.v2gclarity.risev2g.secc.evseController;
 
+import com.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
 
 
 public interface IEVSEController {
 
+	/**
+	 * Provides a reference to the current communication session for
+	 * this controller instance.
+	 * @param commSessionContext The active communication session
+	 */
+	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext);
+	
 	/**
 	 * The EVSEID is formatted according to Annex H of ISO/IEC 15118 and consists of minimum 7, max 37
 	 * characters.
