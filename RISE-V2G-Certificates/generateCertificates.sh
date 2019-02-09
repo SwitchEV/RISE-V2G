@@ -247,7 +247,7 @@ openssl pkcs8 -topk8 -in privateKeys/moSubCA2.key -inform PEM -passin file:passp
 # IMPORTANT: Concatenate in such a way that the chain leads from the leaf certificate to the root (excluding), this means here: first parameter of the cat command is the sub-CA certificate which signs the leaf certificate (in this case cpoSubCA2.pem). Otherwise the Java method getCertificateChain() which is called on the keystore will only return the leaf certificate!
 cat certs/cpoSubCA2Cert.pem certs/cpoSubCA1Cert.pem > certs/intermediateCPOCACerts.pem
 # Put the seccCertificate, the private key associated with the seccCertificate as well as the intermediate sub-CA certificates in a PKCS12 container with the -certfile switch.
-openssl pkcs12 -export -inkey privateKeys/secc.key    -in certs/seccCert.pem    -name secc_cert     -certfile certs/intermediateCPOCACerts.pem -caname mo_subca_2 -caname mo_subca_1   -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -out keystores/cpoCertChain.p12
+openssl pkcs12 -export -inkey privateKeys/secc.key -in certs/seccCert.pem -name secc_cert -certfile certs/intermediateCPOCACerts.pem -caname mo_subca_2 -caname mo_subca_1 -aes128 -passin file:passphrase.txt -passout file:passphrase.txt -out keystores/cpoCertChain.p12
 keytool -importkeystore -srckeystore keystores/cpoCertChain.p12 -srcstoretype pkcs12 -srcstorepass:file passphrase.txt -srcalias secc_cert -destalias secc_cert -destkeystore keystores/seccKeystore.jks -storepass:file passphrase.txt -noprompt
 #
 # 18.2) EVCC keystore needs to initally hold the OEM provisioning certificate (contract certificate will be installed with ISO 15118 message exchange)
