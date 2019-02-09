@@ -1381,16 +1381,16 @@ public final class SecurityUtils {
      * @param certificateECPublicKey The public key of either the OEM provisioning certificate (in case of 
      * 								 CertificateInstallation) or the to be updated contract certificate
      * 								 (in case of CertificateUpdate)
-     * @param ecKeyPair The EC keypair
+     * @param dhPrivateKey The DH private key
      * @param contractCertPrivateKey The private key of the contract certificate
      * @return The encrypted private key of the to be installed contract certificate
      */
 	public static ContractSignatureEncryptedPrivateKeyType encryptContractCertPrivateKey(
 			ECPublicKey certificateECPublicKey, 
-			KeyPair ecKeyPair,
+			ECPrivateKey dhPrivateKey,
 			ECPrivateKey contractCertPrivateKey) {
 		// Generate the shared secret by using the public key of either OEMProvCert or ContractCert
-		byte[] sharedSecret = generateSharedSecret((ECPrivateKey) ecKeyPair.getPrivate(), certificateECPublicKey);
+		byte[] sharedSecret = generateSharedSecret(dhPrivateKey, certificateECPublicKey);
 		
 		if (sharedSecret == null) {
 			getLogger().error("Shared secret could not be generated");

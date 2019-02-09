@@ -24,6 +24,7 @@
 package com.v2gclarity.risev2g.secc.states;
 
 import java.security.KeyPair;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.util.HashMap;
 
@@ -72,7 +73,7 @@ public class WaitForCertificateUpdateReq extends ServerState  {
 				ContractSignatureEncryptedPrivateKeyType encryptedContractCertPrivateKey = 
 						SecurityUtils.encryptContractCertPrivateKey(
 								(ECPublicKey) SecurityUtils.getCertificate(certificateUpdateReq.getContractSignatureCertChain().getCertificate()).getPublicKey(),
-								ecdhKeyPair,
+								(ECPrivateKey) ecdhKeyPair.getPrivate(),
 								getCommSessionContext().getBackendInterface().getContractCertificatePrivateKey());
 				
 				/*
