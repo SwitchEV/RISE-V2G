@@ -1,4 +1,4 @@
-![RISE V2G logo](https://www.v2g-clarity.com/filer/media/1500556560/182/ "RISE V2G logo")
+![RISE V2G logo](https://v2g-clarity.com/test/rise-v2g-logo-2/ "RISE V2G logo")
 
 The open source reference implementation of the Vehicle-2-Grid communication interface ISO 15118
 
@@ -21,13 +21,13 @@ A thorough documentation for RISE V2G will follow soon.
 - Have a look at the ISO 15118 Manual at [www.v2g-clarity.com/iso15118-manual](https://v2g-clarity.com/iso15118-manual) to fully understand how ISO 15118 works
 
 - View the [RISE V2G Basics online course](https://courses.v2g-clarity.com/p/risev2g-basics) to get RISE V2G up and running on your computer in under an hour. 
-![RISE V2G Basics Course](https://www.dropbox.com/s/3ol4ig24op8z5qx/risev2g-basics-video-image.png?dl=0 "Online course 'RISE V2G Basics'")
+![RISE V2G Basics Course](https://v2g-clarity.com/risev2g-basics-video-image/)
 
 - Dive even deeper into the implementation of ISO 15118 with the online course [Master the Communication for Charging Electric Vehicles](https://courses.v2g-clarity.com/p/risev2g-advanced1). This course gives you an in-depth guide through RISE V2G and puts you in the position to adapt this framework to your needs. Want to skip months of implementation effort to get an ISO 15118-compliant EV or charging station up and running? Then you'll love this course. 
-![Master the Communication for Charging Electric Vehicles](https://www.dropbox.com/s/5jeerwu3emqwvcv/risev2g-advanced-video-image.png?dl=0 "Online course 'Master the Communication for Charging Electric Vehicles'")
+![Master the Communication for Charging Electric Vehicles](https://v2g-clarity.com/risev2g-advanced-video-image/)
 
 - Ready to fully understand Plug & Charge and its security implications? Then head over to the online course [Data Security and Plug & Charge With ISO 15118](https://courses.v2g-clarity.com/p/data-security-and-pnc-with-iso15118). This is the most comprehensive course available on ISO 15118's data security features, including OpenSSL hands-on excercises.
-![Data Security and Plug & Charge With ISO 15118](https://www.dropbox.com/s/hkeqz1g78dry12o/data-security-and-pnc-video-image.png?dl=0 "Online course 'Data Security and Plug & Charge With ISO 15118'")
+![Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/data-security-and-pnc-video-image/)
 
 - Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@tu-dortmund.de)
 
