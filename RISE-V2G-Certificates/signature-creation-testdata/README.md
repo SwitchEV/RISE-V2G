@@ -3,7 +3,7 @@
 This file provides test data needed to reproduce the same digest and signature values for a CertificateInstallationRes. This test data is provided for your convenience to verify that your implementation of creating and verifying digital XML-based signatures is correct.
 
 Further explanation is given in the ISO 15118 Manual in section 3.12.3 "Test Data To Verify Your CertificateInstallationRes".
-For further explanation why the different usage of XML namespace matters with regards to the resulting digest and signature values, have a look at section 3.12.4 "Pitfalls with Signatures And XML Namespaces" in the [ISO 15118 Manual](http://v2g-clarity.com/en/iso15118-masterclass/ebook/).
+For further explanation why the different usage of XML namespace matters with regards to the resulting digest and signature values, have a look at section 3.12.4 "Pitfalls with Signatures And XML Namespaces" in the [ISO 15118 Manual](http://v2g-clarity.com/iso15118-manual/).
 
 
 
@@ -24,22 +24,22 @@ The public key used to verify the signature of the CertificateInstallationRes is
 0491CAA2FE68797277C9FEADEC61DC7AE7DC334DA59DD82D82290327AF105771F7307B9573870A8DA09CA4CE2F293B23D9F8AEED3AE49A9C177C6F710C55089CE4
 
 
-### Parameter ContractSignatureCertChain
+### ContractSignatureCertChain
 
 The certificate chain provided by the Mobility Operator (MO) comprises the contract certificate and the intermediate sub-CA certificates. 
 All MO certificates are packaged in the PKCS#12 container file moCertChain.p12. But you can also access every single certificate by its own, if you want: the contractCert, moSubCA2, and moSubCA1 (each provided in .pem and .der format). Be aware that the order in which the certificates are placed in the SubCertificates element is important. The first element is the Sub-CA 2 certificate, followed by the Sub-CA 1 certificate.
 Also, the certificates' validity period might already have expired by the time you use this test data. But that is not a problem for this issue. 
 
 
-### Parameter ContractSignatureEncryptedPrivateKey
+### ContractSignatureEncryptedPrivateKey
 
-This parameter holds the encrypted private key that belongs to the contract certificate as well as a so-called initialization vector (IV) of 16 bytes length that is needed for the AES cipher. The IV is represented by the first (also known as most significant) 16 bytes of this parameter. 
+This field holds the encrypted private key that belongs to the contract certificate as well as a so-called initialization vector (IV) of 16 bytes length that is needed for the AES cipher. The IV is represented by the first (also known as most significant) 16 bytes of this field. 
 Use this hexadecimal representation of a ContractSignatureEncryptedPrivateKey to get the same results.
 
 803340C03FEFBC0CF47613E50D74C660EF471D2104C2EB1C1EAE39BAE700EAB0DC9AE909CE234FF2619DD3A721C60AA0
 
 
-### Parameter DHpublickey
+### DHpublickey
 
 The DHpublickey is the public key of a generated elliptic curve Diffie-Hellman key pair. The key pair is used to create the session key with which the private key that belongs to the contract certificate is encrypted. Again, with an additional byte 0x04 prepended as demanded by ISO 15118-2 to represent the uncompressed form of a public key.
 Use this hexadecimal representation of a DHpublickey to get the same results.
@@ -47,14 +47,14 @@ Use this hexadecimal representation of a DHpublickey to get the same results.
 04BE426A534EBCD5444476C0809425F9A593875AA7A4C2A2167C8A295B2B9069E054AD61801552FAB1F7C710D9506890120354C763800891DA595A1619E06254E9
 
 
-### Parameter eMAID
+### eMAID
 
 Let's use the following eMAID for this test case: DEABCC123ABC56
 
 
-### Parameter SAProvisioningCertificateChain
+### SAProvisioningCertificateChain
 
-The signature is built over the four parameters mentioned above. The Certificate Provisioning Service's (CPS) certificate chain is not part of the signature. However, the CPS's Sub-CA 2 certificate holds the public key (printed further above in hexadecimal notation for your convenience) with which you need to verify the signature. If you also want to validate the CPS's chain of certificates all the way up to the V2G root certificate, then use the PKCS#12 container file cpsCertChain.p12 and the v2gRootCA.pem or v2gRootCA.der file. All certificates in cpsCertChain.p12 are also provided as single certificates in this folder.
+The signature is built over the four fields mentioned above. The Certificate Provisioning Service's (CPS) certificate chain is not part of the signature. However, the CPS's Sub-CA 2 certificate holds the public key (printed further above in hexadecimal notation for your convenience) with which you need to verify the signature. If you also want to validate the CPS's chain of certificates all the way up to the V2G root certificate, then use the PKCS#12 container file cpsCertChain.p12 and the v2gRootCA.pem or v2gRootCA.der file. All certificates in cpsCertChain.p12 are also provided as single certificates in this folder.
 
 
 
