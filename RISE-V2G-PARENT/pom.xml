@@ -7,7 +7,7 @@
 	<groupId>com.v2gclarity.risev2g</groupId>
 	<artifactId>rise-v2g-parent</artifactId>
 	<name>rise-v2g-parent</name>
-	<version>1.1.4-SNAPSHOT</version>
+	<version>1.2.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	
 	<modules>
@@ -16,7 +16,7 @@
 		<module>../RISE-V2G-Shared</module>
 	</modules>
 	
-	<url>https://www.v2g-clarity.com/en/risev2g/</url>
+	<url>https://v2g-clarity.com/rise-v2g/</url>
 	<description>RISE V2G is a complete reference implementation of ISO 15118-2, both implementing the EV (EVCC) and charging station (SECC) side. Messages are provided for AC as well as DC charging. Both identification modes, EIM (External Identification Means) as well as Plug and Charge are supported, including all the security relevant features such as TLS, X.509 certificates and digital signatures.</description>
 	
 	<organization>
@@ -46,7 +46,7 @@
 	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.version>1.1.4-SNAPSHOT</project.version>
+		<project.version>1.2.4-SNAPSHOT</project.version>
 	</properties>
 	
 	<build>
