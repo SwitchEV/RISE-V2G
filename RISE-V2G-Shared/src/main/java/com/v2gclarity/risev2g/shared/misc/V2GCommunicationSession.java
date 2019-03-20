@@ -112,7 +112,7 @@ public abstract class V2GCommunicationSession extends Observable {
 	 * but some other case causes a session termination
 	 * 
 	 * @param reason The termination cause
-	 * @param successful True, if in case of a successful session termination, false otherwise
+	 * @param successful True, in case of a successful session termination, false otherwise
 	 */
 	protected void terminateSession(String reason, boolean successful) {
 		String terminationPrefix = "Terminating V2G communication session, reason: "; 

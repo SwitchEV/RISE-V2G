@@ -129,10 +129,10 @@ public final class TLSServer extends StatefulTransportLayerServer {
 	@Override
 	public void stop() {
         try {
-        	getLogger().debug("TLS server will be stopped now");
+        		getLogger().debug("TLS server will be stopped now");
 			getTlsServerSocket().close();
         } catch (SocketException e) {
-        	getLogger().debug("TLSServerSocket was still active and has been closed now", e);
+        		getLogger().debug("TLSServerSocket was still active and has been closed now", e);
 		} catch (IOException e) {
 			getLogger().error("Error occurred while trying to close TLSServerSocket (IOException)", e);
 		}

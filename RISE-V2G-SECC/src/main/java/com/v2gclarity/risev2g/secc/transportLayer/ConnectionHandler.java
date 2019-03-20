@@ -169,6 +169,14 @@ public class ConnectionHandler extends Observable implements Runnable {
 	
 	
 	public void stop() {
+		// See ISO 15118 User Group issue http://extmgmt.kn.e-technik.tu-dortmund.de/issues/50
+		getLogger().debug("Waiting 5 seconds for EVCC to process response and close TCP/TLS connection ...");
+		try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+		
 		if (!isStopAlreadyInitiated()) {
 			getLogger().debug("Closing connection to client ...");
 			setStopAlreadyInitiated(true);

@@ -798,6 +798,15 @@ public final class SecurityUtils {
 	/**
 	 * Reads the private key from an encrypted PKCS#8 file and returns it as an ECPrivateKey instance.
 	 * 
+	 * ----- !! IMPORTANT NOTE!! -----
+	 * The PKCS#8 key file must be encrypted using a PKCS#12 encryption scheme, since JCE parsing of Pbes2Parameters (as defined in PKCS#5) 
+	 * is buggy in Java 1.8, see also https://bugs.openjdk.java.net/browse/JDK-8076999. The bug results in an IOException when trying to 
+	 * instantiate the EncryptedPrivateKeyInfo class.
+	 * 
+	 * The OpenSSL command used to create the DER-encoded and encrypted PKCS#8 file needs to use the 'v1 alg' option, specifying a proper algorithm. 
+	 * Example: '-v1 PBE-SHA1-3DES' (see https://www.openssl.org/docs/man1.0.2/man1/openssl-pkcs8.html).
+	 * -----
+	 * 
 	 * @param A PKCS#8 (.key) file containing the private key with value "s"
 	 * @return The private key as an ECPrivateKey instance
 	 */
@@ -808,19 +817,30 @@ public final class SecurityUtils {
 		try {
 			pkcs8ByteArray = Files.readAllBytes(fileLocation);
 			
-			// The DER encoded private key is password-based encrypted and provided in PKCS#8. So we need to decrypt it first
-			PBEKeySpec pbeKeySpec = new PBEKeySpec(GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
-		    EncryptedPrivateKeyInfo encryptedPrivKeyInfo = new EncryptedPrivateKeyInfo(pkcs8ByteArray);
-		    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivKeyInfo.getAlgName());
-		    Key secret = secretKeyFactory.generateSecret(pbeKeySpec);
-		    PKCS8EncodedKeySpec pkcs8PrivKeySpec = encryptedPrivKeyInfo.getKeySpec(secret);
+			// Get the password that was used to encrypt the private key
+			PBEKeySpec password = new PBEKeySpec(GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
 			
+			// Read the ASN.1 structure of the PKCS#8 DER-encoded file
+		    EncryptedPrivateKeyInfo encryptedPrivKeyInfo = new EncryptedPrivateKeyInfo(pkcs8ByteArray);
+		    
+		    // Instantiate the key factory which will create the symmetric (secret) key using algorithm that is encoded in the ASN.1 structure 
+		    // (see 'v1 alg' in OpenSSL's pkcs8 command) and the given password
+		    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivKeyInfo.getAlgName());
+		    
+		    // Create the symmetric key from the given password
+		    Key decryptKey = secretKeyFactory.generateSecret(password);
+		    
+		    // Extract the PKCS8EncodedKeySpec object from the encrypted data
+		    PKCS8EncodedKeySpec pkcs8PrivKeySpec = encryptedPrivKeyInfo.getKeySpec(decryptKey);
+		    
+		    // Generate the EC private key
 			ECPrivateKey privateKey = (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(pkcs8PrivKeySpec);
 
 			return privateKey;
 		} catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException | InvalidKeyException e) {
 			getLogger().error(e.getClass().getSimpleName() + " occurred while trying to access private key at " +
 					  "location '" + keyFilePath + "'");
+			e.printStackTrace();
 			return null;
 		} 
 	}
