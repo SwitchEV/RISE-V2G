@@ -226,7 +226,7 @@ openssl x509 -inform PEM -in certs/contractCert.pem    -outform DER -out certs/c
 
 # 17) In case you want the private keys in PKCS#8 file format and DER encoded, use this command. Especially necessary for the private key of MOSubCA2 in RISE V2G
 openssl pkcs8 -topk8 -in privateKeys/moSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase.txt -outform DER -out privateKeys/moSubCA2.pkcs8.der -v1 PBE-SHA1-3DES
-openssl pkcs8 -topk8 -in privateKeys/cpsSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase.txt -outform DER -out privateKeys/cpsSubCA2.pkcs8.der -v1 PBE-SHA1-3DES
+
 
 # 18) Create the keystores for the EVCC and SECC. We need to first create the PKCS12 files and then import them into the JKS using the 'keytool' command.
 # 	- create a PKCS12 file -> -export
