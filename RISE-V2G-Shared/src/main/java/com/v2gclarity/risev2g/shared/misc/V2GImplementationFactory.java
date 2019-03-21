@@ -31,7 +31,7 @@ import com.v2gclarity.risev2g.shared.utils.MiscUtils;
  * It will look up and instantiate a class based on a
  * configuration property
  */
-abstract public class V2GImplementationFactory {
+public abstract class V2GImplementationFactory {
 
 	/**
 	 * Builds an object instance from the configuration properties

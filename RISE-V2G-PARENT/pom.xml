@@ -7,7 +7,7 @@
 	<groupId>com.v2gclarity.risev2g</groupId>
 	<artifactId>rise-v2g-parent</artifactId>
 	<name>rise-v2g-parent</name>
-	<version>1.2.4-SNAPSHOT</version>
+	<version>1.2.4</version>
 	<packaging>pom</packaging>
 	
 	<modules>
@@ -46,7 +46,7 @@
 	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.version>1.2.4-SNAPSHOT</project.version>
+		<project.version>1.2.4</project.version>
 	</properties>
 	
 	<build>
