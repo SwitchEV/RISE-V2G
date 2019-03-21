@@ -226,7 +226,7 @@ REM Since the intermediate certificates need to be in PEM format when putting th
 
 
 REM 17) In case you want the private keys in PKCSREM8 file format and DER encoded, use this command. Especially necessary for the private key of MOSubCA2 in RISE V2G
-openssl pkcs8 -topk8 -in privateKeys\moSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase.txt -outform DER -out privateKeys\moSubCA2.pkcs8.der
+openssl pkcs8 -topk8 -in privateKeys\moSubCA2.key -inform PEM -passin file:passphrase.txt -passout file:passphrase.txt -outform DER -out privateKeys\moSubCA2.pkcs8.der -v1 PBE-SHA1-3DES
 
 
 REM 18) Create the keystores for the EVCC and SECC. We need to first create the PKCS12 files and then import them into the JKS using the 'keytool' command.
