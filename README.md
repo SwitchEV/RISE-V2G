@@ -35,7 +35,7 @@ Your assistance would therefore be very appreciated, be it by testing this refer
 ![Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/data-security-and-pnc-video-image/)
 
 
-- Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@tu-dortmund.de)
+- Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@verisco.de)
 
 
 ### License
