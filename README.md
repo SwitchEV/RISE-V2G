@@ -25,12 +25,12 @@ Your assistance would therefore be very appreciated, be it by testing this refer
 ![RISE V2G Basics Course](https://v2g-clarity.com/risev2g-basics-video-image/)
 
 
-- Dive even deeper into the implementation of ISO 15118 with the online course [Master the Communication for Charging Electric Vehicles](https://courses.v2g-clarity.com/p/risev2g-advanced1). This course gives you an in-depth guide through RISE V2G and puts you in the position to adapt this framework to your needs. Want to skip months of implementation effort to get an ISO 15118-compliant EV or charging station up and running? Then you'll love this course. 
+- Dive even deeper into the implementation of ISO 15118 with the online course [Master the Communication for Charging Electric Vehicles](https://v2g-clarity.com/courses/#course-risev2g-advanced). This course gives you an in-depth guide through RISE V2G and puts you in the position to adapt this framework to your needs. Want to skip months of implementation effort to get an ISO 15118-compliant EV or charging station up and running? Then you'll love this course. 
 
 ![Master the Communication for Charging Electric Vehicles](https://v2g-clarity.com/risev2g-advanced-video-image/)
 
 
-- Ready to fully understand Plug & Charge and its security implications? Then head over to the online course [Data Security and Plug & Charge With ISO 15118](https://courses.v2g-clarity.com/p/data-security-and-pnc-with-iso15118). This is the most comprehensive course available on ISO 15118's data security features, including OpenSSL hands-on excercises.
+- Ready to fully understand Plug & Charge and its security implications? Then head over to the online course [Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/courses/#course-data-security-and-pnc-with-iso15118). This is the most comprehensive course available on ISO 15118's data security features, including OpenSSL hands-on excercises.
 
 ![Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/data-security-and-pnc-video-image/)
 
