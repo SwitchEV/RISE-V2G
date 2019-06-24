@@ -523,7 +523,7 @@ public final class SecurityUtils {
 	 * Iterates over the certificates stored in the truststore to verify the signature of the provided certificate
 	 * 
 	 * @param trustStoreFilename The relative path and file name of the truststore
-	 * @param certificate The certificate whose signature needs to be signed
+	 * @param certificate The certificate whose signature needs to be verified
 	 * @return True, if the provided certificate has been signed by one of the certificates in the 
 	 * 		   truststore, false otherwise
 	 */
