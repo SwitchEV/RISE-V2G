@@ -27,9 +27,11 @@ import com.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentServiceSelectionReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopResType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
 
 public class WaitForSessionStopReq extends ServerState {
 
@@ -43,6 +45,12 @@ public class WaitForSessionStopReq extends ServerState {
 	@Override
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		if (isIncomingMessageValid(message, SessionStopReqType.class, sessionStopRes)) {
+			V2GMessage v2gMessageReq = (V2GMessage) message;
+			SessionStopReqType sessionStopReq = 
+					(SessionStopReqType) v2gMessageReq.getBody().getBodyElement().getValue();
+			
+			getLogger().info("EV indicated to " + sessionStopReq.getChargingSession() + " the charging session");
+			
 			getCommSessionContext().setStopV2GCommunicationSession(true);
 		} else {
 			if (sessionStopRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
