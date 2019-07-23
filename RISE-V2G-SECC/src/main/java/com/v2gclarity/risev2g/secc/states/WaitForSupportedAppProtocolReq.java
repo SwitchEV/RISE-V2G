@@ -1,7 +1,7 @@
 /*******************************************************************************
  * The MIT License (MIT)
  *
- * Copyright (c) 2015-207  V2G Clarity (Dr.-Ing. Marc Mültin) 
+ * Copyright (c) 2015-2017  V2G Clarity (Dr.-Ing. Marc Mültin)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
