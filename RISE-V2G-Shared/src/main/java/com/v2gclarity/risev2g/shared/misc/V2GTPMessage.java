@@ -23,6 +23,7 @@
  *******************************************************************************/
 package com.v2gclarity.risev2g.shared.misc;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -154,7 +155,7 @@ public class V2GTPMessage {
 		
 		// Sets the messageBuffers's position in order for the .get() message to work without 
 		// throwing a BufferUnderflowException
-		messageBuffer.position(0);
+		((Buffer)messageBuffer).position(0);
 		
 		messageBuffer.get(this.message);
 
