@@ -65,7 +65,7 @@ public class WaitForChargingStatusReq extends ServerState {
 				chargingStatusRes.setReceiptRequired(false);
 			} else {
 				// Only in PnC mode according to [V2G2-691]
-				chargingStatusRes.setReceiptRequired(true);
+				chargingStatusRes.setReceiptRequired(false);
 			}
 			
 			// Optionally set EVSEMaxCurrent (if NOT in AC PnC mode) -> check with AC station

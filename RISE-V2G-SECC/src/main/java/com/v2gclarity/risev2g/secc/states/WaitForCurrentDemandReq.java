@@ -87,7 +87,7 @@ public class WaitForCurrentDemandReq extends ServerState {
 				currentDemandRes.setReceiptRequired(false);
 			} else {
 				// Optionally set to true, but only in PnC mode according to [V2G2-691]
-				currentDemandRes.setReceiptRequired(true);
+				currentDemandRes.setReceiptRequired(false);
 			}
 			
 			if (currentDemandRes.isReceiptRequired()) {
