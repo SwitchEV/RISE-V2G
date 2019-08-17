@@ -30,6 +30,7 @@ import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
@@ -100,7 +101,14 @@ public class WaitForCurrentDemandRes extends ClientState {
 					// TODO regard [V2G2-305] (new SalesTariff if EAmount not yet met and tariff finished)
 					
 					if (getCommSessionContext().getEvController().isChargingLoopActive()) {
-						return getSendMessage(getCurrentDemandReq(), V2GMessages.CURRENT_DEMAND_RES);
+						// Check whether or not the EV controller triggered a renegotiation
+						if (getCommSessionContext().isRenegotiationRequested()) {
+							return getSendMessage(getPowerDeliveryReq(ChargeProgressType.RENEGOTIATE), 
+									  V2GMessages.POWER_DELIVERY_RES,
+						  			  " (ChargeProgress = RE_NEGOTIATION)");
+						} else {
+							return getSendMessage(getCurrentDemandReq(), V2GMessages.CURRENT_DEMAND_RES);
+						}
 					} else {
 						getCommSessionContext().setStopChargingRequested(true);
 						return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 

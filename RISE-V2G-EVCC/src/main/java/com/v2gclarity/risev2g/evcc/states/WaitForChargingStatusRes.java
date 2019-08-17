@@ -99,6 +99,7 @@ public class WaitForChargingStatusRes extends ClientState {
 										  V2GMessages.POWER_DELIVERY_RES,
 										  " (ChargeProgress = STOP_CHARGING)");
 				case RE_NEGOTIATION:
+					getCommSessionContext().setRenegotiationRequested(true);
 					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.RENEGOTIATE), 
 										  V2GMessages.POWER_DELIVERY_RES,
 							  			  " (ChargeProgress = RE_NEGOTIATION)");
@@ -106,8 +107,15 @@ public class WaitForChargingStatusRes extends ClientState {
 					// TODO regard [V2G2-305] (new SalesTariff if EAmount not yet met and tariff finished)
 					
 					if (getCommSessionContext().getEvController().isChargingLoopActive()) {
-						ChargingStatusReqType chargingStatusReq = new ChargingStatusReqType();
-						return getSendMessage(chargingStatusReq, V2GMessages.CHARGING_STATUS_RES);
+						// Check whether or not the EV controller triggered a renegotiation
+						if (getCommSessionContext().isRenegotiationRequested()) {
+							return getSendMessage(getPowerDeliveryReq(ChargeProgressType.RENEGOTIATE), 
+									  V2GMessages.POWER_DELIVERY_RES,
+						  			  " (ChargeProgress = RE_NEGOTIATION)");
+						} else {
+							ChargingStatusReqType chargingStatusReq = new ChargingStatusReqType();
+							return getSendMessage(chargingStatusReq, V2GMessages.CHARGING_STATUS_RES);
+						}
 					} else {
 						getCommSessionContext().setStopChargingRequested(true);
 						return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 

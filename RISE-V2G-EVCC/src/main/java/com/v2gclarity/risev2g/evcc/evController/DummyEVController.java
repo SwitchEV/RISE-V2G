@@ -308,6 +308,16 @@ public class DummyEVController implements IACEVController, IDCEVController {
 		// Keep charging until 100 charging loops are finished
 		if (getChargingLoopCounter() < 100) {
 			setChargingLoopCounter(getChargingLoopCounter() + 1);
+			
+			/*
+			 * OPTIONAL:
+			 * Trigger a renegotiation after 50 charging loops (for testing purposes); you can comment this out if you do not want to test an EV-triggered renegotiation
+			 */
+			if (getChargingLoopCounter() == 50) {
+				getCommSessionContext().setRenegotiationRequested(true);
+				getLogger().debug("EV triggered a renegotiation (for testing purposes)");
+			}
+			
 			return true;
 		} else 
 			return false;
