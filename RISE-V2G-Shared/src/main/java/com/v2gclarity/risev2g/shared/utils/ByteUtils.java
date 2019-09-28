@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.BufferOverflowException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 import javax.xml.bind.DatatypeConverter;
@@ -174,11 +175,11 @@ public final class ByteUtils {
 		 * Response only holds 2 bytes. Thus, we must account for this and guarantee the Big Endian 
 		 * byte order.
 		 */
-		bb.position(4 - byteArray.length);
+		((Buffer)bb).position(4 - byteArray.length);
 		bb.put(byteArray);
 		
 		// Setting the current position to 0, otherwise getInt() would throw a BufferUnderflowException
-		bb.position(0);
+		((Buffer)bb).position(0);
 		
 		return bb.getInt();
 	}
@@ -195,7 +196,7 @@ public final class ByteUtils {
 			
 		// In case the provided byte array is smaller than 8 bytes (e.g. int has 4 bytes), take care that they are placed at the right-most position
 		if (byteArray.length < 8) {
-			bb.position(8-byteArray.length);
+			((Buffer)bb).position(8-byteArray.length);
 			bb.put(byteArray);
 		} else {
 			try {
@@ -204,13 +205,13 @@ public final class ByteUtils {
 				getLogger().warn("Byte array length is too big (" + byteArray.length + " bytes) to be converted " +
 								 "into a long value. Only the right-most 8 bytes (least significant bytes " +
 								 "according to Big Endian) are used.", e);
-				bb.position(0);
+				((Buffer)bb).position(0);
 				bb.put(byteArray, byteArray.length - 8, byteArray.length);
 			}
 		}
 		
 		// Setting the current position to 0, otherwise getLong() would throw a BufferUnderflowException
-		bb.position(0);
+		((Buffer)bb).position(0);
 		
 		return bb.getLong();
 	}
