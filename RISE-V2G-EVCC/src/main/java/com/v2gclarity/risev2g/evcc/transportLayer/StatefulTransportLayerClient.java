@@ -48,7 +48,6 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 	private byte[] v2gTPMessage;
 	private InputStream inStream;
 	private OutputStream outStream;
-	private final int MASK = 0x80;
 	private int payloadLength;
 	private int bytesReadFromInputStream;
 	private Inet6Address clientAddress;
@@ -91,18 +90,21 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 	
 		/*
 		 * The payload length is written to the last 4 bytes (v2gTPHeader[4] to v2gTPHeader[7])
-		 * of the V2GTP header. The most significant bit of v2gTPHeader[4] should never be set!
-		 * If it was set, then this would mean that a V2GTP message of a size of at least 2 GB 
-		 * was intended to be transferred ... and this cannot be, no V2G message has this size!
-		 * Since the most significant bit should never be set, we do not need to care about
-		 * signed integers in Java at this point!
+		 * of the V2GTP header. The biggest ISO 15118 message in size is the CertificateInstallationRes, which in EXI
+		 * consumes usually 3.000 to 4.000 bytes max. Let's use a threshold of 10.000 just to be safe to 
+		 * check for unreasonably high payload lengths.
+		 * 
+		 * Change this value if you use a V2GTP payload type for a proprietary, manufacturer-specific use (see Table 10 of ISO 15118-2)
+		 * that requires bigger payloads! 
 		 */
-		if ((getV2gTPHeader()[4] & getMASK()) == getMASK()) {
-			stopAndNotify("Payload length of V2GTP message is inappropiately high! There must be " +
-						  "an error in the V2GTP message header!", null);
+		setPayloadLength(ByteUtils.toIntFromByteArray(Arrays.copyOfRange(getV2gTPHeader(), 4, 8)));
+		
+		if (getPayloadLength() > 10000) {
+			stopAndNotify("Payload length of V2GTP message is inappropiately high (" + getPayloadLength() + " bytes)! " +
+						 "There must be an error in the V2GTP message header!", null);
 			return false;
 		} else {
-			setPayloadLength(ByteUtils.toIntFromByteArray(Arrays.copyOfRange(getV2gTPHeader(), 4, 8)));
+			getLogger().debug("Length of V2GTP payload in bytes according to V2GTP header: " + getPayloadLength());
 			setV2gTPPayload(new byte[getPayloadLength()]);
 		
 			getInStream().read(getV2gTPPayload());
@@ -212,10 +214,6 @@ public abstract class StatefulTransportLayerClient  extends Observable implement
 
 	public void setBytesReadFromInputStream(int bytesReadFromInputStream) {
 		this.bytesReadFromInputStream = bytesReadFromInputStream;
-	}
-
-	public int getMASK() {
-		return MASK;
 	}
 	
 	public Inet6Address getClientAddress() {
