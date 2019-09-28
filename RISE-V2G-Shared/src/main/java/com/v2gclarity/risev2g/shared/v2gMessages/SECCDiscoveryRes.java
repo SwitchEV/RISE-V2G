@@ -23,6 +23,7 @@
  *******************************************************************************/
 package com.v2gclarity.risev2g.shared.v2gMessages;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -94,7 +95,7 @@ public class SECCDiscoveryRes {
 		
 		// Sets the messageBuffers's position in order for the .get() message to work without 
 		// throwing a BufferUnderflowException
-		payloadBuffer.position(0);
+		((Buffer)payloadBuffer).position(0);
 		
 		payloadBuffer.get(payload);
 		
