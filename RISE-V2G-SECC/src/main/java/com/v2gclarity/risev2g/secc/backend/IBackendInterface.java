@@ -40,6 +40,7 @@ public interface IBackendInterface {
 	 */
 	public void setCommSessionContext(V2GCommunicationSessionSECC commSessionContext);
 	
+	
 	/**
 	 * Provides a list of schedules coming from a secondary actor (SAScheduleList) with pMax values
 	 * and optional tariff incentives which shall influence the charging behaviour of the EV.
@@ -47,12 +48,34 @@ public interface IBackendInterface {
 	 * @param maxEntriesSAScheduleTuple The maximum number of PMaxEntries and SalesTariff entries allowed by EVCC
 	 * @param departureTime The departure time provided by the EV
 	 * @param xmlSignatureRefElements Signature reference parameter provided to put sales tariff IDs and sales tariffs in
+	 * 
 	 * @return An SASchedulesType element with a list of secondary actor schedules 
 	 */
 	public SAScheduleListType getSAScheduleList(
 			int maxEntriesSAScheduleTuple, 
 			long departureTime,
 			HashMap<String, byte[]> xmlSignatureRefElements);
+	
+	
+	/**
+	 * Provides a list of schedules coming from a secondary actor (SAScheduleList) with pMax values
+	 * and optional tariff incentives which shall influence the charging behaviour of the EV. 
+	 * 
+	 * The parameter selectedSAScheduleTupleId tells the backend to again offer a schedule with that ID 
+	 * because the EVCC requested it in a previous charging session that has now been resumed after pausing.
+	 * 
+	 * @param maxEntriesSAScheduleTuple The maximum number of PMaxEntries and SalesTariff entries allowed by EVCC
+	 * @param departureTime The departure time provided by the EV
+	 * @param xmlSignatureRefElements Signature reference parameter provided to put sales tariff IDs and sales tariffs in
+	 * @param selectedSAScheduleTupleId The SAScheduleTupleID which the EVCC chose in a previous charging session (optional)
+	 * 
+	 * @return An SASchedulesType element with a list of secondary actor schedules 
+	 */
+	public SAScheduleListType getSAScheduleList(
+			int maxEntriesSAScheduleTuple, 
+			long departureTime,
+			HashMap<String, byte[]> xmlSignatureRefElements,
+			short selectedSAScheduleTupleId);
 	
 	
 	/**

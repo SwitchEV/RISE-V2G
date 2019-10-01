@@ -61,11 +61,14 @@ import com.v2gclarity.risev2g.shared.messageHandling.SendMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.misc.V2GCommunicationSession;
 import com.v2gclarity.risev2g.shared.misc.V2GTPMessage;
+import com.v2gclarity.risev2g.shared.utils.ByteUtils;
+import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.AppProtocolType;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolRes;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingProfileType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
@@ -87,9 +90,8 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	 * (saves some processing time)
 	 */
 	private ChargeParameterDiscoveryReqType chargeParameterDiscoveryReq;
-	private boolean stopChargingRequested;
+	private ChargingSessionType chargingSession;
 	private boolean renegotiationRequested;
-	private boolean pausingV2GCommSession;
 	private ChargingProfileType chargingProfile;
 	private ServiceListType offeredServices;
 	private SelectedServiceListType selectedServices; 
@@ -148,6 +150,9 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		
 		// Set default value for contract certificate status to UNKNOWN
 		setContractCertStatus(ContractCertificateStatus.UNKNOWN);
+		
+		// ChargingSessionType only takes enum values "Pause" and "Terminate". Therefore, set it to null at beginning of charging session
+		setChargingSession(null);
 			
 		getLogger().debug("\n*******************************************" +
 						  "\n* New V2G communication session initialized" +
@@ -231,12 +236,21 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	
 	
 	private void saveSessionProperties() {
-		// TODO save respective parameters to properties file
+		// According to [V2G2-740]
+		MiscUtils.getProperties().setProperty("session.id", "" + ByteUtils.toHexString(getSessionID()));
+		MiscUtils.getProperties().setProperty("authentication.mode", getSelectedPaymentOption().value());
+		MiscUtils.getProperties().setProperty("energy.transfermode.requested", getRequestedEnergyTransferMode().value());
+		
+		MiscUtils.storeProperties(GlobalValues.EVCC_CONFIG_PROPERTIES_PATH.toString());
 	}
 	
 	
 	private void deleteSessionProperties() {
-		// TODO delete the respective parameters from properties file
+		// Reset the session ID and the authentication mode
+		MiscUtils.getProperties().setProperty("session.id", "00");
+		MiscUtils.getProperties().setProperty("authentication.mode", "");
+		
+		MiscUtils.storeProperties(GlobalValues.EVCC_CONFIG_PROPERTIES_PATH.toString());
 	}
 
 	
@@ -283,13 +297,6 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		this.reactionToIncomingMessage = reactionToIncomingMessage;
 	}
 
-	public boolean isStopChargingRequested() {
-		return stopChargingRequested;
-	}
-
-	public void setStopChargingRequested(boolean stopChargingRequested) {
-		this.stopChargingRequested = stopChargingRequested;
-	}
 
 	public boolean isRenegotiationRequested() {
 		return renegotiationRequested;
@@ -299,13 +306,6 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 		this.renegotiationRequested = renegotiationRequested;
 	}
 
-	public boolean isPausingV2GCommSession() {
-		return pausingV2GCommSession;
-	}
-
-	public void setPausingV2GCommSession(boolean pausingV2GCommSession) {
-		this.pausingV2GCommSession = pausingV2GCommSession;
-	}
 
 	public long getEvseScheduleReceived() {
 		return evseScheduleReceived;
@@ -508,4 +508,15 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	public void setSentGenChallenge(byte[] sentGenChallenge) {
 		this.sentGenChallenge = sentGenChallenge;
 	}
+	
+
+	public ChargingSessionType getChargingSession() {
+		return chargingSession;
+	}
+
+
+	public void setChargingSession(ChargingSessionType chargingSession) {
+		this.chargingSession = chargingSession;
+	}
+
 }

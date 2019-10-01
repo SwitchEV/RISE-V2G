@@ -30,7 +30,7 @@ import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 public class StartEVCC {
 
 	public static void main(String[] args) {
-		MiscUtils.setV2gEntityConfig(GlobalValues.EVCC_CONFIG_PROPERTIES_PATH.toString());
+		MiscUtils.loadProperties(GlobalValues.EVCC_CONFIG_PROPERTIES_PATH.toString());
 		new V2GCommunicationSessionHandlerEVCC();
 	}
 

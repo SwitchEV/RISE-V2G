@@ -43,7 +43,7 @@ public abstract class V2GImplementationFactory {
 	 */
 	protected static <T> T buildFromProperties(String propertyName, Class<T> cls) {
 		try {
-			String className = MiscUtils.getV2gEntityConfig().getProperty(propertyName);
+			String className = MiscUtils.getProperties().getProperty(propertyName);
 			if (className == null) {
 				return null;
 			}

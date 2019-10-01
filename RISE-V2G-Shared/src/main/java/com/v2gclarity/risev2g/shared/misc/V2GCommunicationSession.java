@@ -60,16 +60,7 @@ public abstract class V2GCommunicationSession extends Observable {
 		setSessionID(null);
 		setV2gTpMessage(null);
 	}
-	
-	
-	/**
-	 * Generates a session ID (with length of 8 bytes) from a given long value.
-	 * @param The long value representing a session ID (either 0 or a previously stored session ID)
-	 * @return The byte array representation of the provided session ID
-	 */
-	public byte[] generateSessionIDFromValue(long fromValue) {
-		return ByteUtils.toByteArrayFromLong(fromValue);
-	}
+
 	
 	/**
 	 * Generates randomly a new session ID (with length of 8 bytes) and takes care that the newly generated 
@@ -87,8 +78,7 @@ public abstract class V2GCommunicationSession extends Observable {
 	}
 	
 	protected void pauseSession(PauseSession pauseObject) {
-		getLogger().info("Pausing"
-				+ " V2G communication session");
+		getLogger().info("Pausing V2G communication session");
 		setChanged();
 		notifyObservers(pauseObject);
 	}
@@ -125,25 +115,6 @@ public abstract class V2GCommunicationSession extends Observable {
 		notifyObservers(termination);
 	}
 
-	
-	public PaymentOptionListType getPaymentOptions() {
-		@SuppressWarnings("unchecked")
-		ArrayList<PaymentOptionType> paymentOptions = (ArrayList<PaymentOptionType>) (MiscUtils.getPropertyValue("authentication.modes.supported"));
-		
-		if (paymentOptions == null) {
-			paymentOptions = new ArrayList<PaymentOptionType>();
-		}
-		
-		// Contract-based payment may only be offered if TLS is used
-		if (!isTlsConnection()) 
-			paymentOptions.remove(PaymentOptionType.CONTRACT);
-				
-		PaymentOptionListType paymentOptionList = new PaymentOptionListType();
-		paymentOptionList.getPaymentOption().addAll(paymentOptions);
-		
-		return paymentOptionList;
-	}
-	
 	
 	public ArrayList<EnergyTransferModeType> getSupportedEnergyTransferModes() {
 		@SuppressWarnings("unchecked")
@@ -199,10 +170,9 @@ public abstract class V2GCommunicationSession extends Observable {
 
 	public void setSessionID(byte[] sessionID) {
 		if (sessionID == null) {
-			sessionID = generateSessionIDFromValue(0L);
+			sessionID = ByteUtils.toByteArrayFromHexString("00");
 		} 
 		this.sessionID = sessionID;
-		MiscUtils.getV2gEntityConfig().setProperty("session.id", String.valueOf(ByteUtils.toLongFromByteArray(sessionID)));
 	}
 
 	public V2GTPMessage getV2gTpMessage() {

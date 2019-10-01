@@ -30,6 +30,7 @@ import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEStatusType;
@@ -88,7 +89,8 @@ public class WaitForCurrentDemandRes extends ClientState {
 			
 			switch ((EVSENotificationType) dcEVSEStatus.getEVSENotification()) {
 				case STOP_CHARGING:
-					getCommSessionContext().setStopChargingRequested(true);
+					getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
+					
 					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
 										  V2GMessages.POWER_DELIVERY_RES,
 										  " (ChargeProgress = STOP_CHARGING)");
@@ -110,7 +112,13 @@ public class WaitForCurrentDemandRes extends ClientState {
 							return getSendMessage(getCurrentDemandReq(), V2GMessages.CURRENT_DEMAND_RES);
 						}
 					} else {
-						getCommSessionContext().setStopChargingRequested(true);
+						/* Check if the EV controller triggered a pause of a charging session. 
+						 * If not, indicate a termination of the charging session. This will be
+						 * evaluated in the state WaitForPowerDeliveryRes
+						 */
+						if (getCommSessionContext().getChargingSession() == null)
+							getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
+						
 						return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
 											  V2GMessages.POWER_DELIVERY_RES,
 											  " (ChargeProgress = STOP_CHARGING)");

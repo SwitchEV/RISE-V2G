@@ -44,7 +44,7 @@ public interface IEVController {
 	 * RFID card or via Plug-and-Charge (PnC)
 	 * @return The payment option Contract or ExternalPayment
 	 */
-	public PaymentOptionType getPaymentOption(PaymentOptionListType paymentOptionsOffered);
+	public PaymentOptionType getPaymentOption();
 	
 	
 	/**

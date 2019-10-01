@@ -38,6 +38,7 @@ import com.v2gclarity.risev2g.secc.transportLayer.TLSServer;
 import com.v2gclarity.risev2g.secc.transportLayer.UDPServer;
 import com.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import com.v2gclarity.risev2g.shared.messageHandling.MessageHandler;
+import com.v2gclarity.risev2g.shared.messageHandling.PauseSession;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import com.v2gclarity.risev2g.shared.utils.ByteUtils;
@@ -97,13 +98,19 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 				 * before the V2GCommunicationSessionSECC object is instantiated, otherwise it may lead to 
 				 * race conditions. 
 				 */
+				getLogger().debug("Resuming previous communication session ...");
 				V2GCommunicationSessionSECC continuedSession = getV2gCommunicationSessions().get(ipAddress);
+				
+				// Reset charging session state from previous session (namely ChargingSessionType.PAUSE) to avoid confusion in the algorithm
+				continuedSession.setChargingSession(null);
+				
 				continuedSession.setConnectionHandler((ConnectionHandler) obj);
 				continuedSession.setTlsConnection((obs instanceof TLSServer) ? true : false);
 				((ConnectionHandler) obj).addObserver(getV2gCommunicationSessions().get(ipAddress));
 				
 				manageConnectionHandlers((ConnectionHandler) obj);
 			} else { 
+				getLogger().debug("Initiating a new communication session ...");
 				V2GCommunicationSessionSECC newSession = new V2GCommunicationSessionSECC((ConnectionHandler) obj);
 				newSession.setTlsConnection((obs instanceof TLSServer) ? true : false);
 				newSession.addObserver(this);
@@ -112,11 +119,14 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 				manageConnectionHandlers((ConnectionHandler) obj);
 			}
 		} else if (obs instanceof V2GCommunicationSessionSECC && obj instanceof TerminateSession) {
-			// Remove the V2GCommunicationSessionSECC instance from the hashmap
+			// Remove the V2GCommunicationSessionSECC instance from the hash map
 			String ipAddress = ((V2GCommunicationSessionSECC) obs).getConnectionHandler().getAddress();
 			getV2gCommunicationSessions().remove(ipAddress);
 			
-			stopConnectionHandler(((V2GCommunicationSessionSECC) obs).getConnectionHandler());
+			stopConnectionHandler(((V2GCommunicationSessionSECC) obs).getConnectionHandler(), false);
+		} else if (obs instanceof V2GCommunicationSessionSECC && obj instanceof PauseSession) {
+			// Stop the connection handler, but keep the V2GCommunicationSessionSECC instance in the hash map
+			stopConnectionHandler(((V2GCommunicationSessionSECC) obs).getConnectionHandler(), true);
 		} else {
 			getLogger().warn("Notification received, but sending entity or received object not identifiable");
 		}
@@ -184,7 +194,7 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 	 * @param connectionHandler The ConnectionHandler whose socket is to be closed and whose thread
 	 * 							   is to be interrupted.
 	 */
-	public void stopConnectionHandler(ConnectionHandler connectionHandler) {
+	public void stopConnectionHandler(ConnectionHandler connectionHandler, boolean pausingSession) {
 		if (getConnectionHandlerMap().containsKey(connectionHandler)) {
 			// Close the socket
 			connectionHandler.stop();
@@ -196,7 +206,9 @@ public class V2GCommunicationSessionHandlerSECC implements Observer {
 			// Remove HashMap entry
 			getConnectionHandlerMap().remove(connectionHandler);
 			
-			getLogger().debug("Thread '" + connectionThread.getName() + "' has been interrupted and removed\n\n" );
+			
+			getLogger().debug("Thread '" + connectionThread.getName() + "' has been interrupted and removed" + 
+							  ((pausingSession) ? ". Charging session is paused." : "") + "\n\n");
 		} else {
 			String address = connectionHandler.getAddress();
 			int port = connectionHandler.getPort(); 

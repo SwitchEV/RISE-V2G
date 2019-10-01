@@ -67,9 +67,11 @@ public final class ByteUtils {
 	 * 					 representing the octet code. For example, '0FB7' is a hex encoding for the 
 	 * 					 16-bit integer 4023 (whose binary representation is 111110110111)."
 	 * @return A byte array representing the hexadecimal string
+	 * @throws IllegalArgumentException Passes on the IllegalArgumentException from the method DatatypeConverter.parseHexBinary()
+	 * 								   so that the caller can appropriately handle the execption
 	 */
-	public static byte[] toByteArrayFromHexString(String s) {
-	    return DatatypeConverter.parseHexBinary(s);
+	public static byte[] toByteArrayFromHexString(String s) throws IllegalArgumentException {
+		return DatatypeConverter.parseHexBinary(s);
 	}
 	
 	/**

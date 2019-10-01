@@ -25,6 +25,7 @@ package com.v2gclarity.risev2g.shared.utils;
 
 			import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -47,7 +48,7 @@ public final class MiscUtils {
 
 	static Logger logger = LogManager.getLogger(MiscUtils.class.getSimpleName());
 	static V2GMessages[] messageTypes = V2GMessages.values();
-	static Properties v2gEntityConfig;
+	static Properties properties;
 	
 	public static Logger getLogger() {
 		return logger;
@@ -131,34 +132,27 @@ public final class MiscUtils {
 	 * in this method. The return value differs depending on the key. Therefore, the return value
 	 * is given as an Object, which again must be casted to the matching type when using this method.
 	 * 
-	 * @param propertyName The key string written in the respective properties file of each V2G entity (EV or EVSE)
+	 * @param propertyKey The key string written in the respective properties file of each V2G entity (EV or EVSE)
 	 * @return An Object holding the data structure fitting for the key (e.g. an Enum value, a Boolean, 
 	 * 			a collection, ...)
 	 */
-	public static Object getPropertyValue(String propertyName) {
+	public static Object getPropertyValue(String propertyKey) {
 		Object returnValue = null;
 		String propertyValue = "";
 		
 		try {
-			propertyValue = getV2gEntityConfig().getProperty(propertyName).replaceAll("\\s", "");
+			propertyValue = getProperties().getProperty(propertyKey).replaceAll("\\s", "");
 		} catch (NullPointerException e) {
-			getLogger().warn("No entry found in the properties file for property '" + propertyName + "'", e);
+			getLogger().warn("No entry found in the properties file for property '" + propertyKey + "'", e);
 			return null;
 		}
 		
-		switch (propertyName) {
+		switch (propertyKey) {
 		case "network.interface": // EV + EVSE property
 			returnValue = propertyValue;
 			break;
 		case "session.id": // EV property
-			try {
-				returnValue = Long.parseLong(propertyValue);
-			} catch (NumberFormatException e) {
-				getLogger().warn("SessionID '" + propertyValue + "' not supported. " +
-							     "Setting default value to 0.", e);
-				getV2gEntityConfig().setProperty("session.id", "0");
-				returnValue = 0L;
-			}
+			returnValue = propertyValue;  // a hexadecimal string representing a byte array
 			break;
 		case "energy.transfermodes.supported": // EVSE property
 			String energyTransferMode = "";
@@ -170,7 +164,7 @@ public final class MiscUtils {
 					try {
 						supportedEnergyTransferModeType.getEnergyTransferMode().add(EnergyTransferModeType.fromValue(energyTransferMode));
 					} catch (IllegalArgumentException e){
-						getLogger().warn("EnergyTransferModeType '" + energyTransferMode + "' not supported");
+						getLogger().warn("EnergyTransferModeType '" + energyTransferMode + "' listed in properties file is not supported");
 					}
 				}
 			}
@@ -178,11 +172,10 @@ public final class MiscUtils {
 			break;
 		case "energy.transfermode.requested": // EV property
 			try {
-				if (!propertyValue.equals("")) returnValue = EnergyTransferModeType.fromValue(propertyValue);
-				else return null;
+				if (!propertyValue.equals("")) 
+					returnValue = EnergyTransferModeType.fromValue(propertyValue);
 			} catch (IllegalArgumentException e) {
-				getLogger().warn("EnergyTransferModeType '" + propertyValue + "' not supported");
-				return null;
+				getLogger().warn("EnergyTransferModeType '" + propertyValue + "' listed in properties file is not supported");
 			}
 			break;
 		case "tls": // EV property (with this code, TLS is always supported on EVSE side)
@@ -193,19 +186,18 @@ public final class MiscUtils {
 			try {
 				returnValue = Integer.parseInt(propertyValue);
 			} catch (NumberFormatException e) {
-				getLogger().warn("ContractCertificateUpdateTimespan '" + propertyValue + "' not supported. " +
+				getLogger().warn("ContractCertificateUpdateTimespan '" + propertyValue + "' listed in properties file is not supported. " +
 							     "Setting default value to 14.", e);
-				getV2gEntityConfig().setProperty("contract.certificate.update.timespan", "14");
+				getProperties().setProperty("contract.certificate.update.timespan", "14");
 				returnValue = 14;
 			}
 			break;
 		case "authentication.mode": // EV property
 			try {
-				if (!propertyValue.equals("")) returnValue = PaymentOptionType.fromValue(propertyValue);
-				else return null;
+				if (!propertyValue.equals("")) 
+					returnValue = PaymentOptionType.fromValue(propertyValue);
 			} catch (IllegalArgumentException e) {
-				getLogger().warn("PaymentOptionType '" + propertyValue + "' not supported");
-				return null;
+				getLogger().warn("PaymentOptionType '" + propertyValue + "' listed in properties file is not supported");
 			}
 			break;
 		case "authentication.modes.supported": // EVSE property
@@ -219,7 +211,7 @@ public final class MiscUtils {
 					try {
 						paymentOptionsList.add(PaymentOptionType.fromValue(option));
 					} catch (IllegalArgumentException e) {
-						getLogger().warn("PaymentOptionType '" + option + "' not supported");
+						getLogger().warn("PaymentOptionType '" + option + "' listed in properties file is not supported");
 					}
 				}
 			}
@@ -251,14 +243,14 @@ public final class MiscUtils {
 			try {
 				returnValue = Integer.parseInt(propertyValue);
 			} catch (NumberFormatException e) {
-				getLogger().warn("Voltage accuracy '" + propertyValue + "' not supported. " +
+				getLogger().warn("Voltage accuracy '" + propertyValue + "' listed in properties file is not supported. " +
 							     "Setting default value to 5.", e);
-				getV2gEntityConfig().setProperty("voltage.accuracy", "5");
+				getProperties().setProperty("voltage.accuracy", "5");
 				returnValue = 5;
 			}
 			break;
 		default:
-			getLogger().error("No property with name '" + propertyName + "' found");
+			getLogger().error("No property with name '" + propertyKey + "' found");
 		}
 		
 		return returnValue;
@@ -273,8 +265,8 @@ public final class MiscUtils {
 	 * @return The Properties object containing the (key, value)-pairs of the respective properties
 	 * 			file for the respective V2G entity (EVCC or SECC)
 	 */
-	public static Properties getV2gEntityConfig() {
-		return v2gEntityConfig;
+	public static Properties getProperties() {
+		return properties;
 	}
 
 
@@ -287,13 +279,12 @@ public final class MiscUtils {
 	 * @param propertiesFileLocation The location of the properties file
 	 * @return True, if the properties file could be loaded successfully.
 	 */
-	public static boolean setV2gEntityConfig(String propertiesFileLocation) {
-		Properties properties = new Properties();
+	public static boolean loadProperties(String propertiesFileLocation) {
+		properties = new Properties();
 		
 		try {
 			FileInputStream config = new FileInputStream(propertiesFileLocation);
 			properties.load(config);
-			v2gEntityConfig = properties;
 			config.close();
 			return true;
 		} catch (FileNotFoundException e) {
@@ -305,5 +296,26 @@ public final class MiscUtils {
 							+ "Error occurred while trying to set config properties file.");
 			return false;
 		}
+	}
+	
+	
+	/**
+	 * Stores the current properties into the properties file
+	 * 
+	 */
+	public static void storeProperties(String propertiesFileLocation) {
+		try {
+			FileOutputStream configFile = new FileOutputStream(propertiesFileLocation);
+			
+			getProperties().store(configFile, "");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+						e.printStackTrace();
+		}
+		
+//		getV2gEntityConfig().store(out, "");
 	}
 }

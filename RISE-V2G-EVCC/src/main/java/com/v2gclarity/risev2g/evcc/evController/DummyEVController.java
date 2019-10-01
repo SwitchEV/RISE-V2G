@@ -32,8 +32,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
 import com.v2gclarity.risev2g.shared.enumerations.CPStates;
+import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVChargeParameterType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingProfileType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVChargeParameterType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVErrorCodeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVPowerDeliveryParameterType;
@@ -63,21 +65,31 @@ public class DummyEVController implements IACEVController, IDCEVController {
 	}
 	
 	@Override
-	public PaymentOptionType getPaymentOption(PaymentOptionListType paymentOptionsOffered) {
-		// Contract payment option may only be chosen if offered by SECC AND if communication is secured by TLS
-		if (paymentOptionsOffered.getPaymentOption().contains(PaymentOptionType.CONTRACT)) {
-			if (!getCommSessionContext().isTlsConnection()) {
-				getLogger().warn("SECC offered CONTRACT based payment although no TLS connectionis used. Choosing EIM instead");
-				return PaymentOptionType.EXTERNAL_PAYMENT;
-			} else return PaymentOptionType.CONTRACT; 
-		} else return PaymentOptionType.EXTERNAL_PAYMENT;
+	public PaymentOptionType getPaymentOption() {
+		/*
+		 * The payment options offered by the SECC should probably be displayed on a HMI in the EV.
+		 * A request to the EVController should then be initiated here in order to let the user
+		 * choose which offered payment option to use.
+		 * 
+		 * TODO check [V2G2-828] (selecting payment option related to state B, C)
+		 */
+		
+		// Set default to Plug & Charge
+		return PaymentOptionType.CONTRACT;
 	}
 
 
 	@Override
 	public EnergyTransferModeType getRequestedEnergyTransferMode() {
-		return EnergyTransferModeType.AC_SINGLE_PHASE_CORE;
+		// Set default to AC_THREE_PHASE_CORE. Should normally depend on type of cable plugged into the vehicle inlet
+		EnergyTransferModeType requestedEnergyTransferMode = (EnergyTransferModeType) MiscUtils.getPropertyValue("energy.transfermode.requested");
+		 
+		if (requestedEnergyTransferMode == null)
+			return EnergyTransferModeType.AC_THREE_PHASE_CORE;
+		else
+			return requestedEnergyTransferMode;
 	}
+	
 
 	@Override
 	public JAXBElement<ACEVChargeParameterType> getACEVChargeParamter() {
@@ -320,6 +332,13 @@ public class DummyEVController implements IACEVController, IDCEVController {
 			
 			return true;
 		} else 
+			
+			/*
+			 * OPTIONAL:
+			 * If you want to trigger a pause of the charging session, then uncomment this line
+			 */
+			//getCommSessionContext().setChargingSession(ChargingSessionType.PAUSE);
+			
 			return false;
 	}
 

@@ -73,12 +73,27 @@ public class DummyBackendInterface implements IBackendInterface {
 		
 	}
 	
+	
 	@Override
 	public SAScheduleListType getSAScheduleList(
 			int maxEntriesSAScheduleTuple, 
 			long departureTime,
 			HashMap<String, byte[]> xmlSignatureRefElements) {
+		return getSAScheduleList(maxEntriesSAScheduleTuple, departureTime, xmlSignatureRefElements, (short) -1);
+	}
+	
+	
+	@Override
+	public SAScheduleListType getSAScheduleList(
+			int maxEntriesSAScheduleTuple, 
+			long departureTime,
+			HashMap<String, byte[]> xmlSignatureRefElements,
+			short selectedSAScheduleTupleId) {
 		/*
+		 * This is a static list of SASchedules. This means that we always offer the same list and ignore the 
+		 * processing of the parameter selectedSAScheduleTupleId.
+		 * 
+		 * 
 		 * Some important requirements:
 		 * 
 		 * 1. The sum of the individual time intervals described in the PMaxSchedule and

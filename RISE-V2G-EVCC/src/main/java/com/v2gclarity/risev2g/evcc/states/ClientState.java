@@ -454,28 +454,19 @@ public abstract class ClientState extends State {
 		
 		
 	protected EnergyTransferModeType getRequestedEnergyTransferMode() {
-		// Check if an EnergyTransferModeType has been requested in a previously paused session  
-		EnergyTransferModeType requestedEnergyTransferMode = 
-				(EnergyTransferModeType) MiscUtils.getPropertyValue("energy.transfermode.requested");
+		EnergyTransferModeType requestedEnergyTransferMode = null;
 		
-		if (requestedEnergyTransferMode == null) {
+		// Check if an EnergyTransferModeType has been requested in a previously paused session 
+		if (getCommSessionContext().isOldSessionJoined()) 
+			requestedEnergyTransferMode = (EnergyTransferModeType) MiscUtils.getPropertyValue("energy.transfermode.requested");
+			
+		if (requestedEnergyTransferMode == null) 
 			requestedEnergyTransferMode = getCommSessionContext().getEvController().getRequestedEnergyTransferMode();
-			getCommSessionContext().setRequestedEnergyTransferMode(requestedEnergyTransferMode);
-		}
+		
+		// We need to save the requested energy transfer mode in the session variable to be able to store in the properties file during pausing
+		getCommSessionContext().setRequestedEnergyTransferMode(requestedEnergyTransferMode);
 				
 		return requestedEnergyTransferMode;	
 	}
 	
-	
-	protected PaymentOptionType getSelectedPaymentOption() {
-		// Check if a PaymentOptionType has been requested in a previously paused session 
-		PaymentOptionType selectedPaymentOption = (PaymentOptionType) MiscUtils.getPropertyValue("authentication.mode");
-		
-		if (selectedPaymentOption == null) {
-			selectedPaymentOption = getCommSessionContext().getEvController().getPaymentOption(getCommSessionContext().getPaymentOptions());
-			getCommSessionContext().setSelectedPaymentOption(selectedPaymentOption);
-		}
-		
-		return selectedPaymentOption;
-	}
 }

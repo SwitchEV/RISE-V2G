@@ -50,15 +50,13 @@ public class WaitForWeldingDetectionRes extends ClientState {
 			 * How to react on DCEVSEStatus values?
 			 */
 			
-			if (getCommSessionContext().isPausingV2GCommSession()) {
-				getCommSessionContext().setPausingV2GCommSession(false);
+			if (getCommSessionContext().getChargingSession() != null && 
+				getCommSessionContext().getChargingSession() == ChargingSessionType.PAUSE) {
 				
 				return getSendMessage(getSessionStopReq(ChargingSessionType.PAUSE), 
 						  V2GMessages.SESSION_STOP_RES, "(ChargingSession = " + 
 						  ChargingSessionType.PAUSE.toString() + ")");
-			} else {
-				getCommSessionContext().setStopChargingRequested(false);
-				
+			} else {	
 				return getSendMessage(getSessionStopReq(ChargingSessionType.TERMINATE), 
 						  V2GMessages.SESSION_STOP_RES, "(ChargingSession = " + 
 						  ChargingSessionType.TERMINATE.toString() + ")");

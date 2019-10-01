@@ -40,6 +40,7 @@ import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscovery
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVChargeParameterType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.IsolationLevelType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.V2GMessage;
@@ -80,12 +81,22 @@ public class WaitForChargeParameterDiscoveryReq extends ServerState {
 					
 					Long departureTime = chargeParameterDiscoveryReq.getEVChargeParameter().getValue().getDepartureTime();
 					
-					getCommSessionContext().setSaSchedules(
-							getCommSessionContext().getBackendInterface().getSAScheduleList(
-									maxEntriesSAScheduleTuple, 
-									(departureTime != null) ? departureTime.longValue() : 0,
-									getXMLSignatureRefElements())
-							);
+					if (getCommSessionContext().isOldSessionJoined()) {
+						getCommSessionContext().setSaSchedules(
+								getCommSessionContext().getBackendInterface().getSAScheduleList(
+										maxEntriesSAScheduleTuple, 
+										(departureTime != null) ? departureTime.longValue() : 0,
+										getXMLSignatureRefElements(),
+										getCommSessionContext().getChosenSAScheduleTuple())
+								);
+					} else {
+						getCommSessionContext().setSaSchedules(
+								getCommSessionContext().getBackendInterface().getSAScheduleList(
+										maxEntriesSAScheduleTuple, 
+										(departureTime != null) ? departureTime.longValue() : 0,
+										getXMLSignatureRefElements())
+								);
+					}
 				}
 				
 				// TODO An integration to a backend system which provides the SalesTariff would be needed here

@@ -30,6 +30,7 @@ import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.misc.TimeRestrictions;
+import com.v2gclarity.risev2g.shared.utils.ByteUtils;
 import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.AppProtocolType;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.ResponseCodeType;
@@ -77,14 +78,18 @@ public class WaitForSupportedAppProtocolRes extends ClientState {
 				/*
 				 * The session ID is taken from the properties file. If a previous charging session has been
 				 * paused, then the previously valid session ID has been written to the properties file
-				 * in order persist the value when the ISO/IEC 15118 controller is shut down for energy
+				 * in order persist the value when the ISO 15118 controller is shut down for energy
 				 * saving reasons.
-				 * The initial value for a completely new charging session must be 0.
+				 * The initial value for a completely new charging session must be 00.
 				 */
-				long sessionID = (long) MiscUtils.getPropertyValue("session.id");
-				getCommSessionContext().setSessionID(
-						getCommSessionContext().generateSessionIDFromValue(sessionID)
-				);
+				String sessionID = (String) MiscUtils.getPropertyValue("session.id");
+				try {
+					getCommSessionContext().setSessionID(ByteUtils.toByteArrayFromHexString(sessionID));
+				} catch (IllegalArgumentException e) {
+					getLogger().warn("Stored session ID '" + sessionID + "' contains illegal character(s) which are not hexadecimal. " +
+									  "Will reset session ID to '00'");
+					getCommSessionContext().setSessionID(ByteUtils.toByteArrayFromHexString("00"));
+				}
 			} else {
 				return new TerminateSession("No supported appProtocol found (positive response code received, " + 
 											"but no valid schemaID. Received schema ID is: " + 

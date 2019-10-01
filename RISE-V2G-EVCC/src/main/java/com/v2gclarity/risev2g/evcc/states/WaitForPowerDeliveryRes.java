@@ -66,12 +66,13 @@ public class WaitForPowerDeliveryRes extends ClientState {
 					getCommSessionContext().setChangeToState(CPStates.STATE_B);
 				}
 				
-				getCommSessionContext().setRenegotiationRequested(false);
 				return getSendMessage(getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
-			} else if (getCommSessionContext().isStopChargingRequested()) {
-				return getSendMessage(ChargingSessionType.TERMINATE, true);
-			} else if (getCommSessionContext().isPausingV2GCommSession()) {
-				return getSendMessage(ChargingSessionType.PAUSE, false);
+			} else if (getCommSessionContext().getChargingSession() != null && 
+					   getCommSessionContext().getChargingSession() == ChargingSessionType.TERMINATE) {
+				return getSendMessage(ChargingSessionType.TERMINATE);
+			} else if (getCommSessionContext().getChargingSession() != null && 
+					   getCommSessionContext().getChargingSession() == ChargingSessionType.PAUSE) {
+				return getSendMessage(ChargingSessionType.PAUSE);
 			} else {
 				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
 					ChargingStatusReqType chargingStatusReq = new ChargingStatusReqType();
@@ -86,7 +87,7 @@ public class WaitForPowerDeliveryRes extends ClientState {
 	}
 	
 	
-	private ReactionToIncomingMessage getSendMessage(ChargingSessionType chargingSessionType, boolean stopChargingRequested) {
+	private ReactionToIncomingMessage getSendMessage(ChargingSessionType chargingSessionType) {
 		if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
 			// CP state B signaling BEFORE sending WeldingDetectionReq message in DC
 			if (getCommSessionContext().getEvController().setCPState(CPStates.STATE_B)) {
@@ -100,10 +101,7 @@ public class WaitForPowerDeliveryRes extends ClientState {
 						getCommSessionContext().getEvController().getCPState() +
 						")");
 			}
-		} else {
-			if (stopChargingRequested) getCommSessionContext().setStopChargingRequested(false);
-			else getCommSessionContext().setPausingV2GCommSession(false);
-			
+		} else {	
 			return getSendMessage(getSessionStopReq(chargingSessionType), 
 								  V2GMessages.SESSION_STOP_RES, "(ChargingSession = " + 
 								  chargingSessionType.toString() + ")");

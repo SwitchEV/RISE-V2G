@@ -27,6 +27,7 @@ import com.v2gclarity.risev2g.secc.session.V2GCommunicationSessionSECC;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.BodyBaseType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentServiceSelectionReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopReqType;
@@ -51,18 +52,26 @@ public class WaitForSessionStopReq extends ServerState {
 			
 			getLogger().info("EV indicated to " + sessionStopReq.getChargingSession() + " the charging session");
 			
-			getCommSessionContext().setStopV2GCommunicationSession(true);
+			if (sessionStopReq.getChargingSession() == ChargingSessionType.TERMINATE) {
+				getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
+				return getSendMessage(sessionStopRes, V2GMessages.NONE, sessionStopRes.getResponseCode());
+			} else {
+				// EV indicated to pause the charging session. Next expected request message is SupportedAppProtocolReq
+				getCommSessionContext().setChargingSession(ChargingSessionType.PAUSE);
+				return getSendMessage(sessionStopRes, V2GMessages.SUPPORTED_APP_PROTOCOL_REQ, sessionStopRes.getResponseCode());
+			}
 		} else {
+			getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
+			
 			if (sessionStopRes.getResponseCode().equals(ResponseCodeType.FAILED_SEQUENCE_ERROR)) {
 				BodyBaseType responseMessage = getSequenceErrorResMessage(new SessionStopResType(), message);
 				
 				return getSendMessage(responseMessage, V2GMessages.NONE, sessionStopRes.getResponseCode());
 			} else {
 				setMandatoryFieldsForFailedRes(sessionStopRes, sessionStopRes.getResponseCode());
+				return getSendMessage(sessionStopRes, V2GMessages.NONE, sessionStopRes.getResponseCode());
 			}
 		}
-			
-		return getSendMessage(sessionStopRes, V2GMessages.NONE, sessionStopRes.getResponseCode());
 	}
 
 

@@ -39,6 +39,7 @@ import com.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVSEChargeParameterType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeProgressType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVSEChargeParameterType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSEProcessingType;
@@ -105,7 +106,7 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 				
 				if (evseNotification.equals(EVSENotificationType.STOP_CHARGING)) {
 					getLogger().debug("The EVSE requested to stop the charging process");
-					getCommSessionContext().setStopChargingRequested(true);
+					getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
 					
 					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), V2GMessages.POWER_DELIVERY_RES);
 				} else {
@@ -134,7 +135,23 @@ public class WaitForChargeParameterDiscoveryRes extends ClientState {
 					// Save the list of SASchedules (saves the time of reception as well)
 					getCommSessionContext().setSaSchedules(saSchedules);
 					
-					if (getCommSessionContext().getEvController().getCPState().equals(CPStates.STATE_B)) {
+					/*
+					 * The following states are possible (and will not raise the termination of a charging session):
+					 * - State B: 
+					 * 		- In AC charging, when exchanging the first ChargeParameterDiscoveryReq/Res message pair, before the charging loop
+					 * 		  was initiated 
+					 * - State C:
+					 * 		- In DC charging, when exchanging the first ChargeParameterDiscoveryReq/Res message pair, before the charging loop
+					 * 		  was initiated 
+					 * 		- In AC charging, after the charging loop was initiated and a renegotiation was triggered 
+					 */
+					if (getCommSessionContext().getEvController().getCPState().equals(CPStates.STATE_B) || 
+					    (getCommSessionContext().getEvController().getCPState().equals(CPStates.STATE_C) &&
+						 getCommSessionContext().isRenegotiationRequested())) {
+						
+						// We need to reset the renegotiation trigger (in case of State C and a renegotiation was triggered)
+						getCommSessionContext().setRenegotiationRequested(false);
+						
 						if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("AC")) {
 							return getSendMessage(getPowerDeliveryReq(ChargeProgressType.START), V2GMessages.POWER_DELIVERY_RES);
 						} else if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {

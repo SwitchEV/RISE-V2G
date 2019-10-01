@@ -28,9 +28,11 @@ import com.v2gclarity.risev2g.evcc.transportLayer.TLSClient;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.utils.SecurityUtils;
 import com.v2gclarity.risev2g.shared.utils.SecurityUtils.ContractCertificateStatus;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionListType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SelectedServiceType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ServiceCategoryType;
@@ -60,7 +62,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 			 */
 			getCommSessionContext().getServiceDetailsToBeRequested().clear(); // just to be sure
 			
-			// Save offered charge service and optional value added services
+			// Save the list containing information on all other services than charging services offered by the charging station
 			getCommSessionContext().setOfferedServices(serviceDiscoveryRes.getServiceList());
 			
 			if (serviceDiscoveryRes.getChargeService() != null) {
@@ -69,7 +71,6 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 				
 				if (serviceDiscoveryRes.getChargeService().getSupportedEnergyTransferMode()
 						.getEnergyTransferMode().contains(requestedEnergyTransferMode)) {
-					getCommSessionContext().setRequestedEnergyTransferMode(requestedEnergyTransferMode);
 					getCommSessionContext().getOfferedServices().getService().add(serviceDiscoveryRes.getChargeService());
 					addSelectedService(1, null); // Assumption: a charge service is always used
 				} else {
@@ -77,16 +78,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 				}
 			} else return new TerminateSession("No charge service available");
 			
-			/*
-			 * The payment options offered by the SECC should probably be displayed on a HMI in the EV.
-			 * A request to the EVController should then be initiated here in order to let the user
-			 * choose which offered payment option to use.
-			 * 
-			 * TODO check [V2G2-828] (selecting payment option related to state B, C)
-			 */
-			PaymentOptionType userPaymentOption = 
-					getCommSessionContext().getEvController().getPaymentOption(serviceDiscoveryRes.getPaymentOptionList());
-			getCommSessionContext().setSelectedPaymentOption(userPaymentOption);
+			getCommSessionContext().setSelectedPaymentOption(getSelectedPaymentOption(serviceDiscoveryRes.getPaymentOptionList()));
 			
 			// Check for the usage of value added services (VAS)
 			if (useVAS(serviceDiscoveryRes)) {
@@ -96,6 +88,41 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 			}
 		} else {
 			return new TerminateSession("Incoming message raised an error");
+		}
+	}
+	
+	
+	protected PaymentOptionType getSelectedPaymentOption(PaymentOptionListType authenticationOptions) {
+		/*
+		 * Note that although the type is called "PaymentOptionListType", it's not a list of payment options, but authorization options, 
+		 * namely either Plug & Charge ("Contract") or external identification means (EIM) like an RFID card ("ExternalPayment"). This is 
+		 * why the parameter for this function is called "authenticationOptions" for clarity.
+		 */
+		
+		PaymentOptionType selectedPaymentOption = null;
+		
+		// Check if a PaymentOptionType has been requested in a previously paused session 
+		if (getCommSessionContext().isOldSessionJoined()) 
+			selectedPaymentOption = (PaymentOptionType) MiscUtils.getPropertyValue("authentication.mode");
+		
+		if (selectedPaymentOption == null) 
+			selectedPaymentOption = getCommSessionContext().getEvController().getPaymentOption();
+		
+		// Contract payment option may only be chosen if offered by SECC AND if communication is secured by TLS
+		if (selectedPaymentOption.equals(PaymentOptionType.CONTRACT) &&
+			authenticationOptions.getPaymentOption().contains(PaymentOptionType.CONTRACT)) {
+			
+			if (!getCommSessionContext().isTlsConnection()) {
+				getLogger().warn("SECC offered 'Contract' based payment although no TLS connectionis used. Choosing 'ExternalPayment' instead");
+				getCommSessionContext().setSelectedPaymentOption(PaymentOptionType.EXTERNAL_PAYMENT);
+				return PaymentOptionType.EXTERNAL_PAYMENT;
+			} else {
+				getCommSessionContext().setSelectedPaymentOption(PaymentOptionType.CONTRACT);
+				return PaymentOptionType.CONTRACT; 
+			}
+		} else {
+			getCommSessionContext().setSelectedPaymentOption(PaymentOptionType.EXTERNAL_PAYMENT);
+			return PaymentOptionType.EXTERNAL_PAYMENT;
 		}
 	}
 	

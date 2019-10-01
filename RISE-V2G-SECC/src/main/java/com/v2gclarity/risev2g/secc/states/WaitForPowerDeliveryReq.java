@@ -65,10 +65,6 @@ public class WaitForPowerDeliveryReq extends ServerState {
 			if (isResponseCodeOK(powerDeliveryReq)) {
 				getCommSessionContext().setChosenSAScheduleTuple(powerDeliveryReq.getSAScheduleTupleID());
 				
-				// For debugging purposes, log the ChargeProgress value
-				getLogger().debug("ChargeProgress of PowerDeliveryReq set to '" + 
-								  powerDeliveryReq.getChargeProgress().toString() + "'");
-				
 				// TODO regard [V2G2-866]
 				
 				setEVSEStatus(powerDeliveryRes);
@@ -114,8 +110,9 @@ public class WaitForPowerDeliveryReq extends ServerState {
 	public boolean isResponseCodeOK(PowerDeliveryReqType powerDeliveryReq) {
 		SAScheduleTupleType chosenSASchedule = getChosenSASCheduleTuple(powerDeliveryReq.getSAScheduleTupleID());
 		
-		// This debug message is helpful to determine why the EV might not send a ChargingProfile (parameter is optional and should only be left out if ChargeProgress is set to Stop)
-		getLogger().debug("ChargeProgress is set to " + powerDeliveryReq.getChargeProgress());
+		// This debug message is helpful to determine why the EV might not send a ChargingProfile 
+		// (parameter is optional and should only be left out if ChargeProgress is set to Stop)
+		getLogger().debug("ChargeProgress of PowerDeliveryReq set to '" + powerDeliveryReq.getChargeProgress().toString() + "'");
 		
 		if (powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.RENEGOTIATE) && 
 				!getCommSessionContext().isChargeProgressStarted()) {

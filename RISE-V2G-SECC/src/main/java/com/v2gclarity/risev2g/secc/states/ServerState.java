@@ -38,6 +38,7 @@ import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateInstallationResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateUpdateResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryResType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusResType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ContractSignatureEncryptedPrivateKeyType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CurrentDemandResType;
@@ -167,7 +168,7 @@ public abstract class ServerState extends State {
 		
 		if (!responseCode.value().startsWith("OK")) {
 			getLogger().error("Response code '" + responseCode.value() + "' will be sent.");
-			getCommSessionContext().setStopV2GCommunicationSession(true);
+			getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
 		}
 		
 		return getSendMessage(message, nextExpectedMessage, "", timeout);
@@ -181,7 +182,7 @@ public abstract class ServerState extends State {
 		
 		if (!responseCode.value().substring(0, 2).toUpperCase().equals("OK")) {
 			getLogger().error("Response code '" + responseCode.value() + "' will be sent.");
-			getCommSessionContext().setStopV2GCommunicationSession(true);
+			getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
 		}
 		
 		getLogger().debug("Preparing to send " + messageName);

@@ -36,7 +36,7 @@ public class StartSECC {
 	
 	public static void main(String[] args) {
 		final Logger logger = LogManager.getLogger(StartSECC.class.getSimpleName());
-		MiscUtils.setV2gEntityConfig(GlobalValues.SECC_CONFIG_PROPERTIES_PATH.toString());
+		MiscUtils.loadProperties(GlobalValues.SECC_CONFIG_PROPERTIES_PATH.toString());
 		
 		UDPServer udpServer = UDPServer.getInstance();
 		TCPServer tcpServer = TCPServer.getInstance();

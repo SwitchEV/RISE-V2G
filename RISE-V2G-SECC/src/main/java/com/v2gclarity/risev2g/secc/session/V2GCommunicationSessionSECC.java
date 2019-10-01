@@ -57,20 +57,24 @@ import com.v2gclarity.risev2g.secc.transportLayer.ConnectionHandler;
 import com.v2gclarity.risev2g.shared.enumerations.GlobalValues;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ChangeProcessingState;
+import com.v2gclarity.risev2g.shared.messageHandling.PauseSession;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.SendMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
 import com.v2gclarity.risev2g.shared.misc.V2GCommunicationSession;
 import com.v2gclarity.risev2g.shared.misc.V2GTPMessage;
 import com.v2gclarity.risev2g.shared.utils.ByteUtils;
+import com.v2gclarity.risev2g.shared.utils.MiscUtils;
 import com.v2gclarity.risev2g.shared.v2gMessages.appProtocol.SupportedAppProtocolReq;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ACEVSEStatusType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.CertificateChainType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EVSENotificationType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.EnergyTransferModeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.MessageHeaderType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.MeterInfoType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PMaxScheduleType;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionListType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.PaymentOptionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ResponseCodeType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SAScheduleListType;
@@ -81,8 +85,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	
 	private short schemaID;
 	private ACEVSEStatusType acEVSEStatus;
-	private boolean stopV2GCommunicationSession;
-	private boolean pauseV2GCommunicationSession;
+	private ChargingSessionType chargingSession;
 	private PMaxScheduleType pMaxSchedule;
 	private short chosenSAScheduleTuple;
 	private IACEVSEController acEvseController;
@@ -142,8 +145,8 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		getACEVSEStatus().setNotificationMaxDelay(0);
 		getACEVSEStatus().setRCD(false);
 		
-		setStopV2GCommunicationSession(false);
-		setPauseV2GCommunicationSession(false);
+		// Will be set only if a session is to be stopped or paused
+		setChargingSession(null);
 		
 		setOfferedServices(new ArrayList<ServiceType>());
 		
@@ -189,8 +192,11 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		// Check the outcome of the processIncomingMessage() of the respective state
 		if (reactionToIncomingMessage instanceof SendMessage) {
 			send((SendMessage) reactionToIncomingMessage);
-			if (isStopV2GCommunicationSession()) {
+			if (getChargingSession() != null && getChargingSession() == ChargingSessionType.TERMINATE) 
 				terminateSession("EVCC indicated request to stop the session or a FAILED response code was sent", true);
+			
+			if (getChargingSession() != null && getChargingSession() == ChargingSessionType.PAUSE) {
+				pauseSession(new PauseSession());
 			}
 		} else if (reactionToIncomingMessage instanceof ChangeProcessingState) {
 			setCurrentState(((ChangeProcessingState) reactionToIncomingMessage).getNewState());
@@ -217,20 +223,22 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	 */
 	public ResponseCodeType checkSessionID(MessageHeaderType header) {
 		if (getCurrentState().equals(getStates().get(V2GMessages.SESSION_SETUP_REQ)) && 
-				ByteUtils.toLongFromByteArray(header.getSessionID()) == 0L) {
+			ByteUtils.toHexString(header.getSessionID()).equals("00")) {
 			// EV wants to start a totally new charging session
 			setSessionID(generateSessionIDRandomly());
 			setOldSessionJoined(false);
 			return ResponseCodeType.OK_NEW_SESSION_ESTABLISHED;
 		} else if (getCurrentState().equals(getStates().get(V2GMessages.SESSION_SETUP_REQ)) && 
-				   header.getSessionID() == getSessionID()) {
+				   Arrays.equals(header.getSessionID(), getSessionID())) {
 			// A charging pause has taken place and the EV wants to resume the old charging session
 			setOldSessionJoined(true);
 			return ResponseCodeType.OK_OLD_SESSION_JOINED;
 		} else if (getCurrentState().equals(getStates().get(V2GMessages.SESSION_SETUP_REQ)) && 
-				ByteUtils.toLongFromByteArray(header.getSessionID()) != 0L &&
-				   header.getSessionID() != getSessionID()) {
+				  !ByteUtils.toHexString(header.getSessionID()).equals("00") &&
+				  !Arrays.equals(header.getSessionID(), getSessionID())) {
 			// Avoid a "FAILED_..." response code by generating a new SessionID in the response
+			getLogger().warn("Presented session ID '" + ByteUtils.toHexString(header.getSessionID()) + "' does not match stored session ID '" +
+							 ByteUtils.toHexString(getSessionID()) + "'. Will reassign a new session ID");
 			setSessionID(generateSessionIDRandomly());
 			setOldSessionJoined(false);
 			return ResponseCodeType.OK_NEW_SESSION_ESTABLISHED;
@@ -243,6 +251,27 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 			setOldSessionJoined(false);
 			return ResponseCodeType.FAILED_UNKNOWN_SESSION;
 		}
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public PaymentOptionListType getPaymentOptions() {
+		ArrayList<PaymentOptionType> paymentOptions = new ArrayList<PaymentOptionType>();
+		
+		if (isOldSessionJoined()) {
+			paymentOptions.add(selectedPaymentOption);
+		} else { 
+			paymentOptions.addAll((ArrayList<PaymentOptionType>) (MiscUtils.getPropertyValue("authentication.modes.supported")));
+		}
+		
+		// Contract-based payment may only be offered if TLS is used
+		if (!isTlsConnection()) 
+			paymentOptions.remove(PaymentOptionType.CONTRACT);
+				
+		PaymentOptionListType paymentOptionList = new PaymentOptionListType();
+		paymentOptionList.getPaymentOption().addAll(paymentOptions);
+		
+		return paymentOptionList;
 	}
 	
 	
@@ -283,24 +312,6 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	public ACEVSEStatusType getACEVSEStatus() {
 		return acEVSEStatus;
 	}
-
-	public boolean isStopV2GCommunicationSession() {
-		return stopV2GCommunicationSession;
-	}
-
-	public void setStopV2GCommunicationSession(boolean stopV2GCommunicationSession) {
-		this.stopV2GCommunicationSession = stopV2GCommunicationSession;
-	}
-
-	public boolean isPauseV2GCommunicationSession() {
-		return pauseV2GCommunicationSession;
-	}
-
-
-	public void setPauseV2GCommunicationSession(boolean pauseV2GCommunicationSession) {
-		this.pauseV2GCommunicationSession = pauseV2GCommunicationSession;
-	}
-
 
 	public PMaxScheduleType getPMaxSchedule() {
 		return pMaxSchedule;
@@ -474,5 +485,15 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 
 	public void setChargeProgressStarted(boolean chargeProgressStarted) {
 		this.chargeProgressStarted = chargeProgressStarted;
+	}
+
+
+	public ChargingSessionType getChargingSession() {
+		return chargingSession;
+	}
+
+
+	public void setChargingSession(ChargingSessionType chargingSession) {
+		this.chargingSession = chargingSession;
 	}
 }

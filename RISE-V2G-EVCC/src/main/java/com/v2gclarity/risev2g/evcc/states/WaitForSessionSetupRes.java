@@ -47,14 +47,10 @@ public class WaitForSessionSetupRes extends ClientState {
 					(SessionSetupResType) ((V2GMessage) message).getBody().getBodyElement().getValue();
 					
 			if (sessionSetupRes.getResponseCode().equals(ResponseCodeType.OK_NEW_SESSION_ESTABLISHED)) {
-				getCommSessionContext().setSessionID(receivedSessionID);
-				getLogger().debug("Negotiated session ID is " + ByteUtils.toLongFromByteArray(receivedSessionID));
+				getLogger().debug("Negotiated session ID is " + ByteUtils.toHexString(receivedSessionID));
 				getCommSessionContext().setOldSessionJoined(false);
-				getCommSessionContext().setEvseID(sessionSetupRes.getEVSEID());
-				// EVSETimeStamp is optional
-				if (sessionSetupRes.getEVSETimeStamp() != null)	getCommSessionContext().setEvseTimeStamp(sessionSetupRes.getEVSETimeStamp());
 			} else if (sessionSetupRes.getResponseCode().equals(ResponseCodeType.OK_OLD_SESSION_JOINED)) {
-				getLogger().debug("Previous charging session joined (session ID = " + ByteUtils.toLongFromByteArray(receivedSessionID) + ")");
+				getLogger().debug("Previous charging session joined (session ID = " + ByteUtils.toHexString(receivedSessionID) + ")");
 				
 				/*
 				 * Mark that the old session was joined in order to resend
@@ -63,8 +59,6 @@ public class WaitForSessionSetupRes extends ClientState {
 				 * according to 8.4.2. Those values should be persisted in the properties file.
 				 */
 				getCommSessionContext().setOldSessionJoined(true);
-				getCommSessionContext().setEvseID(sessionSetupRes.getEVSEID());
-				getCommSessionContext().setEvseTimeStamp(sessionSetupRes.getEVSETimeStamp());
 			} else {
 				getCommSessionContext().setOldSessionJoined(false);
 				getLogger().error("No negative response code received, but positive response code '" +
@@ -72,6 +66,12 @@ public class WaitForSessionSetupRes extends ClientState {
 								  "neither OK_NEW_SESSION_ESTABLISHED nor OK_OLD_SESSION_JOINED");
 				return new TerminateSession("Positive response code invalid in state WaitForSessionSetupRes");
 			}
+			
+			getCommSessionContext().setSessionID(receivedSessionID);
+			getCommSessionContext().setEvseID(sessionSetupRes.getEVSEID());
+			// EVSETimeStamp is optional
+			if (sessionSetupRes.getEVSETimeStamp() != null) 
+				getCommSessionContext().setEvseTimeStamp(sessionSetupRes.getEVSETimeStamp());
 			
 			ServiceDiscoveryReqType serviceDiscoveryReq = new ServiceDiscoveryReqType();
 			

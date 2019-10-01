@@ -24,8 +24,10 @@
 package com.v2gclarity.risev2g.evcc.states;
 
 import com.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
+import com.v2gclarity.risev2g.shared.messageHandling.PauseSession;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.SessionStopResType;
 
 public class WaitForSessionStopRes extends ClientState {
@@ -37,7 +39,11 @@ public class WaitForSessionStopRes extends ClientState {
 	@Override
 	public ReactionToIncomingMessage processIncomingMessage(Object message) {
 		if (isIncomingMessageValid(message, SessionStopResType.class)) {
-			return new TerminateSession("V2G communication session will be stopped successfully", true);
+			if (getCommSessionContext().getChargingSession() != null &&
+				getCommSessionContext().getChargingSession().equals(ChargingSessionType.PAUSE)) 
+				return new PauseSession();
+			else
+				return new TerminateSession("V2G communication session will be stopped successfully", true);
 		} else {
 			return new TerminateSession("Incoming message raised an error");
 		}
