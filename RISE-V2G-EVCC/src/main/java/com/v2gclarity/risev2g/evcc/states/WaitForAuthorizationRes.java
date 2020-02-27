@@ -86,29 +86,8 @@ public class WaitForAuthorizationRes extends ClientState {
 					getCommSessionContext().setOngoingTimerActive(true);
 				}
 					
-				AuthorizationReqType authorizationReq = null;
-				
-				if (getCommSessionContext().getSelectedPaymentOption().equals(PaymentOptionType.CONTRACT) && 
-					getCommSessionContext().isTlsConnection()) {
-					authorizationReq = getAuthorizationReq(getCommSessionContext().getSentGenChallenge());
-					
-					// Set xml reference element
-					getXMLSignatureRefElements().put(
-							authorizationReq.getId(), 
-							SecurityUtils.generateDigest(
-									authorizationReq.getId(),
-									getMessageHandler().getJaxbElement(authorizationReq)));
-					
-					// Set signing private key
-					setSignaturePrivateKey(SecurityUtils.getPrivateKey(
-							SecurityUtils.getKeyStore(
-									GlobalValues.EVCC_KEYSTORE_FILEPATH.toString(),
-									GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString()), 
-							GlobalValues.ALIAS_CONTRACT_CERTIFICATE.toString())
-					);
-				} else {
-					authorizationReq = getAuthorizationReq(null);
-				}
+				// [V2G2-684] demands to send an empty AuthorizationReq if the field EVSEProcessing is set to 'Ongoing'  
+				AuthorizationReqType authorizationReq = getAuthorizationReq(null);
 				
 				return getSendMessage(authorizationReq, V2GMessages.AUTHORIZATION_RES, Math.min((TimeRestrictions.V2G_EVCC_ONGOING_TIMEOUT - (int) elapsedTimeInMs), TimeRestrictions.getV2gEvccMsgTimeout(V2GMessages.AUTHORIZATION_RES)));
 			}
