@@ -82,7 +82,7 @@ REM	- using the named curve prime256v1 -> -name prime256v1
 REM	- encrypt the key with symmetric cipher AES-128-CBC using the 'ec' utility command -> ec -aes-128-cbc
 REM - the passphrase for the encryption of the private key is provided in a file -> -passout file:passphrase.txt
 REM	- save the encrypted private key at the location provided -> -out 
-openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/v2gRootA.key 
+openssl ecparam -genkey -name prime256v1 | openssl ec -aes-128-cbc -passout file:passphrase.txt -out privateKeys/v2gRootCA.key 
 REM 1.2) Create a CSR
 REM	- new -> -new
 REM	- certificate signing request -> req
