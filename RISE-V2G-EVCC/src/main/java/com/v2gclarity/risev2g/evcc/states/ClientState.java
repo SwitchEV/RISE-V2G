@@ -30,7 +30,6 @@ import java.util.ListIterator;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
-import com.v2gclarity.risev2g.evcc.evController.DummyEVController;
 import com.v2gclarity.risev2g.evcc.evController.IACEVController;
 import com.v2gclarity.risev2g.evcc.evController.IDCEVController;
 import com.v2gclarity.risev2g.evcc.session.V2GCommunicationSessionEVCC;
@@ -293,7 +292,7 @@ public abstract class ClientState extends State {
 	 */
 	protected CableCheckReqType getCableCheckReq() {
 		CableCheckReqType cableCheckReq = new CableCheckReqType();
-		cableCheckReq.setDCEVStatus(((DummyEVController) getCommSessionContext().getEvController()).getDCEVStatus());
+		cableCheckReq.setDCEVStatus(((IDCEVController) getCommSessionContext().getEvController()).getDCEVStatus());
 		
 		return cableCheckReq;
 	}
