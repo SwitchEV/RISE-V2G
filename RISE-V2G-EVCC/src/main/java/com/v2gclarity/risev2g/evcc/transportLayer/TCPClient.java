@@ -139,6 +139,7 @@ public class TCPClient extends StatefulTransportLayerClient {
 				getInStream().close();
 				getOutStream().close();
 				getTcpSocketToServer().close();
+				releaseInstance();
 				Thread.currentThread().interrupt();
 			} catch (IOException e) {
 				getLogger().error("Error occurred while trying to close TCP socket to server", e);
@@ -146,6 +147,10 @@ public class TCPClient extends StatefulTransportLayerClient {
 			
 			getLogger().debug("TCP client stopped");
 		}
+	}
+	
+	private static void releaseInstance() {
+		uniqueTCPClientInstance = null;
 	}
 	
 	public Socket getTcpSocketToServer() {

@@ -211,6 +211,7 @@ public class TLSClient extends StatefulTransportLayerClient {
 				getInStream().close();
 				getOutStream().close();
 				getTlsSocketToServer().close();
+				releaseInstance();
 				Thread.currentThread().interrupt();
 			} catch (IOException e) {
 				getLogger().error("Error occurred while trying to close TCP socket to server", e);
@@ -218,6 +219,10 @@ public class TLSClient extends StatefulTransportLayerClient {
 			
 			getLogger().debug("TLS client stopped");
 		}
+	}
+	
+	private static void releaseInstance() {
+		uniqueTLSClientInstance = null;
 	}
 	
 	
