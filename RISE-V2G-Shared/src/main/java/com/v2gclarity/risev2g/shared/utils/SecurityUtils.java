@@ -75,6 +75,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
@@ -1871,10 +1872,11 @@ public final class SecurityUtils {
 		 * Iterate over all element IDs of the message which should have been signed and find the 
 		 * respective Reference element in the given message header
 		 */
-		for (String id : verifyXMLSigRefElements.keySet()) {
+		for (Map.Entry<String, byte[]> verifyXMLSigRefElement : verifyXMLSigRefElements.entrySet()) {
+			String id = verifyXMLSigRefElement.getKey();
 			getLogger().debug("Verifying digest for element '" + id + "'");
 			messageDigestsEqual = false;
-			calculatedReferenceDigest = verifyXMLSigRefElements.get(id);
+			calculatedReferenceDigest = verifyXMLSigRefElement.getValue();
 			
 			for (ReferenceType reference : signature.getSignedInfo().getReference()) {
 				if (reference == null) {
