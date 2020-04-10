@@ -1008,9 +1008,9 @@ public final class SecurityUtils {
 						getCertificateChain(contractCertChain)); 
 				
 				// Save the keystore persistently
-				FileOutputStream fos = new FileOutputStream("evccKeystore.jks");
-				keyStore.store(fos, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
-				fos.close();
+				try(FileOutputStream fos = new FileOutputStream("evccKeystore.jks")){
+					keyStore.store(fos, GlobalValues.PASSPHRASE_FOR_CERTIFICATES_AND_KEYS.toString().toCharArray());
+				}
 				
 				X509Certificate contractCert = getCertificate(contractCertChain.getCertificate());
 				
