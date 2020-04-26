@@ -152,8 +152,11 @@ public class WaitForPowerDeliveryReq extends ServerState {
 				dcEVSEStatusCode.equals(DCEVSEStatusCodeType.EVSE_EMERGENCY_SHUTDOWN) || 
 				dcEVSEStatusCode.equals(DCEVSEStatusCodeType.EVSE_MALFUNCTION)) {
 				getLogger().error("EVSE status code is '" + dcEVSEStatusCode.toString() + "'");
-				powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_POWER_DELIVERY_NOT_APPLIED);
-				return false;
+				
+				if (!powerDeliveryReq.getChargeProgress().equals(ChargeProgressType.STOP)) {
+					powerDeliveryRes.setResponseCode(ResponseCodeType.FAILED_POWER_DELIVERY_NOT_APPLIED);
+					return false;
+				}
 			}
 					
 		}
