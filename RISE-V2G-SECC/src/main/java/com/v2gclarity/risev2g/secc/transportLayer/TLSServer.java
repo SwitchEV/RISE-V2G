@@ -76,6 +76,15 @@ public final class TLSServer extends StatefulTransportLayerServer {
 			 * the standard. An implementer may decide to choose only one of them:
 			 * - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
 			 * - TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+			 * 
+			 * In ISO 15118-2, only the named elliptic curve "secp256r1" is allowed for ECDH(E). The jdk.tls.namedGroups property 
+			 * contains a comma-separated list within quotation marks of enabled named groups in preference order. The list of default 
+			 * named groups varies depending on what JDK release you are using. Set it on your Java command-line as follows:
+			 * 
+			 * $ java -Djdk.tls.namedGroups="secp256r1"
+			 * 
+			 * As it turns out, "secp256r1" is already the default first entry for Java 8 (and higher versions), but you should deactivate 
+			 * the other elliptic curves by reducing the list to this one entry.
 			 */
 			String[] enabledCipherSuites = {
 					"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 
