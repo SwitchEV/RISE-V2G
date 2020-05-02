@@ -79,9 +79,12 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 	}
 	
 	
-	private boolean initialize() {
+	private void initialize() {
 		UDPClient udpClient = UDPClient.getInstance();
-		udpClient.initialize();
+		if (!udpClient.initialize()) {
+			logger.fatal("UDP client cannot be initialized, ISO 15118 communication cannot continue");
+			return;
+		};
 		
 		byte[] udpResponse = null;
 		SECCDiscoveryRes seccDiscoveryRes = null;
@@ -105,12 +108,8 @@ public class V2GCommunicationSessionHandlerEVCC implements Observer {
 			}
 		}
 		
-		/*
-		 * Establish a new V2GCommunicationSessionEVCC if SECCDiscoveryRes was successful and initiate
-		 * the respective TCP client connection
-		 */
-		if (startNewSession(seccDiscoveryRes)) return true;
-		else return false;
+		// SECCDiscoveryRes was successful, establish a new V2GCommunicationSessionEVCC and initiate the respective TCP client connection
+		startNewSession(seccDiscoveryRes);
 	}
 	
 	
