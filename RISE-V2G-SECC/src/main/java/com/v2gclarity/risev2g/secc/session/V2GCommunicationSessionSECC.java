@@ -140,7 +140,7 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		setBackendInterface(SECCImplementationFactory.createBackendInterface(this));
 
 		// ACEVSE notification
-		setAcEVSEStatus(new ACEVSEStatusType());
+		setACEVSEStatus(new ACEVSEStatusType());
 		getACEVSEStatus().setEVSENotification(EVSENotificationType.NONE);
 		getACEVSEStatus().setNotificationMaxDelay(0);
 		getACEVSEStatus().setRCD(false);
@@ -312,6 +312,10 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 	public ACEVSEStatusType getACEVSEStatus() {
 		return acEVSEStatus;
 	}
+	
+	public void setACEVSEStatus(ACEVSEStatusType acEVSEStatus) {
+		this.acEVSEStatus = acEVSEStatus;
+	}
 
 	public PMaxScheduleType getPMaxSchedule() {
 		return pMaxSchedule;
@@ -363,15 +367,6 @@ public class V2GCommunicationSessionSECC extends V2GCommunicationSession impleme
 		this.connectionHandler = connectionHandler;
 	}
 	
-	public ACEVSEStatusType getAcEVSEStatus() {
-		return acEVSEStatus;
-	}
-
-	public void setAcEVSEStatus(ACEVSEStatusType acEVSEStatus) {
-		this.acEVSEStatus = acEVSEStatus;
-	}
-
-
 	public ArrayList<ServiceType> getOfferedServices() {
 		return offeredServices;
 	}
