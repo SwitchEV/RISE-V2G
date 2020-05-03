@@ -105,13 +105,9 @@ public class UDPClient {
 	}
 	
 
-	public static UDPClient getInstance() {
+	public static synchronized UDPClient getInstance() {
 		if (uniqueUDPClientInstance == null) {
-			synchronized (UDPClient.class) {
-				if (uniqueUDPClientInstance == null) {
-					uniqueUDPClientInstance = new UDPClient();
-				}
-			}
+			uniqueUDPClientInstance = new UDPClient();
 		}
 		return uniqueUDPClientInstance;
 	}
@@ -151,10 +147,6 @@ public class UDPClient {
 	public void stop() {
 		getSocketToUDPServer().close();
 		getLogger().debug("UDP client stopped");
-		releaseInstance();
-	}
-	
-	private static void releaseInstance() {
 		uniqueUDPClientInstance = null;
 	}
 	
