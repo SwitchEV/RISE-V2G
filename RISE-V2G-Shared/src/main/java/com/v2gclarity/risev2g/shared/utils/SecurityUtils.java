@@ -434,8 +434,7 @@ public final class SecurityUtils {
 		
 		
 		responseCode = verifyLeafCertificateAttributes(leafCertificate, pki);
-		if (responseCode.equals(ResponseCodeType.OK))
-			return responseCode;
+		if (!responseCode.equals(ResponseCodeType.OK)) return responseCode;
 		
 		return ResponseCodeType.OK;
 	}
