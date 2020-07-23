@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.v2gclarity.risev2g</groupId>
 		<artifactId>rise-v2g-parent</artifactId>
-		<version>1.2.5</version>
+		<version>1.2.6</version>
 		<relativePath>../RISE-V2G-PARENT</relativePath>
 	</parent>
 
