@@ -706,7 +706,7 @@ public final class SecurityUtils {
 			parameters.init(new ECGenParameterSpec("secp256r1"));
 			ECParameterSpec ecParameterSpec = parameters.getParameterSpec(ECParameterSpec.class);
 			
-			ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(x), new BigInteger(y)), ecParameterSpec);
+			ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(new ECPoint(new BigInteger(1, x), new BigInteger(1, y)), ecParameterSpec);
 			ECPublicKey ecPublicKey = (ECPublicKey) kf.generatePublic(ecPublicKeySpec);
 			return ecPublicKey;
 	    } catch (NoSuchAlgorithmException | InvalidParameterSpecException | InvalidKeySpecException e) {
