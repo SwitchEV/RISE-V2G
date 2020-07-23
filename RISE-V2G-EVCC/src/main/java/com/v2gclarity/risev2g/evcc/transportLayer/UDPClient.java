@@ -51,7 +51,7 @@ public class UDPClient {
 	 *  access the instance variable -> thread safe.
 	 */
 	private Logger logger = LogManager.getLogger(this.getClass().getSimpleName());
-	private static final UDPClient uniqueUDPClientInstance = new UDPClient();
+	private static UDPClient uniqueUDPClientInstance = new UDPClient();
 	private int multicastSocketPort;
 	private Inet6Address multicastAddress;
 	private MulticastSocket socketToUDPServer;
@@ -105,7 +105,10 @@ public class UDPClient {
 	}
 	
 
-	public static UDPClient getInstance() {
+	public static synchronized UDPClient getInstance() {
+		if (uniqueUDPClientInstance == null) {
+			uniqueUDPClientInstance = new UDPClient();
+		}
 		return uniqueUDPClientInstance;
 	}
 	
@@ -144,6 +147,7 @@ public class UDPClient {
 	public void stop() {
 		getSocketToUDPServer().close();
 		getLogger().debug("UDP client stopped");
+		uniqueUDPClientInstance = null;
 	}
 	
 	
