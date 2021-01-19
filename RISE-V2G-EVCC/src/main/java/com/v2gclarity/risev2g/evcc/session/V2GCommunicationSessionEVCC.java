@@ -95,7 +95,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	private ChargingProfileType chargingProfile;
 	private ServiceListType offeredServices;
 	private SelectedServiceListType selectedServices; 
-	private ArrayList<Short> serviceDetailsToBeRequested;
+	private ArrayList<Integer> serviceDetailsToBeRequested;
 	private EnergyTransferModeType requestedEnergyTransferMode;
 	private long evseScheduleReceived; // The timestamp of receiving the SAScheduleList from the EVSE, is used as a reference
 	private List<AppProtocolType> supportedAppProtocols;
@@ -436,9 +436,9 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 	}
 
 
-	public ArrayList<Short> getServiceDetailsToBeRequested() {
+	public ArrayList<Integer> getServiceDetailsToBeRequested() {
 		if (serviceDetailsToBeRequested == null) {
-			serviceDetailsToBeRequested = new ArrayList<Short>();
+			serviceDetailsToBeRequested = new ArrayList<Integer>();
 		}
 		
 		return serviceDetailsToBeRequested;
@@ -446,7 +446,7 @@ public class V2GCommunicationSessionEVCC extends V2GCommunicationSession impleme
 
 
 	public void setServiceDetailsToBeRequested(
-			ArrayList<Short> serviceDetailsToBeRequested) {
+			ArrayList<Integer> serviceDetailsToBeRequested) {
 		this.serviceDetailsToBeRequested = serviceDetailsToBeRequested;
 	}
 
