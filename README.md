@@ -16,26 +16,13 @@ RISE V2G shall evolve to cover all aspects of conductive and inductive charging 
 Your assistance would therefore be very appreciated, be it by testing this reference implementation against your own solution - this way uncovering possible bugs or making code optimisation suggestions - or by providing an implementation for yet missing parts.
 
 ### More Information
-- Have a look at the [ISO 15118 Manual](https://v2g-clarity.com/iso15118-manual) to fully understand how ISO 15118 works
-
-![ISO 15118 Manual](https://v2g-clarity.com/v2g-ebook-ipad-title-small/)
-
 - View the [RISE V2G Basics online course](https://courses.v2g-clarity.com/p/risev2g-basics) to get RISE V2G up and running on your computer in under an hour. 
 
 ![RISE V2G Basics Course](https://v2g-clarity.com/risev2g-basics-video-image/)
 
 
-- Dive even deeper into the implementation of ISO 15118 with the online course [Master the Communication for Charging Electric Vehicles](https://v2g-clarity.com/courses/#course-risev2g-advanced). This course gives you an in-depth guide through RISE V2G and puts you in the position to adapt this framework to your needs. Want to skip months of implementation effort to get an ISO 15118-compliant EV or charging station up and running? Then you'll love this course. 
-
-![Master the Communication for Charging Electric Vehicles](https://v2g-clarity.com/risev2g-advanced-video-image/)
-
-
-- Ready to fully understand Plug & Charge and its security implications? Then head over to the online course [Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/courses/#course-data-security-and-pnc-with-iso15118). This is the most comprehensive course available on ISO 15118's data security features, including OpenSSL hands-on excercises.
-
-![Data Security and Plug & Charge With ISO 15118](https://v2g-clarity.com/data-security-and-pnc-video-image/)
-
-
-- Join the [ISO 15118 User Group](http://extmgmt.kn.e-technik.tu-dortmund.de/) for discussing Q&As regarding the implementation of ISO 15118 standard requirements (for an account, mail to jens.schmutzler@verisco.de)
+### Support Update
+Due to a lack of time on my side and ongoing work to create a new and production-ready open-source implementation of ISO 15118 as part of [Josev (Joint Operating system for Seamless EV charging)](https://www.switch-ev.com/josev), I need to discontinue the support for RISE V2G. Josev will likely be launched on GitHub by the end of 2021 under the same MIT License.
 
 
 ### License
