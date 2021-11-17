@@ -99,6 +99,13 @@ public class WaitForMeteringReceiptRes extends ClientState {
 						return getSendMessage(getCurrentDemandReq(), V2GMessages.CURRENT_DEMAND_RES);
 					}
 				} else {
+					/* Check if the EV controller triggered a pause of a charging session. 
+					 * If not, indicate a termination of the charging session. This will be
+					 * evaluated in the state WaitForPowerDeliveryRes
+					 */
+					if (getCommSessionContext().getChargingSession() == null)
+						getCommSessionContext().setChargingSession(ChargingSessionType.TERMINATE);
+					
 					return getSendMessage(getPowerDeliveryReq(ChargeProgressType.STOP), 
 										  V2GMessages.POWER_DELIVERY_RES,
 										  " (ChargeProgress = STOP_CHARGING)");
