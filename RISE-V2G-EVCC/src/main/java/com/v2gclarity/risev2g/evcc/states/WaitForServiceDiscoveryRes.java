@@ -176,7 +176,7 @@ public class WaitForServiceDiscoveryRes extends ClientState {
 		 * so don't send a ServiceDetailReq for a ChargeService
 		 */
 		if (serviceID != 1)
-			getCommSessionContext().getServiceDetailsToBeRequested().add((short) serviceID);
+			getCommSessionContext().getServiceDetailsToBeRequested().add(serviceID);
 	}
 	
 	
