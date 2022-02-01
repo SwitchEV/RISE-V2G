@@ -29,6 +29,7 @@ import com.v2gclarity.risev2g.shared.enumerations.CPStates;
 import com.v2gclarity.risev2g.shared.enumerations.V2GMessages;
 import com.v2gclarity.risev2g.shared.messageHandling.ReactionToIncomingMessage;
 import com.v2gclarity.risev2g.shared.messageHandling.TerminateSession;
+import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargeParameterDiscoveryReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingSessionType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.ChargingStatusReqType;
 import com.v2gclarity.risev2g.shared.v2gMessages.msgDef.DCEVStatusType;
@@ -65,8 +66,15 @@ public class WaitForPowerDeliveryRes extends ClientState {
 				if (getCommSessionContext().getRequestedEnergyTransferMode().toString().startsWith("DC")) {
 					getCommSessionContext().setChangeToState(CPStates.STATE_B);
 				}
+				ChargeParameterDiscoveryReqType chargeParameterDiscoveryReq = getChargeParameterDiscoveryReq();
+
+				/*
+				 * Save this request in case the ChargeParameterDiscoveryRes indicates that the EVSE is
+				 * still processing. Then this request can just be resent instead of asking the EV again.
+				 */
+				getCommSessionContext().setChargeParameterDiscoveryReq(chargeParameterDiscoveryReq);
 				
-				return getSendMessage(getChargeParameterDiscoveryReq(), V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
+				return getSendMessage(chargeParameterDiscoveryReq, V2GMessages.CHARGE_PARAMETER_DISCOVERY_RES);
 			} else if (getCommSessionContext().getChargingSession() != null && 
 					   getCommSessionContext().getChargingSession() == ChargingSessionType.TERMINATE) {
 				return getSendMessage(ChargingSessionType.TERMINATE);

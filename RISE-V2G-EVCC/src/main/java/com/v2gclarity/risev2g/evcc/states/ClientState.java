@@ -230,10 +230,10 @@ public abstract class ClientState extends State {
 	 */
 	protected ServiceDetailReqType getServiceDetailReq() {
 		if (getCommSessionContext().getServiceDetailsToBeRequested().size() > 0) {
-			ListIterator<Short> listIterator = getCommSessionContext().getServiceDetailsToBeRequested().listIterator();
+			ListIterator<Integer> listIterator = getCommSessionContext().getServiceDetailsToBeRequested().listIterator();
 			
 			ServiceDetailReqType serviceDetailReq = new ServiceDetailReqType();
-			serviceDetailReq.setServiceID((short) listIterator.next());
+			serviceDetailReq.setServiceID(listIterator.next());
 			
 			listIterator.remove();
 			
