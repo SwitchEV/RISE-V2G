@@ -9,20 +9,8 @@ The international standard ISO 15118, entitled "Road vehicles - Vehicle to grid 
 A rise in the wide application of this standard is essential for reaching the goal of integrating EVs as flexible energy storage devices into a smart grid.
 
 
-### Mission Statement
-The RISE V2G project serves as an open source standard-compliant reference implementation and documentation. As such, the objective is to provide a test platform for interoperability testing and to offer an information resource for interested parties. The adoption of a new technology heavily depends on the interoperability of its various implementations. The more tests conducted, the more stable and reliable the developed solution will be.
-
-RISE V2G shall evolve to cover all aspects of conductive and inductive charging and communication from the data link layer up to the application layer. However, it requires a lot of work to be done to fulfil this endeavor.
-Your assistance would therefore be very appreciated, be it by testing this reference implementation against your own solution - this way uncovering possible bugs or making code optimisation suggestions - or by providing an implementation for yet missing parts.
-
-### More Information
-- View the [RISE V2G Basics online course](https://courses.v2g-clarity.com/p/risev2g-basics) to get RISE V2G up and running on your computer in under an hour. 
-
-![RISE V2G Basics Course](https://v2g-clarity.com/risev2g-basics-video-image/)
-
-
 ### Support Update
-Due to a lack of time on my side and ongoing work to create a new and production-ready open-source implementation of ISO 15118 as part of [Josev (Joint Operating system for Seamless EV charging)](https://www.switch-ev.com/josev), I need to discontinue the support for RISE V2G. Josev will likely be launched on GitHub by the end of 2021 under the same MIT License.
+The RISE V2G project is no longer supported. Switch's new [Josev Community](https://github.com/SwitchEV/josev) project is replacing RISE V2G.
 
 
 ### License
