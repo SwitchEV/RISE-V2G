@@ -51,7 +51,7 @@ public class EXISchemaFactoryExceptionHandler implements EXISchemaFactoryErrorHa
     @Override
 	public void fatalError(EXISchemaFactoryException eXISchemaFactoryException) throws EXISchemaFactoryException {
     	logger.warn("FATAL:");
-    	eXISchemaFactoryException.getStackTrace();
+    	eXISchemaFactoryException.printStackTrace();
     }
     
 }
