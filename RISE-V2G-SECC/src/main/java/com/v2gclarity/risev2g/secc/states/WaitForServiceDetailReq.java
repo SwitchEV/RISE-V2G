@@ -140,12 +140,15 @@ public class WaitForServiceDetailReq extends ServerState {
 	private ParameterSetType getInternetAccessFTPPort20Parameters() {	
 		ParameterSetType parameterSet = new ParameterSetType();
 		
-		ParameterType ftpPort20 = new ParameterType();
-		ftpPort20.setName("FTP20");
-		ftpPort20.setStringValue("ftp");
-		ftpPort20.setIntValue(20);
-		
-		parameterSet.getParameter().add(ftpPort20);
+		ParameterType ftpPort20_str = new ParameterType();
+		ParameterType ftpPort20_int = new ParameterType();
+		ftpPort20_str.setName("Protocol");
+		ftpPort20_str.setStringValue("ftp");
+		ftpPort20_int.setName("Port");
+		ftpPort20_int.setIntValue(20);
+
+		parameterSet.getParameter().add(ftpPort20_str);
+		parameterSet.getParameter().add(ftpPort20_int);
 		parameterSet.setParameterSetID((short) 1);
 		
 		return parameterSet;
@@ -155,12 +158,15 @@ public class WaitForServiceDetailReq extends ServerState {
 	private ParameterSetType getInternetAccessFTPPort21Parameters() {	
 		ParameterSetType parameterSet = new ParameterSetType();
 		
-		ParameterType ftpPort21 = new ParameterType();
-		ftpPort21.setName("FTP21");
-		ftpPort21.setStringValue("ftp");
-		ftpPort21.setIntValue(21);
-		
-		parameterSet.getParameter().add(ftpPort21);
+		ParameterType ftpPort21_str = new ParameterType();
+		ParameterType ftpPort21_int = new ParameterType();
+		ftpPort21_str.setName("Protocol");
+		ftpPort21_str.setStringValue("ftp");
+		ftpPort21_int.setName("Port");
+		ftpPort21_int.setIntValue(21);
+
+		parameterSet.getParameter().add(ftpPort21_str);
+		parameterSet.getParameter().add(ftpPort21_int);
 		parameterSet.setParameterSetID((short) 2);
 		
 		return parameterSet;
@@ -170,12 +176,15 @@ public class WaitForServiceDetailReq extends ServerState {
 	private ParameterSetType getInternetAccessHTTPParameters() {	
 		ParameterSetType parameterSet = new ParameterSetType();
 		
-		ParameterType http = new ParameterType();
-		http.setName("HTTP port 80");
-		http.setStringValue("http");
-		http.setIntValue(80);
-		
-		parameterSet.getParameter().add(http);
+		ParameterType http_int = new ParameterType();
+		ParameterType http_str = new ParameterType();
+		http_str.setName("Protocol");
+		http_str.setStringValue("https");
+		http_int.setName("Port");
+		http_int.setIntValue(80);
+
+		parameterSet.getParameter().add(http_str);
+		parameterSet.getParameter().add(http_int);
 		parameterSet.setParameterSetID((short) 3);
 		
 		return parameterSet;
@@ -185,12 +194,15 @@ public class WaitForServiceDetailReq extends ServerState {
 	private ParameterSetType getInternetAccessHTTPSParameters() {	
 		ParameterSetType parameterSet = new ParameterSetType();
 		
-		ParameterType https = new ParameterType();
-		https.setName("HTTP port 443");
-		https.setStringValue("https");
-		https.setIntValue(443);
-		
-		parameterSet.getParameter().add(https);
+		ParameterType https_int = new ParameterType();
+		ParameterType https_str = new ParameterType();
+		https_str.setName("Protocol");
+		https_str.setStringValue("https");
+		https_int.setName("Port");
+		https_int.setIntValue(443);
+
+		parameterSet.getParameter().add(https_str);
+		parameterSet.getParameter().add(https_int);
 		parameterSet.setParameterSetID((short) 4);
 		
 		return parameterSet;
